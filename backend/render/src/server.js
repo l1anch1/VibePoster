@@ -148,6 +148,16 @@ app.post('/api/render/psd', async (req, res) => {
     console.log('📥 收到 PSD 生成请求...');
     const posterData = req.body; // 1. 直接从请求体拿数据
     const { canvas, layers } = posterData;
+    
+    // 调试：打印接收到的数据
+    console.log('📋 画布信息:', JSON.stringify(canvas));
+    console.log('📋 输入图层数量:', layers?.length || 0);
+    if (layers && layers.length > 0) {
+      console.log('📋 输入图层详情:');
+      layers.forEach((layer, index) => {
+        console.log(`  图层 ${index + 1}: id="${layer.id}", type="${layer.type}", name="${layer.name || 'N/A'}"`);
+      });
+    }
 
     // 初始化 PSD 对象
     const psd = {
@@ -163,54 +173,100 @@ app.post('/api/render/psd', async (req, res) => {
     for (const layer of layers) {
       // --- 处理文字 ---
       if (layer.type === 'text') {
-        const textColor = hexToRgb(layer.color);
+        // 验证必要字段并清理文本内容
+        if (!layer.content) {
+          console.warn(`⚠️ 文本图层 ${layer.id || layer.name || 'unknown'} 缺少 content 字段，跳过`);
+          continue;
+        }
+        
+        const textContent = String(layer.content).trim();
+        if (textContent.length === 0) {
+          console.warn(`⚠️ 文本图层 ${layer.id || layer.name || 'unknown'} 内容为空，跳过`);
+          continue;
+        }
+        
+        const textColor = hexToRgb(layer.color || '#000000');
         const fontFamily = layer.fontFamily || 'Arial';
-        const fontPostScriptName = findFontPostScriptName(fontFamily);
+        let fontPostScriptName = findFontPostScriptName(fontFamily);
+        
+        // 如果找不到字体，使用 Arial 作为回退
+        if (!fontPostScriptName || fontPostScriptName === fontFamily.replace(/\s+/g, '') + '-Regular') {
+          console.warn(`⚠️ 字体 "${fontFamily}" 未找到，使用 Arial 作为回退`);
+          fontPostScriptName = 'ArialMT'; // Arial 的标准 PostScript 名称
+        }
 
-        console.log(`🔤 处理文字: "${layer.content}" -> 字体: ${fontPostScriptName}`);
-
-        textLayers.push({
-          name: layer.name,
-          left: layer.x,
-          top: layer.y,
-          right: layer.x + layer.width,
-          bottom: layer.y + layer.height,
-          opacity: layer.opacity,
+        // 确保所有必要字段都存在
+        const fontSize = layer.fontSize || 12;
+        const layerWidth = layer.width || 100;
+        const layerHeight = layer.height || 50;
+        const layerX = layer.x || 0;
+        const layerY = layer.y || 0;
+        
+        // 计算行高（通常是字体大小的1.2倍）
+        const leading = Math.round(fontSize * 1.2);
+        
+        console.log(`🔤 处理文字: "${textContent}" -> 字体: ${fontFamily} (${fontPostScriptName})`);
+        console.log(`   位置: x=${layerX}, y=${layerY}, width=${layerWidth}, height=${layerHeight}`);
+        console.log(`   样式: fontSize=${fontSize}, color=${layer.color}, align=${layer.textAlign}`);
+        
+        const textLayer = {
+          name: layer.name || layer.id || 'Text Layer',
+          left: layerX,
+          top: layerY,
+          right: layerX + layerWidth,
+          bottom: layerY + layerHeight,
+          opacity: layer.opacity !== undefined ? layer.opacity : 1.0,
           text: {
-            text: layer.content,
+            text: textContent, // 使用清理后的文本内容
             shapeType: 'box',
-            transform: [1, 0, 0, 1, layer.x, layer.y],
-            boxBounds: [0, 0, layer.width, layer.height],
+            transform: [1, 0, 0, 1, layerX, layerY],
+            boxBounds: [0, 0, layerWidth, layerHeight],
             style: {
-              font: { name: fontPostScriptName },
-              fontSize: layer.fontSize,
+              font: { 
+                name: fontPostScriptName,
+                synthetic: false
+              },
+              fontSize: fontSize,
               fillColor: textColor,
               fillFlag: true,
+              leading: leading,
+              tracking: 0, // 字间距
+              autoLeading: false,
+              baselineShift: 0,
             },
             paragraphStyle: {
               justification: layer.textAlign === 'center' ? 'center' :
                 layer.textAlign === 'right' ? 'right' : 'left',
             },
+            warp: null, // 无变形
           },
-        });
+        };
+        
+        textLayers.push(textLayer);
+        console.log(`✅ 文本图层已添加: "${textLayer.text.text}"`);
+        console.log(`   字体: ${fontPostScriptName}, 大小: ${fontSize}, 颜色: RGB(${textColor.r}, ${textColor.g}, ${textColor.b})`);
       }
 
       // --- 处理图片 ---
       if (layer.type === 'image') {
-        console.log(`🖼️ 处理图片: ${layer.name}`);
+        const layerName = layer.name || layer.id || 'Image Layer';
+        console.log(`🖼️ 处理图片图层: id="${layer.id}", name="${layerName}"`);
+        console.log(`   位置: x=${layer.x}, y=${layer.y}, width=${layer.width}, height=${layer.height}`);
+        console.log(`   源: ${layer.src ? (layer.src.substring(0, 50) + '...') : 'N/A'}`);
         // 注意：这里为了不引入复杂的解码库 (如 jpeg-js/canvas)，我们暂时使用灰色占位符
         // ag-psd 需要 raw pixel data，直接传 buffer 是不行的
         // 真正的图片处理需要 node-canvas 的 loadImage 和 getImageData
         imageLayers.push({
-          name: layer.name,
+          name: layerName,
           left: layer.x,
           top: layer.y,
           right: layer.x + layer.width,
           bottom: layer.y + layer.height,
-          opacity: layer.opacity,
+          opacity: layer.opacity !== undefined ? layer.opacity : 1.0,
           // 使用灰色占位
           imageData: createImageData(layer.width, layer.height, { r: 200, g: 200, b: 200 }),
         });
+        console.log(`✅ 图片图层已添加: "${layerName}"`);
       }
     }
 
@@ -226,9 +282,25 @@ app.post('/api/render/psd', async (req, res) => {
 
     // 生成 Buffer
     console.log('🔨 正在构建 PSD 二进制流...');
-    const psdBuffer = agPsd.writePsdBuffer(psd, {
-      invalidateTextLayers: true, // 关键：让 PS 重新计算文字外观
+    console.log('📊 图层统计:');
+    console.log(`   - 背景色图层: 1 (自动生成的背景色)`);
+    console.log(`   - 图片图层: ${imageLayers.length}`);
+    imageLayers.forEach((layer, index) => {
+      console.log(`     ${index + 1}. ${layer.name}`);
     });
+    console.log(`   - 文本图层: ${textLayers.length}`);
+    textLayers.forEach((layer, index) => {
+      console.log(`     ${index + 1}. ${layer.name} - "${layer.text.text}"`);
+    });
+    console.log(`   - 总图层数量: ${psd.children.length} (1个背景色 + ${imageLayers.length}个图片 + ${textLayers.length}个文本)`);
+    
+    // 尝试不使用 invalidateTextLayers，看看是否能正确显示文本
+    const psdBuffer = agPsd.writePsdBuffer(psd, {
+      invalidateTextLayers: true, // 改为 false，让文本图层保持原样
+      generateThumbnail: false,
+    });
+    
+    console.log(`✅ PSD 文件大小: ${psdBuffer.length} bytes`);
 
     // 2. 发送回前端
     console.log('🚀 发送 PSD 文件给前端!');

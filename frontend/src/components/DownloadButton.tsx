@@ -13,6 +13,24 @@ export const DownloadButton: React.FC<Props> = ({ data }) => {
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
+      // 调试：打印要发送的数据
+      console.log('📤 准备发送数据到后端:', {
+        canvas: data.canvas,
+        layersCount: data.layers.length,
+        textLayers: data.layers.filter(l => l.type === 'text').map(l => ({
+          id: l.id,
+          name: l.name,
+          content: l.content,
+          x: l.x,
+          y: l.y,
+          width: l.width,
+          height: l.height,
+          fontSize: l.type === 'text' ? l.fontSize : undefined,
+          fontFamily: l.type === 'text' ? l.fontFamily : undefined,
+          color: l.type === 'text' ? l.color : undefined,
+        }))
+      });
+      
       const response = await axios.post('http://localhost:3000/api/render/psd', data, {
         responseType: 'blob', 
       });
@@ -36,24 +54,36 @@ export const DownloadButton: React.FC<Props> = ({ data }) => {
       onClick={handleDownload}
       disabled={isDownloading}
       style={{
-        // ⚠️ 修改点：删除了 position: fixed, top, right
-        // 现在它只负责长得像个按钮，位置由 App.tsx 里的父容器决定
-        padding: '12px 24px',
+        width: '100%', // 全宽按钮，与生成按钮保持一致
+        padding: '14px 20px',
         backgroundColor: isDownloading ? '#9CA3AF' : '#10B981', 
         color: 'white',
         border: 'none',
-        borderRadius: '50px', // 变成圆角矩形更好看
-        fontSize: '16px',
-        fontWeight: 'bold',
+        borderRadius: '12px',
+        fontSize: '15px',
+        fontWeight: 600,
         cursor: isDownloading ? 'not-allowed' : 'pointer',
-        boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)', // 加个绿色光晕
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        boxShadow: isDownloading 
+          ? 'none' 
+          : '0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(255,255,255,0.1)',
+        transition: 'all 0.2s ease',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px'
+        gap: '10px',
+        backdropFilter: 'blur(10px)',
       }}
-      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+      onMouseEnter={(e) => {
+        if (!isDownloading) {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(255,255,255,0.1)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDownloading) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(255,255,255,0.1)';
+        }
+      }}
     >
       <span>📥</span>
       {isDownloading ? '打包中...' : '下载 PSD 源文件'}
