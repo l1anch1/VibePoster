@@ -9,15 +9,18 @@ import tempfile
 import os
 from PIL import Image
 import numpy as np
+from ..core.logger import get_logger
+
+logger = get_logger(__name__)
 
 # 尝试导入 rembg，如果失败则使用占位实现
 try:
     from rembg import remove
     REMBG_AVAILABLE = True
-    print("✅ rembg 已启用，抠图功能可用")
+    logger.info("✅ rembg 已启用，抠图功能可用")
 except ImportError:
     REMBG_AVAILABLE = False
-    print("⚠️ rembg 未安装，抠图功能将使用占位实现")
+    logger.warning("⚠️ rembg 未安装，抠图功能将使用占位实现")
 
 
 def remove_background(image_data: bytes) -> bytes:
@@ -36,12 +39,12 @@ def remove_background(image_data: bytes) -> bytes:
             output = remove(image_data)
             return output
         except Exception as e:
-            print(f"❌ 抠图失败: {e}")
+            logger.error(f"❌ 抠图失败: {e}")
             # 如果失败，返回原图
             return image_data
     else:
         # 占位实现：返回原图（仅在 rembg 未安装时使用）
-        print("⚠️ rembg 未安装，返回原图")
+        logger.warning("⚠️ rembg 未安装，返回原图")
         return image_data
 
 
@@ -92,7 +95,7 @@ def analyze_image(image_data: bytes) -> Dict[str, Any]:
             "subject_bbox": subject_bbox,
         }
     except Exception as e:
-        print(f"❌ 图像分析失败: {e}")
+        logger.error(f"❌ 图像分析失败: {e}")
         # 返回默认值
         return {
             "width": 1080,
@@ -128,7 +131,7 @@ def process_cutout(image_data: bytes) -> Dict[str, Any]:
             tmp_file.write(processed_image)
             temp_path = tmp_file.name
     except Exception as e:
-        print(f"⚠️ 保存临时文件失败: {e}")
+        logger.warning(f"⚠️ 保存临时文件失败: {e}")
     
     return {
         "processed_image_path": temp_path,
@@ -177,7 +180,7 @@ def composite_images(foreground: bytes, background: bytes, position: tuple = Non
         bg_img.save(output, format='PNG')
         return output.getvalue()
     except Exception as e:
-        print(f"❌ 图像合成失败: {e}")
+        logger.error(f"❌ 图像合成失败: {e}")
         return background
 
 

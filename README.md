@@ -6,17 +6,17 @@
 
 ### 四大智能体架构 (The 4-Agent Architecture)
 
-1. 🧠 **Director (策划)**：理解意图，写文案，定色调
-2. 🎨 **Prompter (视觉)**：处理图片（抠图、分析、搜图），是"视觉调度中心"
-3. 📐 **Layout (排版)**：计算坐标，生成图层数据
-4. ⚖️ **Reviewer (审核)**：基于规则和视觉冲突检测，进行自修正
+1. 🧠 **Planner (规划)**：理解意图，写文案，定色调
+2. 🎨 **Visual (感知)**：处理图片（抠图、分析、搜图），是"视觉感知中心"
+3. 📐 **Layout (执行)**：计算坐标，生成图层数据
+4. ⚖️ **Critic (反思)**：基于规则和视觉冲突检测，进行自修正
 
 ### 技术栈
 
 - **前端**: React + TypeScript + Vite
 - **后端引擎**: Python + FastAPI + LangGraph
 - **渲染服务**: Node.js + Express + ag-psd
-- **AI 模型**: DeepSeek (Director/Prompter/Reviewer) + Gemini (Layout)
+- **AI 模型**: DeepSeek (Planner/Visual/Critic) + Gemini (Layout)
 
 ## 🚀 快速开始
 
@@ -53,12 +53,6 @@ pip install rembg[new]
 cp .env.example .env
 # 然后编辑 .env 文件，填入你的 API Key
 
-# 获取 Unsplash API Key（用于背景图搜索）：
-# 1. 访问 https://unsplash.com/developers
-# 2. 注册账号并创建应用
-# 3. 获取 Access Key
-# 4. 将 Access Key 填入 .env 文件的 UNSPLASH_ACCESS_KEY
-# 注意：如果不配置 Unsplash API Key，系统会使用占位符图片
 ```
 
 #### 渲染服务 (Node.js)
@@ -171,7 +165,7 @@ VibePoster/
    - 上传人物图：系统会自动抠图并合成
 3. **选择画布尺寸**：竖版或横版，三种尺寸可选
 4. **生成海报**：点击"开始融合生成"按钮
-5. **下载 PSD**：点击右下角下载按钮，获取可编辑的 PSD 文件
+5. **下载 PSD**：点击下载按钮，获取可编辑的 PSD 文件
 
 ### 工作流说明
 

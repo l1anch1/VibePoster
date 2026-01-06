@@ -1,114 +1,242 @@
 """
-核心配置 - 环境变量、模型名称、全局常量
+核心配置 - VibePoster
+
+设计原则：
+1. 每个 Agent 拥有独立的完整配置（API_KEY, BASE_URL, MODEL, TEMPERATURE）
+2. 通过环境变量前缀隔离各 Agent 配置（PLANNER_*, VISUAL_*, LAYOUT_*, CRITIC_*）
 """
+
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# === LLM 配置 ===
 
-# DeepSeek 配置
-DEEPSEEK_CONFIG = {
-    "provider": "deepseek",
-    "model": os.getenv("DIRECTOR_MODEL", "deepseek-chat"),
-    "api_key": os.getenv("DEEPSEEK_API_KEY"),
-    "base_url": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
-    "temperature": float(os.getenv("DIRECTOR_TEMPERATURE", "0.7")),
-    "response_format": {"type": "json_object"},
-}
+class PlannerAgentConfig(BaseSettings):
+    """
+    Planner Agent 配置
+    """
 
-# Gemini 配置
-GEMINI_CONFIG = {
-    "provider": "gemini",
-    "model": os.getenv("LAYOUT_MODEL", "gemini-3-flash-preview"),
-    "api_key": os.getenv("GEMINI_API_KEY"),
-    "base_url": os.getenv("GEMINI_BASE_URL", "https://api.openai-proxy.org/google"),
-    "vertexai": True,
-    "response_mime_type": "application/json",
-}
+    model_config = SettingsConfigDict(env_prefix="PLANNER_", env_file=".env", extra="ignore")
 
-# === Agent 配置 ===
+    # LLM 配置
+    PROVIDER: str = Field(
+        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    )
+    API_KEY: str = Field(..., description="Planner Agent 的 API Key")
+    BASE_URL: str = Field(
+        default="https://api.deepseek.com", description="Planner Agent 的 API Base URL"
+    )
+    MODEL: str = Field(default="deepseek-chat", description="Planner Agent 使用的模型")
+    TEMPERATURE: float = Field(
+        default=0.7, ge=0.0, le=2.0, description="Planner Agent 的温度参数（0.0-2.0）"
+    )
 
-DIRECTOR_CONFIG = {
-    "llm": "deepseek",
-    **DEEPSEEK_CONFIG,
-}
+    # Planner 专用参数
+    DEFAULT_INTENT: str = Field(default="poster", description="默认意图类型")
 
-PROMPTER_CONFIG = {
-    "llm": "deepseek",  # Prompter 也使用 DeepSeek 做路由决策
-    **DEEPSEEK_CONFIG,
-}
 
-LAYOUT_CONFIG = {
-    "llm": "gemini",
-    **GEMINI_CONFIG,
-}
+class VisualAgentConfig(BaseSettings):
+    """
+    Visual Agent 配置
+    """
 
-REVIEWER_CONFIG = {
-    "llm": "deepseek",  # Reviewer 使用 DeepSeek 做审核
-    **DEEPSEEK_CONFIG,
-}
+    model_config = SettingsConfigDict(env_prefix="VISUAL_", env_file=".env", extra="ignore")
 
-ASSET_CONFIG = {
-    "provider": "unsplash",  # 使用 Unsplash API
-    "unsplash_access_key": os.getenv("UNSPLASH_ACCESS_KEY"),
-    "fallback_url": os.getenv("ASSET_FALLBACK_URL", "https://placehold.co/1080x1920/333333/FFF?text=Default+Background"),
-}
+    # LLM 配置（用于 OCR 和图像理解）
+    PROVIDER: str = Field(
+        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    )
+    API_KEY: str = Field(..., description="Visual Agent 的 API Key")
+    BASE_URL: str = Field(
+        default="https://api.deepseek.com", description="Visual Agent 的 API Base URL"
+    )
+    MODEL: str = Field(
+        default="deepseek-chat", description="Visual Agent 使用的模型（需支持 Vision）"
+    )
+    TEMPERATURE: float = Field(
+        default=0.2, ge=0.0, le=2.0, description="Visual Agent 的温度参数（较低以确保准确性）"
+    )
 
-# === 工作流配置 ===
+    # Visual 专用参数
+    DEFAULT_POSITION: str = Field(default="center_bottom", description="前景图层默认位置")
+    PEXELS_API_KEY: str = Field(..., description="Pexels 素材库 API Key")
 
-WORKFLOW_CONFIG = {
-    "nodes": [
-        {"name": "director", "description": "策划与意图理解", "agent": "director"},
-        {"name": "prompter", "description": "视觉调度中心", "agent": "prompter"},
-        {"name": "layout", "description": "空间计算与排版", "agent": "layout"},
-        {"name": "reviewer", "description": "质量审核", "agent": "reviewer"},
-    ],
-    "edges": [
-        {"from": "director", "to": "prompter"},
-        {"from": "prompter", "to": "layout"},
-        {"from": "layout", "to": "reviewer"},
-        {"from": "reviewer", "to": "layout", "condition": "reject"},  # 条件边：如果审核不通过，回到 layout
-        {"from": "reviewer", "to": "END", "condition": "pass"},  # 条件边：如果审核通过，结束
-    ],
-    "entry_point": "director",
-}
 
-# === 画布默认配置 ===
+class LayoutAgentConfig(BaseSettings):
+    """
+    Layout Agent 配置
+    """
 
-CANVAS_DEFAULTS = {
-    "width": int(os.getenv("CANVAS_WIDTH", "1080")),
-    "height": int(os.getenv("CANVAS_HEIGHT", "1920")),
-    "backgroundColor": os.getenv("CANVAS_BG_COLOR", "#FFFFFF"),
-}
+    model_config = SettingsConfigDict(env_prefix="LAYOUT_", env_file=".env", extra="ignore")
 
-# === 错误处理配置 ===
+    # LLM 配置
+    PROVIDER: str = Field(
+        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    )
+    API_KEY: str = Field(..., description="Layout Agent 的 API Key")
+    BASE_URL: str = Field(
+        default="https://api.deepseek.com", description="Layout Agent 的 API Base URL"
+    )
+    MODEL: str = Field(
+        default="deepseek-reasoner", description="Layout Agent 使用的模型（推荐使用推理模型）"
+    )
+    TEMPERATURE: float = Field(
+        default=0.1, ge=0.0, le=2.0, description="Layout Agent 的温度参数（非常低以确保精确性）"
+    )
 
-ERROR_FALLBACKS = {
-    "director": {
-        "title": "生成失败",
-        "subtitle": "请检查 API Key",
-        "main_color": "#000000",
-        "background_color": "#FFFFFF",
-        "style_keywords": [],
-        "intent": "other",
-    },
-    "prompter": {
-        "background_layer": {
-            "type": "image",
-            "src": "https://placehold.co/1080x1920/333333/FFF?text=Default+Background",
-            "source_type": "stock",
+    # Layout 专用参数（排版约束）
+    FG_MAX_WIDTH_RATIO: float = Field(
+        default=0.5, ge=0.1, le=1.0, description="前景图层最大宽度占画布比例"
+    )
+    FG_MAX_HEIGHT_RATIO: float = Field(
+        default=0.6, ge=0.1, le=1.0, description="前景图层最大高度占画布比例"
+    )
+    Z_INDEX_BG: int = Field(default=0, description="背景图层 z-index")
+    Z_INDEX_FG: int = Field(default=10, description="前景图层 z-index")
+    Z_INDEX_TEXT: int = Field(default=20, description="文字图层 z-index")
+
+
+class CriticAgentConfig(BaseSettings):
+    """
+    Critic Agent 配置
+    """
+
+    model_config = SettingsConfigDict(env_prefix="CRITIC_", env_file=".env", extra="ignore")
+
+    # LLM 配置
+    PROVIDER: str = Field(
+        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    )
+    API_KEY: str = Field(..., description="Critic Agent 的 API Key")
+    BASE_URL: str = Field(
+        default="https://api.deepseek.com", description="Critic Agent 的 API Base URL"
+    )
+    MODEL: str = Field(
+        default="deepseek-reasoner", description="Critic Agent 使用的模型（推荐使用推理模型）"
+    )
+    TEMPERATURE: float = Field(
+        default=0.0, ge=0.0, le=2.0, description="Critic Agent 的温度参数（0.0 确保严格审核）"
+    )
+
+    # Critic 专用参数
+    MAX_RETRY_COUNT: int = Field(default=2, ge=0, le=5, description="最大重试次数")
+    DEFAULT_STATUS: str = Field(default="PASS", description="默认审核状态")
+
+
+class CanvasConfig(BaseSettings):
+    """画布默认配置"""
+
+    model_config = SettingsConfigDict(env_prefix="CANVAS_", env_file=".env", extra="ignore")
+
+    WIDTH: int = Field(default=1080, ge=100, le=10000, description="默认画布宽度")
+    HEIGHT: int = Field(default=1920, ge=100, le=10000, description="默认画布高度")
+    BG_COLOR: str = Field(default="#FFFFFF", description="默认背景颜色")
+
+
+class CORSConfig(BaseSettings):
+    """CORS 配置"""
+
+    model_config = SettingsConfigDict(env_prefix="CORS_", env_file=".env", extra="ignore")
+
+    ALLOW_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+        description="允许的来源列表（逗号分隔）",
+    )
+    ALLOW_METHODS: str = Field(
+        default="GET,POST,PUT,DELETE,OPTIONS", description="允许的 HTTP 方法（逗号分隔）"
+    )
+    ALLOW_HEADERS: str = Field(
+        default="Content-Type,Authorization", description="允许的请求头（逗号分隔）"
+    )
+    ALLOW_CREDENTIALS: bool = Field(default=False, description="是否允许携带凭证")
+
+    @property
+    def allow_origins_list(self) -> List[str]:
+        """将逗号分隔的字符串转换为列表"""
+        if not self.ALLOW_ORIGINS:
+            return []
+        origins = [origin.strip() for origin in self.ALLOW_ORIGINS.split(",") if origin.strip()]
+        if "*" in origins:
+            return ["*"]
+        return origins
+
+    @property
+    def allow_methods_list(self) -> List[str]:
+        """将逗号分隔的字符串转换为列表"""
+        if not self.ALLOW_METHODS:
+            return ["GET", "POST"]
+        return [method.strip() for method in self.ALLOW_METHODS.split(",") if method.strip()]
+
+    @property
+    def allow_headers_list(self) -> List[str]:
+        """将逗号分隔的字符串转换为列表"""
+        if not self.ALLOW_HEADERS:
+            return ["Content-Type"]
+        return [header.strip() for header in self.ALLOW_HEADERS.split(",") if header.strip()]
+
+
+# =============================================================================
+# 全局配置（单例）
+# =============================================================================
+
+
+class Settings:
+    """
+    全局配置单例
+
+    每个 Agent 拥有独立的完整配置，配置清晰明确
+    """
+
+    def __init__(self):
+        # Agent 配置（每个 Agent 独立）
+        self.planner = PlannerAgentConfig()
+        self.visual = VisualAgentConfig()
+        self.layout = LayoutAgentConfig()
+        self.critic = CriticAgentConfig()
+
+        # 应用配置
+        self.canvas = CanvasConfig()
+        self.cors = CORSConfig()
+
+    # 静态配置
+    ERROR_FALLBACKS: Dict[str, Any] = {
+        "planner": {
+            "title": "Error",
+            "subtitle": "",
+            "main_color": "#000000",
+            "background_color": "#FFFFFF",
+            "style_keywords": [],
+            "intent": "other",
         },
-    },
-    "layout": {
-        "canvas": {"width": 1080, "height": 1920, "backgroundColor": "#FFFFFF"},
-        "layers": [],
-    },
-    "reviewer": {
-        "status": "PASS",
-        "feedback": "审核通过",
-        "issues": [],
-    },
-}
+        "visual": {"background_layer": {"type": "image", "src": "", "source_type": "fallback"}},
+        "layout": {
+            "canvas": {"width": 1080, "height": 1920, "backgroundColor": "#FFFFFF"},
+            "layers": [],
+        },
+        "critic": {"status": "PASS", "feedback": "System Error", "issues": []},
+    }
+
+    WORKFLOW_CONFIG: Dict[str, Any] = {
+        "nodes": [
+            {"name": "planner", "description": "Planning Agent", "agent": "planner"},
+            {"name": "visual", "description": "Visual Agent", "agent": "visual"},
+            {"name": "layout", "description": "Layout Agent", "agent": "layout"},
+            {"name": "critic", "description": "Critic Agent", "agent": "critic"},
+        ],
+        "edges": [
+            {"from": "planner", "to": "visual"},
+            {"from": "visual", "to": "layout"},
+            {"from": "layout", "to": "critic"},
+            {"from": "critic", "to": "layout", "condition": "reject"},
+            {"from": "critic", "to": "END", "condition": "pass"},
+        ],
+        "entry_point": "planner",
+    }
+
+
+# 导出全局配置单例
+settings = Settings()

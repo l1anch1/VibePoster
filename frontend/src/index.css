@@ -54,7 +54,7 @@ input[type="file"]::-webkit-file-upload-button {
 input[type="file"]::-webkit-file-upload-button:hover {
   background: #E5E7EB;
   border-color: #9CA3AF;
-}
+  }
 
 @keyframes spin {
   from {
@@ -62,5 +62,16 @@ input[type="file"]::-webkit-file-upload-button:hover {
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
   }
 }

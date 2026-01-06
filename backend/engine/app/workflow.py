@@ -8,14 +8,14 @@ from langgraph.graph import StateGraph, END
 from .core.state import AgentState
 
 # 引入配置
-from .core.config import WORKFLOW_CONFIG
+from .core.config import settings
 
 # 引入各个 Agent 节点
 from .agents import (
-    director_node,
-    prompter_node,
+    planner_node,
+    visual_node,
     layout_node,
-    reviewer_node,
+    critic_node,
     should_retry_layout,
 )
 
@@ -30,17 +30,17 @@ def build_workflow():
     workflow = StateGraph(AgentState)
     
     # 添加节点（从各个 agent 文件导入）
-    workflow.add_node("director", director_node)
-    workflow.add_node("prompter", prompter_node)
+    workflow.add_node("planner", planner_node)
+    workflow.add_node("visual", visual_node)
     workflow.add_node("layout", layout_node)
-    workflow.add_node("reviewer", reviewer_node)
+    workflow.add_node("critic", critic_node)
     
     # 设置入口点（从配置读取）
-    workflow.set_entry_point(WORKFLOW_CONFIG["entry_point"])
+    workflow.set_entry_point(settings.WORKFLOW_CONFIG["entry_point"])
     
     # 添加边（根据配置）
     # 先添加普通边
-    for edge in WORKFLOW_CONFIG["edges"]:
+    for edge in settings.WORKFLOW_CONFIG["edges"]:
         if not edge.get("condition"):
             if edge["to"] == "END":
                 # 跳过，后面用条件边处理
@@ -48,9 +48,9 @@ def build_workflow():
             else:
                 workflow.add_edge(edge["from"], edge["to"])
     
-    # 添加条件边（reviewer -> layout 或 END）
+    # 添加条件边（critic -> layout 或 END）
     workflow.add_conditional_edges(
-        "reviewer",
+        "critic",
         should_retry_layout,
         {
             "retry": "layout",  # 重试 layout

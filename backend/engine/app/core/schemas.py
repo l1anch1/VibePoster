@@ -21,6 +21,7 @@ class BaseLayer(BaseModel):
     height: int = 0
     rotation: int = 0
     opacity: float = 1.0
+    z_index: int = 0  # 图层顺序（背景=0, 前景=1, 文字=2）
 
 
 class TextLayer(BaseLayer):
@@ -66,3 +67,8 @@ class PosterData(BaseModel):
     canvas: Canvas
     # 加入 ShapeLayer 支持
     layers: List[Union[TextLayer, ImageLayer, ShapeLayer]]
+
+
+# 注意：工作流内部使用的数据结构（如 asset_list, review_feedback 等）
+# 目前使用 Dict[str, Any] 传递，未定义专门的 Pydantic Schema
+# 如果未来需要类型验证或 API 文档，可以在此处添加相应的 Schema
