@@ -12,6 +12,11 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // 海报数据可能很大，调大限制
 
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'render' });
+});
+
 // 路由
 app.post('/api/render/psd', handlePSDGeneration);
 app.post('/api/render/image', handleImageGeneration); // PNG/JPG 生成

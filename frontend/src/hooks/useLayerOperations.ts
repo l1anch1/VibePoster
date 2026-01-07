@@ -33,9 +33,9 @@ export function useLayerOperations({
   const updateLayer = useCallback(
     (layerId: string, updates: Partial<Layer>) => {
       const newLayers = data.layers.map((layer) =>
-        layer.id === layerId ? { ...layer, ...updates } : layer
+        layer.id === layerId ? { ...layer, ...updates } as Layer : layer
       );
-      const newData = { ...data, layers: newLayers };
+      const newData: PosterData = { ...data, layers: newLayers };
       updateData(newData, 'Update layer');
     },
     [data, updateData]

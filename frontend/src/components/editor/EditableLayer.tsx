@@ -4,7 +4,7 @@
  * 支持选中、拖拽、调整大小等交互功能
  */
 
-import React, { useState, useRef, useCallback, CSSProperties } from 'react';
+import React, { useState, useRef, useCallback, type CSSProperties } from 'react';
 import type { Layer } from '../../types/PosterSchema';
 import type { ResizeDirection } from '../../types/EditorTypes';
 
@@ -54,7 +54,6 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
   // ✅ 所有 Hooks 必须在组件顶部，任何条件返回之前
   const layerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
 
@@ -106,7 +105,6 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
       if (isLocked) return;
 
       e.stopPropagation();
-      setIsResizing(true);
       resizeStartPos.current = { x: e.clientX, y: e.clientY };
       onResizeStart(layer.id, direction, e.clientX, e.clientY);
 
@@ -119,7 +117,6 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
       };
 
       const handleMouseUp = () => {
-        setIsResizing(false);
         onResizeEnd();
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);

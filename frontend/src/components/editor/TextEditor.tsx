@@ -17,13 +17,13 @@ interface TextEditorProps {
 
 export const TextEditor: React.FC<TextEditorProps> = ({
   layer,
-  scale,
   onUpdate,
   onClose,
 }) => {
   // ✅ Hooks 必须在组件顶层调用（在任何条件判断之前）
-  const isValidTextLayer = isTextLayer(layer) && layer.content;
-  const [content, setContent] = useState(layer.content || '');
+  const isValidTextLayer = isTextLayer(layer);
+  const initialContent = isTextLayer(layer) ? layer.content : '';
+  const [content, setContent] = useState(initialContent);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -48,7 +48,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
 
   const handleBlur = () => {
     // 失焦时保存
-    if (content !== layer.content) {
+    const layerContent = isTextLayer(layer) ? layer.content : '';
+    if (content !== layerContent) {
       onUpdate(content);
     }
     onClose();

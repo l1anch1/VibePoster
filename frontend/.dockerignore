@@ -1,0 +1,26 @@
+# Frontend - Docker Ignore
+# ========================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# Build output (will be created during build)
+dist/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+*.md
+
+# Misc
+.DS_Store
+*.log
+

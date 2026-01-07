@@ -36,10 +36,8 @@ interface EditorCanvasProps {
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   data,
   scale,
-  onDataChange,
   isEditMode = false,
   selectedLayerId = null,
-  lockedLayerIds = new Set(),
   hiddenLayerIds = new Set(),
   onSelectLayer = () => {},
   isLayerLocked = () => false,
@@ -105,7 +103,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   // 调整大小开始
   const handleResizeStart = useCallback(
-    (layerId: string, direction: ResizeDirection, startX: number, startY: number) => {
+    (layerId: string, direction: ResizeDirection) => {
       if (isLayerLocked(layerId)) return;
 
       const layer = data.layers.find((l) => l.id === layerId);
@@ -233,7 +231,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       ))}
 
       {/* 文本编辑器（编辑模式） */}
-      {editingLayer && (
+      {editingLayer && isTextLayer(editingLayer) && (
         <TextEditor
           layer={editingLayer}
           scale={scale}

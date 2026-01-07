@@ -1,0 +1,103 @@
+# VibePoster - Docker Compose 配置
+# =================================
+#
+# 使用方法:
+#   1. 复制 backend/engine/env.template 为 backend/engine/.env 并填写 API Keys
+#   2. docker-compose up -d --build
+#   3. 访问 http://localhost
+#
+# 服务说明:
+#   - frontend: React 前端 (Nginx)
+#   - engine: Python/FastAPI 后端 (AI 处理)
+#   - render: Node.js 后端 (图像渲染)
+
+services:
+  # ===========================================
+  # Frontend - React/Vite (Nginx)
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vibeposter-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      engine:
+        condition: service_healthy
+      render:
+        condition: service_healthy
+    networks:
+      - vibeposter-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Engine - Python/FastAPI (AI 处理)
+  # ===========================================
+  engine:
+    build:
+      context: ./backend/engine
+      dockerfile: Dockerfile
+    container_name: vibeposter-engine
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/engine/.env
+    environment:
+      # CORS 配置 - 允许前端访问
+      - CORS_ALLOW_ORIGINS=http://localhost,http://localhost:80,http://frontend
+    volumes:
+      # 开发模式下可挂载代码热重载（生产环境注释掉）
+      # - ./backend/engine/app:/app/app:ro
+      - engine-cache:/root/.cache
+    networks:
+      - vibeposter-network
+    restart: unless-stopped
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+
+  # ===========================================
+  # Render - Node.js/Express (图像渲染)
+  # ===========================================
+  render:
+    build:
+      context: ./backend/render
+      dockerfile: Dockerfile
+    container_name: vibeposter-render
+    ports:
+      - "3000:3000"
+    volumes:
+      # 开发模式下可挂载代码热重载（生产环境注释掉）
+      # - ./backend/render/src:/app/src:ro
+      - render-temp:/tmp
+    networks:
+      - vibeposter-network
+    restart: unless-stopped
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  vibeposter-network:
+    driver: bridge
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  engine-cache:
+    name: vibeposter-engine-cache
+  render-temp:
+    name: vibeposter-render-temp

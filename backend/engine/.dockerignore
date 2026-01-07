@@ -1,0 +1,37 @@
+# Engine Service - Docker Ignore
+# ==============================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Tests
+tests/
+test_*.py
+conftest.py
+pytest.ini
+
+# Environment
+.env
+.env.*
+env.template
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+*.md
+
+# Misc
+.DS_Store
+*.log
+

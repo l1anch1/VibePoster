@@ -101,9 +101,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
     (layerId: string, updates: Partial<Layer>) => {
       setCurrentData((prevData) => {
         const newLayers = prevData.layers.map((layer) =>
-          layer.id === layerId ? { ...layer, ...updates } : layer
+          layer.id === layerId ? { ...layer, ...updates } as Layer : layer
         );
-        const newData = { ...prevData, layers: newLayers };
+        const newData: PosterData = { ...prevData, layers: newLayers };
         // 保存当前状态到历史
         setHistory((prevHistory) => [...prevHistory, prevData]);
         // 同步到父组件
@@ -120,7 +120,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({
     (layerId: string) => {
       setCurrentData((prevData) => {
         const newLayers = prevData.layers.filter((l) => l.id !== layerId);
-        const newData = { ...prevData, layers: newLayers };
+        const newData: PosterData = { ...prevData, layers: newLayers };
         // 保存当前状态到历史
         setHistory((prevHistory) => [...prevHistory, prevData]);
         // 同步到父组件

@@ -20,10 +20,64 @@
 
 ## 🚀 快速开始
 
-### 前置要求
+### 方式一：Docker 部署（推荐）
+
+最简单的部署方式，一键启动所有服务。
+
+- Docker 20.10+
+- Docker Compose 2.0+
+
+#### 部署步骤
+
+```bash
+# 1. 克隆项目
+git clone <repository-url>
+cd VibePoster
+
+# 2. 配置环境变量
+cp backend/engine/env.template backend/engine/.env
+# 编辑 backend/engine/.env 文件，填入你的 API Keys
+
+# 3. 构建并启动所有服务
+docker-compose up -d --build
+
+# 4. 查看服务状态
+docker-compose ps
+
+# 5. 查看日志
+docker-compose logs -f
+```
+
+#### 访问应用
+
+- **前端**: <http://localhost>
+- **后端 API**: <http://localhost:8000>
+- **渲染服务**: <http://localhost:3000>
+
+#### 常用命令
+
+```bash
+# 停止所有服务
+docker-compose down
+
+# 重新构建并启动
+docker-compose up -d --build
+
+# 查看特定服务日志
+docker-compose logs -f engine
+
+# 进入容器调试
+docker exec -it vibeposter-engine bash
+```
+
+---
+
+### 方式二：本地开发
+
+#### 前置要求
 
 - Python 3.13+ (推荐使用 venv)
-- Node.js 18+ 
+- Node.js 18+
 - npm 或 yarn
 
 ### 1. 环境配置
@@ -114,7 +168,7 @@ npm run dev
 
 ## 📁 项目结构
 
-```
+```plaintext
 VibePoster/
 ├── frontend/                 # React 前端
 │   ├── src/
@@ -151,6 +205,7 @@ VibePoster/
 - **渲染服务**: `http://localhost:3000` (Express)
 
 如需修改端口，请更新：
+
 - 前端：修改 `vite.config.ts` 或使用 `npm run dev -- --port <端口>`
 - 后端引擎：修改 `uvicorn` 命令中的 `--port` 参数
 - 渲染服务：修改 `backend/render/src/server.js` 中的 `PORT` 常量
@@ -216,8 +271,6 @@ VibePoster/
 - 确认已安装 `rembg`：`pip install rembg[new]`
 - 如果未安装，系统会使用占位实现（返回原图）
 
-
 ## 📄 许可证
 
 © 2025 Graduation Project by Anchi Li
-

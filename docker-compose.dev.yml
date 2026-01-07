@@ -1,0 +1,74 @@
+# VibePoster - Docker Compose 开发环境配置
+# =========================================
+#
+# 使用方法:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# 特性:
+#   - 代码热重载
+#   - 开发端口暴露
+#   - 详细日志输出
+
+services:
+  # ===========================================
+  # Frontend - 开发模式 (Vite Dev Server)
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: vibeposter-frontend-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_RENDER_URL=http://localhost:3000
+    depends_on:
+      - engine
+      - render
+    networks:
+      - vibeposter-network
+
+  # ===========================================
+  # Engine - 开发模式 (热重载)
+  # ===========================================
+  engine:
+    build:
+      context: ./backend/engine
+      dockerfile: Dockerfile
+    container_name: vibeposter-engine-dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/engine/.env
+    environment:
+      - CORS_ALLOW_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+    volumes:
+      - ./backend/engine/app:/app/app:ro
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - vibeposter-network
+
+  # ===========================================
+  # Render - 开发模式
+  # ===========================================
+  render:
+    build:
+      context: ./backend/render
+      dockerfile: Dockerfile
+    container_name: vibeposter-render-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/render/src:/app/src:ro
+    networks:
+      - vibeposter-network
+
+networks:
+  vibeposter-network:
+    driver: bridge
+

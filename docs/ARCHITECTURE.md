@@ -19,7 +19,7 @@
 
 ### 整体架构
 
-```
+```plaintext
 ┌─────────────────────────────────────────────────┐
 │                   Frontend                       │
 │              (React + TypeScript)                │
@@ -63,7 +63,7 @@
 
 ## 目录结构
 
-```
+```plaintext
 VibePoster/
 ├── frontend/                    # 前端 (React)
 │   ├── src/
@@ -155,12 +155,14 @@ VibePoster/
 ### 1. API 层 (`api/routes/`)
 
 **职责**：
+
 - 接收 HTTP 请求
 - 参数验证（Pydantic）
 - 调用服务层
 - 返回统一格式的响应
 
 **示例**：
+
 ```python
 # api/routes/poster.py
 
@@ -184,6 +186,7 @@ async def generate_poster(
 ### 2. 服务层 (`services/`)
 
 **职责**：
+
 - 封装业务逻辑
 - 处理用户上传的图片
 - 构建工作流初始状态
@@ -191,6 +194,7 @@ async def generate_poster(
 - 返回处理结果
 
 **示例**：
+
 ```python
 # services/poster_service.py
 
@@ -212,11 +216,13 @@ class PosterService:
 ### 3. Agent 层 (`agents/`)
 
 **职责**：
+
 - AI 决策和规划
 - 调用 LLM
 - 协调工具层
 
 **四大 Agent**：
+
 - **Planner**: 将用户需求转化为设计简报
 - **Visual**: 处理图片（抠图、OCR、图像理解、素材搜索）
 - **Layout**: 生成海报布局和图层坐标
@@ -225,6 +231,7 @@ class PosterService:
 ### 4. 工具层 (`tools/`)
 
 **职责**：
+
 - 具体的技术实现
 - 图像处理（抠图、合成）
 - OCR + 图像理解
@@ -233,6 +240,7 @@ class PosterService:
 ### 5. 核心层 (`core/`)
 
 **职责**：
+
 - 配置管理
 - LLM 客户端工厂
 - 日志系统
@@ -260,6 +268,7 @@ class LLMClientFactory:
 ```
 
 **支持的 LLM**：
+
 - DeepSeek (Planner, Visual, Critic)
 - Google Gemini (Layout)
 - OpenAI（可选）
@@ -360,6 +369,7 @@ def get_poster_service() -> PosterService:
 ### ✅ 已完成
 
 #### 1. 核心基础设施 (core/)
+
 - ✅ 配置管理系统（Pydantic Settings V2）
 - ✅ LLM 客户端工厂（支持 DeepSeek、Gemini）
 - ✅ 统一日志系统
@@ -368,38 +378,45 @@ def get_poster_service() -> PosterService:
 - ✅ 数据模型定义（Pydantic Schema）
 
 #### 2. Agent 层 (agents/)
+
 - ✅ Planner Agent - 需求转化为设计简报
 - ✅ Visual Agent - 图像处理和分析
 - ✅ Layout Agent - 布局生成
 - ✅ Critic Agent - 质量审核
 
 #### 3. 工具层 (tools/)
+
 - ✅ 抠图功能（rembg）
 - ✅ 图像合成（Pillow）
 - ✅ OCR + 图像理解（DeepSeek Vision，一次调用完成）
 - ✅ 素材搜索（Pexels API）
 
 #### 4. 业务逻辑层 (services/)
+
 - ✅ PosterService - 海报生成服务
 - ✅ 图片预处理
 - ✅ 工作流调度
 
 #### 5. API 层 (api/)
+
 - ✅ 海报生成 API
 - ✅ API 响应模型
 - ✅ 统一错误响应格式
 
 #### 6. 工作流 (workflow.py)
+
 - ✅ LangGraph 工作流编排
 - ✅ 重试机制
 - ✅ 状态管理
 
 #### 7. 渲染服务 (backend/render/)
+
 - ✅ PSD 文件生成
 - ✅ 图层处理（背景、前景、文字）
 - ✅ ZIP 打包下载
 
 #### 8. 前端 (frontend/)
+
 - ✅ React + TypeScript
 - ✅ 用户输入界面
 - ✅ 图片上传
@@ -408,6 +425,7 @@ def get_poster_service() -> PosterService:
 - ✅ PSD 下载
 
 #### 9. 测试 (tests/)
+
 - ✅ API 路由测试
 - ✅ Service 层测试
 - ✅ Schema 测试
@@ -418,22 +436,26 @@ def get_poster_service() -> PosterService:
 ### 🚧 待优化
 
 #### 1. 服务层扩展
+
 - 🔲 ImageAnalysisService - 统一管理图像分析
 - 🔲 AssetManagementService - 统一管理素材
 - 🔲 CacheService - 缓存图像分析结果
 
 #### 2. 性能优化
+
 - 🔲 图像分析结果缓存
 - 🔲 素材搜索结果缓存
 - 🔲 异步处理优化
 
 #### 3. 功能增强
+
 - 🔲 更多风格模板（目前支持 5 种）
 - 🔲 在线编辑功能
 - 🔲 RAG 知识库集成
 - 🔲 更多 LLM 支持
 
 #### 4. 文档完善
+
 - 🔲 API 文档（Swagger/OpenAPI）
 - 🔲 用户手册
 - 🔲 开发者指南
@@ -445,7 +467,7 @@ def get_poster_service() -> PosterService:
 ### 后端 (Python/FastAPI)
 
 | 类别 | 技术 | 用途 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **Web 框架** | FastAPI | RESTful API 服务 |
 | **AI 编排** | LangGraph | Agent 工作流编排 |
 | **LLM** | DeepSeek, Gemini | 大语言模型 |
@@ -458,7 +480,7 @@ def get_poster_service() -> PosterService:
 ### 渲染服务 (Node.js)
 
 | 类别 | 技术 | 用途 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **Web 框架** | Express.js | HTTP 服务 |
 | **PSD 生成** | ag-psd | PSD 文件生成 |
 | **图像处理** | sharp | 图像调整和转换 |
@@ -467,7 +489,7 @@ def get_poster_service() -> PosterService:
 ### 前端 (React)
 
 | 类别 | 技术 | 用途 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **框架** | React 18 | UI 框架 |
 | **语言** | TypeScript | 类型安全 |
 | **构建工具** | Vite | 开发和构建 |
@@ -479,24 +501,29 @@ def get_poster_service() -> PosterService:
 ## 设计原则
 
 ### 1. 分层架构
+
 - 清晰的层次划分（API → Service → Agent → Tools → Core）
 - 单向依赖（上层依赖下层，下层不依赖上层）
 
 ### 2. 单一职责
+
 - 每个模块只负责一件事
 - Agent 只做决策，不做具体实现
 - Tools 只做实现，不做决策
 
 ### 3. 依赖注入
+
 - 服务单例管理
 - 便于测试和替换
 
 ### 4. 统一规范
+
 - 统一的错误处理
 - 统一的日志格式
 - 统一的响应格式
 
 ### 5. 可扩展性
+
 - 易于添加新的 Agent
 - 易于添加新的 LLM 提供商
 - 易于添加新的工具
@@ -507,7 +534,7 @@ def get_poster_service() -> PosterService:
 
 ### 海报生成流程
 
-```
+```plaintext
 1. 用户输入
    ├─ 文字需求："设计一张招聘海报"
    ├─ 画布尺寸：800x1200
@@ -569,6 +596,7 @@ def get_poster_service() -> PosterService:
 ## 总结
 
 ### 核心优势
+
 1. **✅ 模块化设计**：清晰的分层和职责划分
 2. **✅ 可扩展性强**：易于添加新功能和新 Agent
 3. **✅ 性能优化**：OCR + 图像理解一次调用，节省 50% token
@@ -577,6 +605,7 @@ def get_poster_service() -> PosterService:
 6. **✅ 易于维护**：清晰的文档和代码结构
 
 ### 技术亮点
+
 - LangGraph 工作流编排
 - 多 LLM 支持（DeepSeek、Gemini）
 - Vision LLM 多任务优化
