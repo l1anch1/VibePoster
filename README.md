@@ -103,8 +103,8 @@ pip install fastapi uvicorn langgraph openai google-genai python-dotenv pydantic
 # 安装图像处理库（可选，用于抠图功能）
 pip install rembg[new]
 
-# 复制 .env.example 为 .env 并填写你的 API Key
-cp .env.example .env
+# 复制 env.template 为 .env 并填写你的 API Key
+cp env.template .env
 # 然后编辑 .env 文件，填入你的 API Key
 
 ```
@@ -170,29 +170,43 @@ npm run dev
 
 ```plaintext
 VibePoster/
-├── frontend/                 # React 前端
+├── frontend/                 # React 前端 (TypeScript + Tailwind CSS)
 │   ├── src/
-│   │   ├── components/      # 组件
+│   │   ├── components/      # 组件 (editor/, landing/, poster/)
+│   │   ├── hooks/           # 自定义 Hooks
+│   │   ├── services/        # API 服务
 │   │   ├── types/           # TypeScript 类型定义
 │   │   └── App.tsx          # 主应用
 │   └── package.json
 │
 ├── backend/
-│   ├── engine/              # Python 后端引擎
+│   ├── engine/              # Python 后端引擎 (FastAPI + LangGraph)
 │   │   ├── app/
-│   │   │   ├── core/        # 核心配置和状态
-│   │   │   ├── agents/      # 四个智能体
-│   │   │   ├── tools/       # 工具函数（抠图、素材库）
-│   │   │   ├── prompts/    # Prompt 管理
-│   │   │   ├── workflow.py  # LangGraph 工作流
+│   │   │   ├── api/         # API 路由层
+│   │   │   │   ├── routes/
+│   │   │   │   │   ├── poster.py      # 海报生成路由
+│   │   │   │   │   └── knowledge.py   # 知识模块路由 (KG + RAG)
+│   │   │   │   └── schemas.py         # 请求模型
+│   │   │   ├── workflow/    # 工作流模块 (LangGraph)
+│   │   │   │   ├── orchestrator.py    # 工作流编排
+│   │   │   │   └── state.py           # 状态定义
+│   │   │   ├── core/        # 核心基础设施 (config, llm, logger)
+│   │   │   ├── agents/      # 四个智能体 (planner, visual, layout, critic)
+│   │   │   ├── knowledge/   # 知识模块 (Knowledge Graph + RAG)
+│   │   │   ├── services/    # 业务服务 (poster, knowledge, renderer)
+│   │   │   ├── models/      # 数据模型 (poster, response)
+│   │   │   ├── tools/       # 工具函数 (抠图, OCR, 素材搜索)
+│   │   │   ├── prompts/     # Prompt 管理
 │   │   │   └── main.py      # FastAPI 入口
+│   │   ├── tests/           # 测试目录
 │   │   └── venv/            # Python 虚拟环境
 │   │
-│   └── render/              # Node.js 渲染服务
+│   └── render/              # Node.js 渲染服务 (Express + ag-psd)
 │       ├── src/
 │       │   └── server.js    # PSD 生成服务
 │       └── package.json
 │
+├── docs/                     # 技术文档
 └── README.md
 ```
 
@@ -234,7 +248,7 @@ VibePoster/
 2. 实现 `BaseAgent` 子类
 3. 在 `agents/base.py` 的 `AgentFactory` 中添加获取方法
 4. 在 `core/config.py` 中添加配置
-5. 在 `workflow.py` 中注册节点
+5. 在 `workflow/orchestrator.py` 中注册节点
 
 ### 修改 Prompt
 

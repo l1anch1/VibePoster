@@ -11,7 +11,7 @@ from app.api.schemas import (
     PosterGenerateResponse,
     ErrorResponse,
 )
-from app.core.schemas import PosterData, Canvas
+from app.models.poster import PosterData, Canvas
 
 
 class TestPosterGenerateRequest:

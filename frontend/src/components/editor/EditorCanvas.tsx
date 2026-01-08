@@ -18,7 +18,7 @@ import {
 interface EditorCanvasProps {
   data: PosterData;
   scale: number;
-  onDataChange: (data: PosterData) => void;
+  onDataChange?: (data: PosterData) => void;  // Optional: used for batch updates
   isEditMode?: boolean;
   // 编辑状态（从外部传入）
   selectedLayerId?: string | null;
@@ -188,28 +188,40 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     ? data.layers.find((l) => l.id === editingLayerId) || null
     : null;
 
+  // 计算缩放后的尺寸
+  const scaledWidth = data.canvas.width * scale;
+  const scaledHeight = data.canvas.height * scale;
+
   return (
     <div
       style={{
+        width: `${scaledWidth}px`,
+        height: `${scaledHeight}px`,
         position: 'relative',
-        width: `${data.canvas.width}px`,
-        height: `${data.canvas.height}px`,
-        backgroundColor: data.canvas.backgroundColor,
-        transform: `scale(${scale})`,
-        transformOrigin: 'center center',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
-        transition: 'transform 0.3s ease',
-        boxSizing: 'border-box',
-        overflow: 'hidden',
-        borderRadius: '2px',
-      }}
-      ref={canvasRef}
-      onClick={(e) => {
-        if (e.target === canvasRef.current) {
-          clearSelection();
-        }
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: `${data.canvas.width}px`,
+          height: `${data.canvas.height}px`,
+          backgroundColor: data.canvas.backgroundColor,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08)',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          borderRadius: '4px',
+        }}
+        ref={canvasRef}
+        onClick={(e) => {
+          if (e.target === canvasRef.current) {
+            clearSelection();
+          }
+        }}
+      >
       {/* 渲染所有图层 */}
       {data.layers.map((layer) => (
         <EditableLayer
@@ -263,6 +275,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           💡 切换到编辑模式以修改海报
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -9,9 +9,35 @@ tests/
 ├── README.md                # 本文件
 ├── test_api_routes.py       # API 路由测试
 ├── test_api_schemas.py      # API Schema 测试
+├── test_core_schemas.py     # Core Schema 测试
 ├── test_services.py         # Service 层测试
-└── test_core_schemas.py     # Core Schema 测试
+├── test_knowledge_graph.py  # Knowledge Graph 设计规则推理测试
+├── test_rag_engine.py       # RAG 品牌知识检索测试
+├── test_layout_engine.py    # OOP 动态布局引擎测试
+├── test_renderer_service.py # 渲染服务测试
+└── test_integration.py      # 集成测试（完整数据流）
 ```
+
+## 测试覆盖范围
+
+### 核心模块测试
+
+| 模块 | 测试文件 | 测试内容 |
+|------|----------|----------|
+| Knowledge Graph | `test_knowledge_graph.py` | 设计规则推理、关键词匹配、图谱统计 |
+| RAG Engine | `test_rag_engine.py` | 文档存储、向量/关键词检索、品牌知识 |
+| Layout Engine | `test_layout_engine.py` | 文本块、图片块、容器布局、嵌套 |
+| Renderer Service | `test_renderer_service.py` | DSL 解析、Schema 转换、海报渲染 |
+
+### 集成测试
+
+| 测试类 | 测试内容 |
+|--------|----------|
+| `TestKGAndRAGIntegration` | KG + RAG 协作 |
+| `TestLayoutEngineIntegration` | 布局引擎完整流程 |
+| `TestDesignBriefIntegration` | 设计简报构建 |
+| `TestEndToEndWorkflow` | 端到端海报生成 |
+| `TestErrorHandling` | 错误处理 |
 
 ## 运行测试
 

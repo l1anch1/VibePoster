@@ -9,7 +9,7 @@ from .templates import (
     CRITIC_PROMPT_TEMPLATE,
 )
 from ..core.config import settings
-from ..core.schemas import PosterData, Canvas, TextLayer, ImageLayer
+from ..models.poster import PosterData, Canvas, TextLayer, ImageLayer
 
 
 def get_planner_prompt(

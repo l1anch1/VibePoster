@@ -8,10 +8,10 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # 引入路由和配置
-from .api.routes import poster_router
+from .api.routes import poster_router, knowledge_router
 from .core.config import settings
 from .core.exceptions import VibePosterException
-from .core.middleware import (
+from .api.middleware import (
     vibe_poster_exception_handler,
     http_exception_handler,
     validation_exception_handler,
@@ -49,3 +49,4 @@ app.add_exception_handler(Exception, exception_handler)
 
 # 注册路由
 app.include_router(poster_router)
+app.include_router(knowledge_router)

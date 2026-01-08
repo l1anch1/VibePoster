@@ -1,77 +1,210 @@
-:root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+/* =============================================================================
+   VibePoster Design System - iOS 液态玻璃风格
+   
+   统一设计规范：
+   - 字体：Inter，主文字 14px (text-sm)，标签 12px (text-xs)
+   - 颜色：高对比度，标题 gray-900，正文 gray-700，辅助 gray-500
+   - 边框：统一 gray-300，focus 时 violet-500
+   - 圆角：按钮 xl (12px)，卡片 2xl-3xl (16-24px)
+   - 阴影：使用 shadow-sm 基础阴影，重要元素用 violet 阴影
+============================================================================= */
+
+@theme {
+  /* 渐变背景 */
+  --color-bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #fef3c7 100%);
+  
+  /* 品牌色 */
+  --color-accent: #8b5cf6;
+  --color-accent-light: #a78bfa;
+  --color-accent-dark: #7c3aed;
+  
+  /* 字体 */
+  --font-display: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* =============================================================================
+   Base Styles
+============================================================================= */
+
+html {
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 body {
-  margin: 0;
-  padding: 0;
-  min-width: 320px;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #fef3c7 100%);
   min-height: 100vh;
-  overflow: hidden;
+  color: #374151; /* gray-700 默认文字颜色 */
+  line-height: 1.6;
 }
 
-button {
-  font-family: inherit;
+/* =============================================================================
+   Typography - 统一字体规范
+============================================================================= */
+
+/* 大标题 */
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #111827; /* gray-900 */
+}
+
+/* 中标题 */
+h2, h3 {
+  font-weight: 600;
+  color: #1f2937; /* gray-800 */
+}
+
+/* 小标题/标签 */
+h4, h5, h6 {
+  font-weight: 600;
+  color: #4b5563; /* gray-600 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 正文 */
+p {
+  color: #4b5563; /* gray-600 */
+}
+
+/* =============================================================================
+   Interactive Elements
+============================================================================= */
+
+/* 所有可点击元素显示指针 */
+button,
+[role="button"],
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+label[for],
+.cursor-pointer {
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-button:focus,
+button:disabled,
+input:disabled,
+select:disabled,
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Focus 状态统一 */
+input:focus,
+textarea:focus,
+select:focus,
 button:focus-visible {
-  outline: 2px solid #2563EB;
-  outline-offset: 2px;
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
-input[type="file"] {
-  font-family: inherit;
-  font-size: 14px;
+/* =============================================================================
+   Glass Morphism - 液态玻璃效果
+============================================================================= */
+
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 
-input[type="file"]::-webkit-file-upload-button {
-  padding: 6px 12px;
-  background: #F3F4F6;
-  border: 1px solid #D1D5DB;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  transition: all 0.2s ease;
+.glass-light {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-input[type="file"]::-webkit-file-upload-button:hover {
-  background: #E5E7EB;
-  border-color: #9CA3AF;
-  }
+/* =============================================================================
+   Scrollbar - 浅色主题
+============================================================================= */
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* =============================================================================
+   Selection
+============================================================================= */
+
+::selection {
+  background: rgba(139, 92, 246, 0.2);
+  color: #1f2937;
+}
+
+/* =============================================================================
+   Utility Classes - 设计系统工具类
+============================================================================= */
+
+/* 统一输入框样式 */
+.input-base {
+  @apply w-full px-3 py-2.5 text-sm bg-white border border-gray-300 rounded-xl;
+  @apply focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none;
+  @apply transition-all text-gray-900 placeholder-gray-400 shadow-sm;
+}
+
+/* 统一标签样式 */
+.label-base {
+  @apply block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide;
+}
+
+/* 主按钮 */
+.btn-primary {
+  @apply px-4 py-2.5 text-sm font-semibold rounded-xl transition-all;
+  @apply bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white;
+  @apply shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40;
+  @apply hover:-translate-y-0.5 active:translate-y-0;
+}
+
+/* 次按钮 */
+.btn-secondary {
+  @apply px-4 py-2.5 text-sm font-medium rounded-xl transition-all;
+  @apply bg-white text-gray-700 border border-gray-300 shadow-sm;
+  @apply hover:bg-gray-50 hover:border-gray-400;
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  @apply px-4 py-2.5 text-sm font-medium rounded-xl transition-all;
+  @apply text-gray-600 hover:text-gray-900 hover:bg-white/60;
+}
+
+/* 面板标题 */
+.panel-title {
+  @apply text-sm font-semibold text-gray-800;
+}
+
+/* 面板描述 */
+.panel-desc {
+  @apply text-xs text-gray-500 mt-0.5;
+}
+
+/* 节标题 */
+.section-label {
+  @apply text-xs font-semibold text-gray-500 uppercase tracking-wider;
 }

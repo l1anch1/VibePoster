@@ -62,7 +62,7 @@ class PosterService:
         canvas_height: int,
         user_images: Optional[List[Dict[str, Any]]] = None,
         chat_history: Optional[List[Dict[str, str]]] = None,
-        style_template: Optional[str] = None
+        brand_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         构建工作流初始状态
@@ -73,6 +73,7 @@ class PosterService:
             canvas_height: 画布高度
             user_images: 用户上传的图片列表
             chat_history: 对话历史（可选）
+            brand_name: 品牌名称，用于 RAG 检索（可选）
             
         Returns:
             工作流初始状态字典
@@ -83,7 +84,7 @@ class PosterService:
             "user_images": user_images,
             "canvas_width": canvas_width,  # 画布尺寸作为独立字段（技术参数）
             "canvas_height": canvas_height,
-            "style_template": style_template,  # 风格模板 ID（可选）
+            "brand_name": brand_name,  # 品牌名称，用于 RAG 检索（可选）
             "design_brief": {},  # 设计简报（由 Planner Agent 生成，不包含技术参数）
             "asset_list": None,
             "final_poster": {},
@@ -100,10 +101,14 @@ class PosterService:
         image_person: Optional[bytes] = None,
         image_bg: Optional[bytes] = None,
         chat_history: Optional[List[Dict[str, str]]] = None,
-        style_template: Optional[str] = None
+        brand_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         生成海报（主要业务逻辑）
+        
+        集成功能：
+        - Knowledge Graph: 根据 prompt 中的行业/氛围关键词推理设计规则
+        - RAG: 如果指定 brand_name，检索企业品牌知识库
         
         Args:
             prompt: 用户输入的提示词
@@ -112,12 +117,15 @@ class PosterService:
             image_person: 人物图片二进制数据（可选）
             image_bg: 背景图片二进制数据（可选）
             chat_history: 对话历史（可选）
+            brand_name: 品牌名称，用于 RAG 检索（可选）
             
         Returns:
             生成的海报数据
         """
         logger.info(f"🚀 收到设计请求: {prompt}")
         logger.info(f"🎨 画布尺寸: {canvas_width}x{canvas_height}")
+        if brand_name:
+            logger.info(f"📚 品牌名称: {brand_name} (将启用 RAG 检索)")
         
         # 处理用户上传的图片
         user_images = self.process_user_images(image_person, image_bg)
@@ -129,11 +137,11 @@ class PosterService:
             canvas_height=canvas_height,
             user_images=user_images,
             chat_history=chat_history,
-            style_template=style_template
+            brand_name=brand_name  # 传递品牌名称用于 RAG 检索
         )
         
         # 启动工作流
-        logger.info("🤖 启动 Agent 工作流 (Planner -> Visual -> Layout -> Critic)...")
+        logger.info("🤖 启动 Agent 工作流 (Planner[KG+RAG] -> Visual -> Layout -> Critic)...")
         final_state = self.workflow.invoke(initial_state)
         
         logger.info("🏁 生成结束，返回 JSON 数据。")
@@ -148,4 +156,3 @@ class PosterService:
                     logger.debug(f"  - {layer.get('id', 'unknown')}: src={src[:100] if src else 'None'}...")
         
         return final_poster
-

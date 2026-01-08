@@ -9,7 +9,7 @@ from ..core.llm import LLMClientFactory
 from ..core.config import settings
 from ..core.exceptions import VibePosterException
 from ..prompts.templates import IMAGE_ANALYSIS_PROMPT_TEMPLATE
-from ..utils.json_parser import parse_llm_json_response
+from ..core.utils import parse_llm_json_response
 
 logger = get_logger(__name__)
 

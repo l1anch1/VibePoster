@@ -1,11 +1,11 @@
 """
-Core Schema 测试
-测试核心数据模型
+Poster Model 测试
+测试海报数据模型
 """
 import pytest
 from pydantic import ValidationError
 
-from app.core.schemas import (
+from app.models.poster import (
     Canvas,
     TextLayer,
     ImageLayer,

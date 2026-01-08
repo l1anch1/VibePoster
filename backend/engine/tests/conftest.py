@@ -1,24 +1,38 @@
 """
 Pytest 配置文件
 提供测试用的 fixtures 和配置
+
+注意：某些 fixtures 需要完整依赖（如 FastAPI），
+核心模块测试（KG、RAG、Layout Engine）可以独立运行。
 """
 import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock, MagicMock
 from typing import Generator
 
-from app.main import app
-from app.services import PosterService
+# 尝试导入 FastAPI 相关依赖（可能不可用）
+try:
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.services import PosterService
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    TestClient = None
+    app = None
+    PosterService = None
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client() -> Generator:
     """
     创建 FastAPI 测试客户端
     
     Yields:
         TestClient: FastAPI 测试客户端
     """
+    if not FASTAPI_AVAILABLE:
+        pytest.skip("FastAPI not available")
+    
     with TestClient(app) as test_client:
         yield test_client
 
@@ -31,6 +45,9 @@ def mock_poster_service() -> Mock:
     Returns:
         Mock: 模拟的 PosterService 实例
     """
+    if not FASTAPI_AVAILABLE:
+        pytest.skip("PosterService not available")
+    
     service = Mock(spec=PosterService)
     service.generate_poster = MagicMock(return_value={
         "canvas": {

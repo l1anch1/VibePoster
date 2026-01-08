@@ -1,12 +1,14 @@
 /**
  * 编辑器组件导出
  */
+
+// 主组件
+export { Editor } from './Editor';
+
+// 子组件
+export { EditorTopBar } from './EditorTopBar';
+export { EditorLeftPanel } from './EditorLeftPanel';
+export { EditorRightPanel } from './EditorRightPanel';
 export { EditorCanvas } from './EditorCanvas';
 export { EditableLayer } from './EditableLayer';
-export { LayerPanel } from './LayerPanel';
-export { PropertyPanel } from './PropertyPanel';
-export { ToolButton } from './ToolButton';
-export { EditorSidebar } from './EditorSidebar';
-export { EditorLayout } from './EditorLayout';
 export { TextEditor } from './TextEditor';
-

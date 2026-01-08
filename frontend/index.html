@@ -4,7 +4,33 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta name="description" content="VibePoster - Transform your ideas into stunning posters with AI. No design skills needed." />
+    <meta name="theme-color" content="#09090b" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    
+    <title>VibePoster - AI-Powered Poster Design</title>
+    
+    <style>
+      /* Prevent FOUC */
+      html { background: #09090b; }
+      
+      /* Custom animations */
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in { animation: fade-in 0.5s ease-out; }
+      
+      @keyframes reverse {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+      }
+      .animate-reverse { animation-direction: reverse; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

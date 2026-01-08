@@ -39,3 +39,13 @@ tenacity>=9.0.0
 orjson>=3.10.0
 typing-extensions>=4.12.0
 
+# Knowledge Graph & RAG
+networkx>=3.1
+
+# Optional: RAG Vector Search (轻量级推荐方案)
+# sentence-transformers>=2.2.0
+
+# Optional: RAG with ChromaDB (完整方案)
+# langchain>=0.1.0
+# chromadb>=0.4.0
+

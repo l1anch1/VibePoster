@@ -1,0 +1,120 @@
+{
+  "description": "Knowledge Graph 设计规则数据",
+  "version": "1.0.0",
+  "last_updated": "2025-01-08",
+  
+  "industries": {
+    "Tech": {
+      "colors": ["#0066FF", "#00C9FF", "#1E1E1E"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Grid", "Center"],
+      "description": "科技行业 - 蓝色系、无衬线字体、网格布局"
+    },
+    "Food": {
+      "colors": ["#FFA500", "#FF6B6B", "#FFD93D", "#8BC34A"],
+      "fonts": ["Handwritten"],
+      "layouts": ["Center"],
+      "description": "食品行业 - 暖色系、手写字体、居中布局"
+    },
+    "Education": {
+      "colors": ["#4CAF50", "#2196F3", "#FFC107"],
+      "fonts": ["Sans-Serif", "Serif"],
+      "layouts": ["Grid"],
+      "description": "教育行业 - 蓝绿色系、多种字体、网格布局"
+    },
+    "Fashion": {
+      "colors": ["#000000", "#FFFFFF", "#E91E63", "#9C27B0"],
+      "fonts": ["Serif"],
+      "layouts": ["Diagonal"],
+      "description": "时尚行业 - 黑白粉紫、衬线字体、对角线布局"
+    },
+    "Real Estate": {
+      "colors": ["#795548", "#607D8B", "#FFD700"],
+      "fonts": ["Serif"],
+      "layouts": ["Grid"],
+      "description": "房地产 - 棕灰金色、衬线字体、网格布局"
+    },
+    "Healthcare": {
+      "colors": ["#00BCD4", "#4CAF50", "#FFFFFF"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Center"],
+      "description": "医疗健康 - 青绿白色、无衬线字体、居中布局"
+    },
+    "Finance": {
+      "colors": ["#1565C0", "#2E7D32", "#424242"],
+      "fonts": ["Serif"],
+      "layouts": ["Grid"],
+      "description": "金融行业 - 深蓝深绿、衬线字体、网格布局"
+    },
+    "Travel": {
+      "colors": ["#00BCD4", "#FF9800", "#4CAF50"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Center", "Diagonal"],
+      "description": "旅游行业 - 青橙绿色、无衬线字体、多种布局"
+    },
+    "Music": {
+      "colors": ["#9C27B0", "#E91E63", "#000000"],
+      "fonts": ["Sans-Serif", "Handwritten"],
+      "layouts": ["Diagonal"],
+      "description": "音乐行业 - 紫粉黑色、多种字体、对角线布局"
+    }
+  },
+  
+  "vibes": {
+    "Minimalist": {
+      "colors": ["#FFFFFF", "#000000", "#F5F5F5"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Center"],
+      "description": "极简主义 - 黑白灰、无衬线字体、居中布局"
+    },
+    "Energetic": {
+      "colors": ["#FF5722", "#FFEB3B", "#FF4081"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Diagonal"],
+      "description": "活力充沛 - 橙黄粉色、无衬线字体、对角线布局"
+    },
+    "Luxury": {
+      "colors": ["#000000", "#FFD700", "#8B4513", "#4A148C"],
+      "fonts": ["Serif"],
+      "layouts": ["Center"],
+      "description": "奢华高端 - 黑金棕紫、衬线字体、居中布局"
+    },
+    "Friendly": {
+      "colors": ["#FFC107", "#FF9800", "#8BC34A"],
+      "fonts": ["Handwritten"],
+      "layouts": ["Center"],
+      "description": "友好亲切 - 黄橙绿色、手写字体、居中布局"
+    },
+    "Professional": {
+      "colors": ["#1976D2", "#424242", "#FFFFFF"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Grid"],
+      "description": "专业严谨 - 蓝灰白色、无衬线字体、网格布局"
+    },
+    "Promotion": {
+      "colors": ["#FF0000", "#FFD700", "#FF6B00"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Diagonal"],
+      "description": "促销活动 - 红金橙色、无衬线字体、对角线布局"
+    },
+    "Vintage": {
+      "colors": ["#8B4513", "#D2691E", "#F5DEB3"],
+      "fonts": ["Serif", "Handwritten"],
+      "layouts": ["Center"],
+      "description": "复古怀旧 - 棕色系、衬线/手写字体、居中布局"
+    },
+    "Modern": {
+      "colors": ["#212121", "#757575", "#BDBDBD"],
+      "fonts": ["Sans-Serif"],
+      "layouts": ["Grid"],
+      "description": "现代风格 - 灰色系、无衬线字体、网格布局"
+    },
+    "Natural": {
+      "colors": ["#4CAF50", "#8BC34A", "#795548"],
+      "fonts": ["Serif"],
+      "layouts": ["Center"],
+      "description": "自然风格 - 绿棕色系、衬线字体、居中布局"
+    }
+  }
+}
+

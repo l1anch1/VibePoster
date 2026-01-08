@@ -88,6 +88,12 @@ class LayoutAgentConfig(BaseSettings):
         default=0.1, ge=0.0, le=2.0, description="Layout Agent 的温度参数（非常低以确保精确性）"
     )
 
+    # Layout 模式配置
+    USE_DSL_MODE: bool = Field(
+        default=True, 
+        description="是否使用 DSL 模式（OOP 布局引擎）。True=DSL模式，False=传统JSON模式"
+    )
+    
     # Layout 专用参数（排版约束）
     FG_MAX_WIDTH_RATIO: float = Field(
         default=0.5, ge=0.1, le=1.0, description="前景图层最大宽度占画布比例"
@@ -137,13 +143,56 @@ class CanvasConfig(BaseSettings):
     BG_COLOR: str = Field(default="#FFFFFF", description="默认背景颜色")
 
 
+class KGConfig(BaseSettings):
+    """Knowledge Graph 配置"""
+
+    model_config = SettingsConfigDict(env_prefix="KG_", env_file=".env", extra="ignore")
+
+    RULES_FILE: str = Field(
+        default="./app/knowledge/kg/data/kg_rules.json",
+        description="KG 规则数据文件路径"
+    )
+
+
+class RAGConfig(BaseSettings):
+    """RAG 知识库配置"""
+
+    model_config = SettingsConfigDict(env_prefix="RAG_", env_file=".env", extra="ignore")
+
+    # 存储配置
+    PERSIST_DIRECTORY: str = Field(
+        default="./data/chroma_db", 
+        description="ChromaDB 持久化目录"
+    )
+    
+    # 默认数据配置
+    LOAD_DEFAULT_DATA: bool = Field(
+        default=True, 
+        description="是否加载默认品牌数据"
+    )
+    DEFAULT_DATA_PATH: str = Field(
+        default="./app/knowledge/rag/data/default_brand_knowledge.json",
+        description="默认品牌数据文件路径"
+    )
+    
+    # 模型配置
+    EMBEDDING_MODEL: str = Field(
+        default="paraphrase-multilingual-MiniLM-L12-v2",
+        description="句子嵌入模型名称"
+    )
+    USE_CHROMADB: bool = Field(
+        default=False,
+        description="是否使用 ChromaDB（否则使用内存存储）"
+    )
+
+
 class CORSConfig(BaseSettings):
     """CORS 配置"""
 
     model_config = SettingsConfigDict(env_prefix="CORS_", env_file=".env", extra="ignore")
 
     ALLOW_ORIGINS: str = Field(
-        default="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+        default="http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,*",
         description="允许的来源列表（逗号分隔）",
     )
     ALLOW_METHODS: str = Field(
@@ -157,12 +206,8 @@ class CORSConfig(BaseSettings):
     @property
     def allow_origins_list(self) -> List[str]:
         """将逗号分隔的字符串转换为列表"""
-        if not self.ALLOW_ORIGINS:
-            return []
-        origins = [origin.strip() for origin in self.ALLOW_ORIGINS.split(",") if origin.strip()]
-        if "*" in origins:
-            return ["*"]
-        return origins
+        # 开发环境直接返回通配符
+        return ["*"]
 
     @property
     def allow_methods_list(self) -> List[str]:
@@ -201,6 +246,8 @@ class Settings:
         # 应用配置
         self.canvas = CanvasConfig()
         self.cors = CORSConfig()
+        self.kg = KGConfig()
+        self.rag = RAGConfig()
 
     # 静态配置
     ERROR_FALLBACKS: Dict[str, Any] = {

@@ -1,0 +1,148 @@
+{
+  "placeholders": {
+    "red": [
+      "https://placehold.co/1080x1920/FF0000/FFF?text=Red+1",
+      "https://placehold.co/1080x1920/DC143C/FFF?text=Red+2",
+      "https://placehold.co/1080x1920/B22222/FFF?text=Red+3"
+    ],
+    "orange": [
+      "https://placehold.co/1080x1920/FF8C00/FFF?text=Orange+1",
+      "https://placehold.co/1080x1920/FF7F50/FFF?text=Orange+2",
+      "https://placehold.co/1080x1920/FF6347/FFF?text=Orange+3"
+    ],
+    "yellow": [
+      "https://placehold.co/1080x1920/FFD700/000?text=Yellow+1",
+      "https://placehold.co/1080x1920/FFFF00/000?text=Yellow+2",
+      "https://placehold.co/1080x1920/FFE135/000?text=Yellow+3"
+    ],
+    "green": [
+      "https://placehold.co/1080x1920/00FF00/000?text=Green+1",
+      "https://placehold.co/1080x1920/228B22/FFF?text=Green+2",
+      "https://placehold.co/1080x1920/32CD32/000?text=Green+3"
+    ],
+    "cyan": [
+      "https://placehold.co/1080x1920/00FFFF/000?text=Cyan+1",
+      "https://placehold.co/1080x1920/00CED1/FFF?text=Cyan+2",
+      "https://placehold.co/1080x1920/48D1CC/000?text=Cyan+3"
+    ],
+    "blue": [
+      "https://placehold.co/1080x1920/0000FF/FFF?text=Blue+1",
+      "https://placehold.co/1080x1920/1E90FF/FFF?text=Blue+2",
+      "https://placehold.co/1080x1920/4169E1/FFF?text=Blue+3"
+    ],
+    "purple": [
+      "https://placehold.co/1080x1920/800080/FFF?text=Purple+1",
+      "https://placehold.co/1080x1920/9370DB/FFF?text=Purple+2",
+      "https://placehold.co/1080x1920/BA55D3/FFF?text=Purple+3"
+    ],
+    "pink": [
+      "https://placehold.co/1080x1920/FF69B4/FFF?text=Pink+1",
+      "https://placehold.co/1080x1920/FF1493/FFF?text=Pink+2",
+      "https://placehold.co/1080x1920/FFC0CB/000?text=Pink+3"
+    ],
+    "brown": [
+      "https://placehold.co/1080x1920/A52A2A/FFF?text=Brown+1",
+      "https://placehold.co/1080x1920/8B4513/FFF?text=Brown+2",
+      "https://placehold.co/1080x1920/D2691E/FFF?text=Brown+3"
+    ],
+    "black": [
+      "https://placehold.co/1080x1920/000000/FFF?text=Black+1",
+      "https://placehold.co/1080x1920/1C1C1C/FFF?text=Black+2",
+      "https://placehold.co/1080x1920/2F2F2F/FFF?text=Black+3"
+    ],
+    "white": [
+      "https://placehold.co/1080x1920/FFFFFF/000?text=White+1",
+      "https://placehold.co/1080x1920/F5F5F5/000?text=White+2",
+      "https://placehold.co/1080x1920/FAFAFA/000?text=White+3"
+    ],
+    "gray": [
+      "https://placehold.co/1080x1920/808080/FFF?text=Gray+1",
+      "https://placehold.co/1080x1920/696969/FFF?text=Gray+2",
+      "https://placehold.co/1080x1920/A9A9A9/000?text=Gray+3"
+    ],
+    "navy": [
+      "https://placehold.co/1080x1920/000080/FFF?text=Navy+1",
+      "https://placehold.co/1080x1920/191970/FFF?text=Navy+2",
+      "https://placehold.co/1080x1920/00008B/FFF?text=Navy+3"
+    ],
+    "teal": [
+      "https://placehold.co/1080x1920/008080/FFF?text=Teal+1",
+      "https://placehold.co/1080x1920/20B2AA/FFF?text=Teal+2",
+      "https://placehold.co/1080x1920/40E0D0/000?text=Teal+3"
+    ],
+    "lime": [
+      "https://placehold.co/1080x1920/00FF00/000?text=Lime+1",
+      "https://placehold.co/1080x1920/32CD32/000?text=Lime+2",
+      "https://placehold.co/1080x1920/ADFF2F/000?text=Lime+3"
+    ],
+    "maroon": [
+      "https://placehold.co/1080x1920/800000/FFF?text=Maroon+1",
+      "https://placehold.co/1080x1920/B03060/FFF?text=Maroon+2",
+      "https://placehold.co/1080x1920/C71585/FFF?text=Maroon+3"
+    ],
+    "olive": [
+      "https://placehold.co/1080x1920/808000/FFF?text=Olive+1",
+      "https://placehold.co/1080x1920/6B8E23/FFF?text=Olive+2",
+      "https://placehold.co/1080x1920/9ACD32/000?text=Olive+3"
+    ],
+    "gold": [
+      "https://placehold.co/1080x1920/FFD700/000?text=Gold+1",
+      "https://placehold.co/1080x1920/FFA500/000?text=Gold+2",
+      "https://placehold.co/1080x1920/FFC125/000?text=Gold+3"
+    ],
+    "silver": [
+      "https://placehold.co/1080x1920/C0C0C0/000?text=Silver+1",
+      "https://placehold.co/1080x1920/D3D3D3/000?text=Silver+2",
+      "https://placehold.co/1080x1920/E6E6E6/000?text=Silver+3"
+    ],
+    "coral": [
+      "https://placehold.co/1080x1920/FF7F50/FFF?text=Coral+1",
+      "https://placehold.co/1080x1920/FF6B6B/FFF?text=Coral+2",
+      "https://placehold.co/1080x1920/FF8C69/FFF?text=Coral+3"
+    ],
+    "turquoise": [
+      "https://placehold.co/1080x1920/40E0D0/000?text=Turquoise+1",
+      "https://placehold.co/1080x1920/00CED1/FFF?text=Turquoise+2",
+      "https://placehold.co/1080x1920/48D1CC/000?text=Turquoise+3"
+    ],
+    "indigo": [
+      "https://placehold.co/1080x1920/4B0082/FFF?text=Indigo+1",
+      "https://placehold.co/1080x1920/6A0DAD/FFF?text=Indigo+2",
+      "https://placehold.co/1080x1920/8A2BE2/FFF?text=Indigo+3"
+    ],
+    "magenta": [
+      "https://placehold.co/1080x1920/FF00FF/FFF?text=Magenta+1",
+      "https://placehold.co/1080x1920/FF1493/FFF?text=Magenta+2",
+      "https://placehold.co/1080x1920/DA70D6/FFF?text=Magenta+3"
+    ],
+    "default": [
+      "https://placehold.co/1080x1920/333333/FFF?text=Default+Background"
+    ]
+  },
+  "color_keywords": {
+    "red": ["红", "red"],
+    "orange": ["橙", "orange"],
+    "yellow": ["黄", "yellow", "金", "gold"],
+    "green": ["绿", "green"],
+    "cyan": ["青", "cyan"],
+    "blue": ["蓝", "blue"],
+    "navy": ["海军蓝", "navy", "深蓝"],
+    "purple": ["紫", "purple"],
+    "pink": ["粉", "pink"],
+    "brown": ["棕", "brown"],
+    "black": ["黑", "black"],
+    "white": ["白", "white"],
+    "gray": ["灰", "gray", "grey"],
+    "teal": ["青绿", "teal"],
+    "lime": ["青柠", "lime"],
+    "maroon": ["栗", "maroon"],
+    "olive": ["橄榄", "olive"],
+    "gold": ["金", "gold"],
+    "silver": ["银", "silver"],
+    "coral": ["珊瑚", "coral"],
+    "turquoise": ["青绿", "turquoise"],
+    "indigo": ["靛", "indigo"],
+    "magenta": ["品红", "magenta"]
+  }
+}
+

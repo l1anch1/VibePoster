@@ -1,0 +1,75 @@
+{
+  "description": "RAG 默认品牌知识数据",
+  "version": "1.0.0",
+  "last_updated": "2025-01-08",
+  
+  "brands": [
+    {
+      "id": "huawei_color_main",
+      "text": "华为 Mate 60 的品牌主色调是昆仑红 (#C32228) 和雅川青 (#74C096)。这两种颜色代表了华为对中国传统文化和现代科技的完美融合。",
+      "metadata": {
+        "brand": "华为",
+        "category": "配色方案",
+        "product": "Mate 60",
+        "type": "color_scheme"
+      }
+    },
+    {
+      "id": "huawei_design_style",
+      "text": "华为品牌的设计风格要求：高端、大气、极简，强调科技与自然的融合。避免过度装饰，追求功能与美学的平衡。",
+      "metadata": {
+        "brand": "华为",
+        "category": "设计风格",
+        "type": "design_guide"
+      }
+    },
+    {
+      "id": "huawei_slogan",
+      "text": "华为品牌 Slogan：遥遥领先，连接未来。体现了华为在 5G 技术和创新领域的领先地位。",
+      "metadata": {
+        "brand": "华为",
+        "category": "品牌口号",
+        "type": "slogan"
+      }
+    },
+    {
+      "id": "huawei_typography",
+      "text": "华为 P 系列的标准字体为 HarmonyOS Sans，这是一款华为自研的系统字体，支持多种字重，适用于不同场景。",
+      "metadata": {
+        "brand": "华为",
+        "category": "字体规范",
+        "product": "P系列",
+        "type": "typography"
+      }
+    },
+    {
+      "id": "huawei_color_secondary",
+      "text": "华为品牌的辅助色包括：科技蓝 (#0071CE)、太空灰 (#5C5C5C)、珍珠白 (#F5F5F5)。这些颜色可用于背景和辅助元素。",
+      "metadata": {
+        "brand": "华为",
+        "category": "配色方案",
+        "type": "secondary_colors"
+      }
+    },
+    {
+      "id": "huawei_visual_guide",
+      "text": "华为 Mate 系列的视觉元素应强调商务、专业、稳重。推荐使用对称布局和中心构图，突出产品的高端定位。",
+      "metadata": {
+        "brand": "华为",
+        "category": "视觉元素",
+        "product": "Mate系列",
+        "type": "visual_guide"
+      }
+    },
+    {
+      "id": "huawei_restrictions",
+      "text": "华为品牌禁忌：不得使用低俗、夸张的促销文案；不得使用与竞品直接对比的表述；不得扭曲华为 Logo。",
+      "metadata": {
+        "brand": "华为",
+        "category": "品牌禁忌",
+        "type": "restrictions"
+      }
+    }
+  ]
+}
+
