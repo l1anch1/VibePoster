@@ -13,7 +13,7 @@ Date: 2025-01
 from langgraph.graph import StateGraph, END
 
 from .state import AgentState
-from ..core.config import settings
+from ..core.config import settings, WORKFLOW_CONFIG
 from ..agents import (
     planner_node,
     visual_node,
@@ -46,11 +46,11 @@ def build_workflow():
     workflow.add_node("critic", critic_node)
     
     # 设置入口点（从配置读取）
-    workflow.set_entry_point(settings.WORKFLOW_CONFIG["entry_point"])
+    workflow.set_entry_point(WORKFLOW_CONFIG["entry_point"])
     
     # 添加边（根据配置）
     # 先添加普通边
-    for edge in settings.WORKFLOW_CONFIG["edges"]:
+    for edge in WORKFLOW_CONFIG["edges"]:
         if not edge.get("condition"):
             if edge["to"] == "END":
                 # 跳过，后面用条件边处理

@@ -13,22 +13,28 @@ from typing import Dict, Any, List, Optional
 
 
 class IKnowledgeGraph(ABC):
-    """知识图谱接口"""
+    """知识图谱接口 v2"""
     
     @abstractmethod
     def infer_rules(self, keywords: List[str]) -> Dict[str, Any]:
         """
-        根据关键词推理设计规则
+        根据关键词推理设计规则（语义化推理链）
+        
+        推理链: Industry/Vibe → Emotion → Visual Elements
         
         Args:
-            keywords: 关键词列表（行业/氛围）
+            keywords: 关键词列表（行业/风格）
             
         Returns:
             推荐规则字典：
             {
-                "recommended_colors": [...],
-                "recommended_fonts": [...],
-                "recommended_layouts": [...]
+                "emotions": ["Trust", "Innovation"],
+                "color_strategies": ["Monochromatic", ...],
+                "color_palettes": {"primary": [...], "accent": [...]},
+                "typography_styles": ["Sans-Serif"],
+                "layout_patterns": ["Grid", "Centered"],
+                "design_principles": [...],
+                "avoid": [...]
             }
         """
         pass

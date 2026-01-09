@@ -14,7 +14,7 @@ Date: 2025-01
 import json
 from typing import Dict, Any, Optional, List
 
-from ..core.config import settings
+from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
 from ..core.dependencies import get_knowledge_service
@@ -107,8 +107,10 @@ def run_planner_agent(
         # 添加知识模块结果
         if kg_rules:
             brief["kg_rules"] = kg_rules
-            if not brief.get("main_color") and kg_rules.get("recommended_colors"):
-                brief["main_color"] = kg_rules["recommended_colors"][0]
+            # 从 color_palettes.primary 获取主色调
+            palettes = kg_rules.get("color_palettes", {})
+            if not brief.get("main_color") and palettes.get("primary"):
+                brief["main_color"] = palettes["primary"][0]
                 logger.info(f"🔮 使用 KG 推荐的主色调: {brief['main_color']}")
         
         if brand_knowledge:
@@ -130,7 +132,7 @@ def run_planner_agent(
 
     except Exception as e:
         logger.error(f"❌ Planner 出错: {e}")
-        return settings.ERROR_FALLBACKS["planner"]
+        return ERROR_FALLBACKS["planner"]
 
 
 def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:

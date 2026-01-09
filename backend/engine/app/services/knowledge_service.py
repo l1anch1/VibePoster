@@ -68,27 +68,33 @@ class KnowledgeService:
     
     def infer_design_rules(self, keywords: List[str]) -> Dict[str, Any]:
         """
-        根据关键词推理设计规则
+        根据关键词推理设计规则（语义化推理链）
+        
+        推理链: Industry/Vibe → Emotion → Visual Elements
         
         Args:
-            keywords: 关键词列表（行业/氛围）
+            keywords: 关键词列表（行业/风格）
             
         Returns:
-            推荐规则字典
+            推荐规则字典（v2 格式）
         """
         if not keywords:
             return {
-                "recommended_colors": [],
-                "recommended_fonts": [],
-                "recommended_layouts": []
+                "emotions": [],
+                "color_strategies": [],
+                "color_palettes": {},
+                "typography_styles": [],
+                "layout_patterns": [],
+                "design_principles": [],
+                "avoid": []
             }
         
         logger.info(f"🔮 KG 推理关键词: {keywords}")
         rules = self.knowledge_graph.infer_rules(keywords)
         
-        logger.info(f"🔮 KG 推荐颜色: {rules.get('recommended_colors', [])}")
-        logger.info(f"🔮 KG 推荐字体: {rules.get('recommended_fonts', [])}")
-        logger.info(f"🔮 KG 推荐布局: {rules.get('recommended_layouts', [])}")
+        logger.info(f"🔮 推理情绪: {rules.get('emotions', [])}")
+        logger.info(f"🔮 配色策略: {rules.get('color_strategies', [])}")
+        logger.info(f"🔮 布局模式: {rules.get('layout_patterns', [])}")
         
         return rules
     
@@ -284,15 +290,33 @@ class KnowledgeService:
         """
         context_parts = []
         
-        # KG 推荐规则
-        if kg_rules and any(kg_rules.values()):
+        # KG 推荐规则（v2 格式）
+        if kg_rules and kg_rules.get("emotions"):
             context_parts.append("【知识图谱推荐】")
-            if kg_rules.get("recommended_colors"):
-                context_parts.append(f"- 推荐颜色: {', '.join(kg_rules['recommended_colors'])}")
-            if kg_rules.get("recommended_fonts"):
-                context_parts.append(f"- 推荐字体: {', '.join(kg_rules['recommended_fonts'])}")
-            if kg_rules.get("recommended_layouts"):
-                context_parts.append(f"- 推荐布局: {', '.join(kg_rules['recommended_layouts'])}")
+            context_parts.append(f"- 情绪基调: {', '.join(kg_rules.get('emotions', []))}")
+            
+            if kg_rules.get("color_strategies"):
+                context_parts.append(f"- 配色策略: {', '.join(kg_rules['color_strategies'])}")
+            
+            # 展示主色调
+            palettes = kg_rules.get("color_palettes", {})
+            if palettes.get("primary"):
+                context_parts.append(f"- 主色调: {', '.join(palettes['primary'][:3])}")
+            if palettes.get("accent"):
+                context_parts.append(f"- 强调色: {', '.join(palettes['accent'][:2])}")
+            
+            if kg_rules.get("typography_styles"):
+                context_parts.append(f"- 字体风格: {', '.join(kg_rules['typography_styles'])}")
+            
+            if kg_rules.get("layout_patterns"):
+                context_parts.append(f"- 布局模式: {', '.join(kg_rules['layout_patterns'])}")
+            
+            if kg_rules.get("design_principles"):
+                context_parts.append(f"- 设计原则: {', '.join(kg_rules['design_principles'])}")
+            
+            if kg_rules.get("avoid"):
+                context_parts.append(f"- 避免使用: {', '.join(kg_rules['avoid'])}")
+            
             context_parts.append("")
         
         # 品牌知识

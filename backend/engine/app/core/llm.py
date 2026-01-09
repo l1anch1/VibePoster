@@ -4,7 +4,7 @@ LLM Client 工厂 - 统一管理多供应商的 Client
 """
 from typing import Dict, Any
 from openai import OpenAI
-import google.generativeai as genai
+from google import genai
 
 
 class LLMClientFactory:

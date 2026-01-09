@@ -5,7 +5,7 @@ Critic Agent - 反思与质量审核
 
 import json
 from typing import Dict, Any
-from ..core.config import settings
+from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
 from ..prompts import get_critic_prompt
@@ -92,7 +92,7 @@ def run_critic_agent(poster_data: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"❌ Critic Agent 出错: {e}")
-        return settings.ERROR_FALLBACKS["critic"]
+        return ERROR_FALLBACKS["critic"]
 
 
 def critic_node(state: Dict[str, Any]) -> Dict[str, Any]:

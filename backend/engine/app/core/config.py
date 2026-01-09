@@ -4,27 +4,47 @@
 设计原则：
 1. 每个 Agent 拥有独立的完整配置（API_KEY, BASE_URL, MODEL, TEMPERATURE）
 2. 通过环境变量前缀隔离各 Agent 配置（PLANNER_*, VISUAL_*, LAYOUT_*, CRITIC_*）
+3. 使用 pathlib 锁定绝对路径，确保路径在任何运行环境下都正确
 """
 
-import os
-from typing import Dict, Any, List
+from enum import Enum
+from pathlib import Path
+from typing import Dict, Any, List, Final, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# 项目根目录: backend/engine/app/
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# =============================================================================
+# 枚举定义
+# =============================================================================
+
+
+class LLMProvider(str, Enum):
+    """LLM 提供商枚举"""
+    DEEPSEEK = "deepseek"
+    OPENAI = "openai"
+    GEMINI = "gemini"
+    MOONSHOT = "moonshot"
+
+
+# =============================================================================
+# Agent 配置类
+# =============================================================================
+
 
 class PlannerAgentConfig(BaseSettings):
-    """
-    Planner Agent 配置
-    """
+    """Planner Agent 配置"""
 
     model_config = SettingsConfigDict(env_prefix="PLANNER_", env_file=".env", extra="ignore")
 
-    # LLM 配置
-    PROVIDER: str = Field(
-        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    PROVIDER: LLMProvider = Field(
+        default=LLMProvider.DEEPSEEK, description="LLM 提供商"
     )
     API_KEY: str = Field(..., description="Planner Agent 的 API Key")
     BASE_URL: str = Field(
@@ -40,15 +60,12 @@ class PlannerAgentConfig(BaseSettings):
 
 
 class VisualAgentConfig(BaseSettings):
-    """
-    Visual Agent 配置
-    """
+    """Visual Agent 配置"""
 
     model_config = SettingsConfigDict(env_prefix="VISUAL_", env_file=".env", extra="ignore")
 
-    # LLM 配置（用于 OCR 和图像理解）
-    PROVIDER: str = Field(
-        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    PROVIDER: LLMProvider = Field(
+        default=LLMProvider.DEEPSEEK, description="LLM 提供商"
     )
     API_KEY: str = Field(..., description="Visual Agent 的 API Key")
     BASE_URL: str = Field(
@@ -67,15 +84,12 @@ class VisualAgentConfig(BaseSettings):
 
 
 class LayoutAgentConfig(BaseSettings):
-    """
-    Layout Agent 配置
-    """
+    """Layout Agent 配置"""
 
     model_config = SettingsConfigDict(env_prefix="LAYOUT_", env_file=".env", extra="ignore")
 
-    # LLM 配置
-    PROVIDER: str = Field(
-        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    PROVIDER: LLMProvider = Field(
+        default=LLMProvider.DEEPSEEK, description="LLM 提供商"
     )
     API_KEY: str = Field(..., description="Layout Agent 的 API Key")
     BASE_URL: str = Field(
@@ -88,12 +102,6 @@ class LayoutAgentConfig(BaseSettings):
         default=0.1, ge=0.0, le=2.0, description="Layout Agent 的温度参数（非常低以确保精确性）"
     )
 
-    # Layout 模式配置
-    USE_DSL_MODE: bool = Field(
-        default=True, 
-        description="是否使用 DSL 模式（OOP 布局引擎）。True=DSL模式，False=传统JSON模式"
-    )
-    
     # Layout 专用参数（排版约束）
     FG_MAX_WIDTH_RATIO: float = Field(
         default=0.5, ge=0.1, le=1.0, description="前景图层最大宽度占画布比例"
@@ -107,15 +115,12 @@ class LayoutAgentConfig(BaseSettings):
 
 
 class CriticAgentConfig(BaseSettings):
-    """
-    Critic Agent 配置
-    """
+    """Critic Agent 配置"""
 
     model_config = SettingsConfigDict(env_prefix="CRITIC_", env_file=".env", extra="ignore")
 
-    # LLM 配置
-    PROVIDER: str = Field(
-        default="deepseek", description="LLM 提供商：deepseek, openai, gemini, moonshot"
+    PROVIDER: LLMProvider = Field(
+        default=LLMProvider.DEEPSEEK, description="LLM 提供商"
     )
     API_KEY: str = Field(..., description="Critic Agent 的 API Key")
     BASE_URL: str = Field(
@@ -131,6 +136,11 @@ class CriticAgentConfig(BaseSettings):
     # Critic 专用参数
     MAX_RETRY_COUNT: int = Field(default=2, ge=0, le=5, description="最大重试次数")
     DEFAULT_STATUS: str = Field(default="PASS", description="默认审核状态")
+
+
+# =============================================================================
+# 应用配置类
+# =============================================================================
 
 
 class CanvasConfig(BaseSettings):
@@ -149,7 +159,7 @@ class KGConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="KG_", env_file=".env", extra="ignore")
 
     RULES_FILE: str = Field(
-        default="./app/knowledge/kg/data/kg_rules.json",
+        default=str(BASE_DIR / "knowledge" / "kg" / "data" / "kg_rules.json"),
         description="KG 规则数据文件路径"
     )
 
@@ -159,23 +169,18 @@ class RAGConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="RAG_", env_file=".env", extra="ignore")
 
-    # 存储配置
     PERSIST_DIRECTORY: str = Field(
-        default="./data/chroma_db", 
+        default=str(BASE_DIR.parent / "data" / "chroma_db"), 
         description="ChromaDB 持久化目录"
     )
-    
-    # 默认数据配置
     LOAD_DEFAULT_DATA: bool = Field(
         default=True, 
         description="是否加载默认品牌数据"
     )
     DEFAULT_DATA_PATH: str = Field(
-        default="./app/knowledge/rag/data/default_brand_knowledge.json",
+        default=str(BASE_DIR / "knowledge" / "rag" / "data" / "default_brand_knowledge.json"),
         description="默认品牌数据文件路径"
     )
-    
-    # 模型配置
     EMBEDDING_MODEL: str = Field(
         default="paraphrase-multilingual-MiniLM-L12-v2",
         description="句子嵌入模型名称"
@@ -205,9 +210,10 @@ class CORSConfig(BaseSettings):
 
     @property
     def allow_origins_list(self) -> List[str]:
-        """将逗号分隔的字符串转换为列表"""
-        # 开发环境直接返回通配符
-        return ["*"]
+        # 只有显式配置为 * 时才返回 *，否则解析列表
+        if self.ALLOW_ORIGINS.strip() == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.ALLOW_ORIGINS.split(",") if origin.strip()]
 
     @property
     def allow_methods_list(self) -> List[str]:
@@ -225,32 +231,11 @@ class CORSConfig(BaseSettings):
 
 
 # =============================================================================
-# 全局配置（单例）
+# 静态常量（模块级）
 # =============================================================================
 
 
-class Settings:
-    """
-    全局配置单例
-
-    每个 Agent 拥有独立的完整配置，配置清晰明确
-    """
-
-    def __init__(self):
-        # Agent 配置（每个 Agent 独立）
-        self.planner = PlannerAgentConfig()
-        self.visual = VisualAgentConfig()
-        self.layout = LayoutAgentConfig()
-        self.critic = CriticAgentConfig()
-
-        # 应用配置
-        self.canvas = CanvasConfig()
-        self.cors = CORSConfig()
-        self.kg = KGConfig()
-        self.rag = RAGConfig()
-
-    # 静态配置
-    ERROR_FALLBACKS: Dict[str, Any] = {
+ERROR_FALLBACKS: Final[Dict[str, Any]] = {
         "planner": {
             "title": "Error",
             "subtitle": "",
@@ -259,15 +244,21 @@ class Settings:
             "style_keywords": [],
             "intent": "other",
         },
-        "visual": {"background_layer": {"type": "image", "src": "", "source_type": "fallback"}},
+    "visual": {
+        "background_layer": {"type": "image", "src": "", "source_type": "fallback"}
+    },
         "layout": {
             "canvas": {"width": 1080, "height": 1920, "backgroundColor": "#FFFFFF"},
             "layers": [],
         },
-        "critic": {"status": "PASS", "feedback": "System Error", "issues": []},
+    "critic": {
+        "status": "PASS", 
+        "feedback": "System Error", 
+        "issues": []
+    },
     }
 
-    WORKFLOW_CONFIG: Dict[str, Any] = {
+WORKFLOW_CONFIG: Final[Dict[str, Any]] = {
         "nodes": [
             {"name": "planner", "description": "Planning Agent", "agent": "planner"},
             {"name": "visual", "description": "Visual Agent", "agent": "visual"},
@@ -283,6 +274,46 @@ class Settings:
         ],
         "entry_point": "planner",
     }
+
+
+# =============================================================================
+# Settings 单例
+# =============================================================================
+
+
+class Settings:
+    """
+    全局配置（真正的单例模式）
+    
+    每个 Agent 拥有独立的完整配置，配置清晰明确。
+    """
+    
+    _instance: Optional['Settings'] = None
+    
+    def __new__(cls) -> 'Settings':
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        # 防止重复初始化
+        if self._initialized:
+            return
+        
+        # Agent 配置
+        self.planner = PlannerAgentConfig()
+        self.visual = VisualAgentConfig()
+        self.layout = LayoutAgentConfig()
+        self.critic = CriticAgentConfig()
+
+        # 应用配置
+        self.canvas = CanvasConfig()
+        self.cors = CORSConfig()
+        self.kg = KGConfig()
+        self.rag = RAGConfig()
+        
+        self._initialized = True
 
 
 # 导出全局配置单例

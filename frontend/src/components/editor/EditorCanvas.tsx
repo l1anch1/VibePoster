@@ -205,23 +205,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           position: 'absolute',
           top: 0,
           left: 0,
-          width: `${data.canvas.width}px`,
-          height: `${data.canvas.height}px`,
-          backgroundColor: data.canvas.backgroundColor,
-          transform: `scale(${scale})`,
+        width: `${data.canvas.width}px`,
+        height: `${data.canvas.height}px`,
+        backgroundColor: data.canvas.backgroundColor,
+        transform: `scale(${scale})`,
           transformOrigin: 'top left',
           boxShadow: '0 25px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08)',
-          boxSizing: 'border-box',
-          overflow: 'hidden',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
           borderRadius: '4px',
-        }}
-        ref={canvasRef}
-        onClick={(e) => {
-          if (e.target === canvasRef.current) {
-            clearSelection();
-          }
-        }}
-      >
+      }}
+      ref={canvasRef}
+      onClick={(e) => {
+        if (e.target === canvasRef.current) {
+          clearSelection();
+        }
+      }}
+    >
       {/* 渲染所有图层 */}
       {data.layers.map((layer) => (
         <EditableLayer

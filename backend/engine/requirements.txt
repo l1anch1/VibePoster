@@ -18,7 +18,7 @@ requests>=2.32.0
 
 # AI/LLM
 openai>=1.50.0
-google-generativeai>=0.8.0
+google-genai>=1.0.0
 langgraph>=0.2.0
 langchain-core>=0.3.0
 langsmith>=0.1.0

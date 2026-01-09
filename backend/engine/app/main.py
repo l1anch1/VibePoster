@@ -50,3 +50,9 @@ app.add_exception_handler(Exception, exception_handler)
 # 注册路由
 app.include_router(poster_router)
 app.include_router(knowledge_router)
+
+
+# 健康检查端点（供 Docker 使用，不记录日志）
+@app.get("/health", include_in_schema=False)
+async def health_check():
+    return {"status": "ok"}

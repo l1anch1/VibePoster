@@ -1,8 +1,8 @@
 """
 Layout Agent - 空间计算与排版
 
-新版本：
-- LLM 输出 DSL 指令（而不是完整 JSON）
+使用 DSL 模式：
+- LLM 输出 DSL 指令
 - RendererService 解析 DSL，使用 OOP 布局引擎生成布局
 - 动态计算元素位置，支持文本高度自适应
 
@@ -11,12 +11,10 @@ Date: 2025-01
 """
 
 import json
-import re
 from typing import Dict, Any, Optional
-from ..core.config import settings
+from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
-from ..prompts import get_layout_prompt
 from ..prompts.dsl_templates import get_layout_dsl_prompt
 from ..services.renderer import RendererService
 from .base import BaseAgent
@@ -75,7 +73,7 @@ class LayoutAgent(BaseAgent):
             return response
 
 
-def run_layout_agent_dsl(
+def run_layout_agent(
     design_brief: Dict[str, Any],
     asset_list: Dict[str, Any],
     canvas_width: int,
@@ -83,7 +81,7 @@ def run_layout_agent_dsl(
     review_feedback: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
-    使用 DSL 方式运行 Layout Agent（新版本）
+    运行 Layout Agent（DSL 模式）
     
     流程：
     1. LLM 输出 DSL 指令列表
@@ -101,7 +99,10 @@ def run_layout_agent_dsl(
     Returns:
         海报 JSON 数据
     """
-    logger.info("📐 Layout Agent (DSL 模式) 正在规划布局...")
+    logger.info("📐 Layout Agent 正在规划布局...")
+    
+    if review_feedback and review_feedback.get("status") == "REJECT":
+        logger.info(f"📝 收到审核反馈: {review_feedback.get('feedback', '')}")
     
     try:
         # 1. 生成 DSL Prompt
@@ -141,14 +142,7 @@ def run_layout_agent_dsl(
         for i, instr in enumerate(dsl_instructions[:5]):  # 只打印前 5 条
             logger.debug(f"  [{i+1}] {instr.get('command')}: {str(instr)[:50]}...")
         
-        # 4. 处理背景色指令
-        bg_color = design_brief.get("background_color", "#FFFFFF")
-        for instr in dsl_instructions:
-            if instr.get("command") == "set_background_color":
-                bg_color = instr.get("color", bg_color)
-                break
-        
-        # 5. 替换图片 src 占位符
+        # 4. 替换图片 src 占位符
         for instr in dsl_instructions:
             if instr.get("command") == "add_image":
                 src = instr.get("src", "")
@@ -161,181 +155,43 @@ def run_layout_agent_dsl(
                     if asset_list.get("foreground_layer"):
                         instr["src"] = asset_list["foreground_layer"].get("src", "")
         
-        # 6. 使用 RendererService 构建布局
+        # 5. 使用 RendererService 构建布局
         renderer = RendererService()
-        
-        # 更新设计简报中的背景色
-        design_brief_with_bg = {**design_brief, "background_color": bg_color}
         
         container = renderer.parse_dsl_and_build_layout(
             dsl_instructions=dsl_instructions,
             canvas_width=canvas_width,
             canvas_height=canvas_height,
-            design_brief=design_brief_with_bg
+            design_brief=design_brief
         )
         
-        # 7. 转换为 Pydantic Schema
+        # 6. 转换为 Pydantic Schema
         poster_data = renderer.convert_to_pydantic_schema(
             container=container,
-            design_brief=design_brief_with_bg
+            design_brief=design_brief
         )
         
-        # 8. 合并素材数据
+        # 7. 合并素材数据
         poster_data = renderer.merge_with_design_brief(
             poster_data=poster_data,
-            design_brief=design_brief_with_bg,
+            design_brief=design_brief,
             asset_list=asset_list
         )
         
-        # 9. 转换为字典格式返回
+        # 8. 转换为字典格式返回
         poster_json = poster_data.model_dump()
         
-        logger.info(f"✅ Layout (DSL) 完成，生成了 {len(poster_json.get('layers', []))} 个图层")
+        logger.info(f"✅ Layout 完成，生成了 {len(poster_json.get('layers', []))} 个图层")
         return poster_json
         
     except json.JSONDecodeError as e:
         logger.error(f"❌ DSL JSON 解析失败: {e}")
-        logger.warning("⚠️  回退到传统 Layout 模式...")
-        return run_layout_agent_legacy(
-            design_brief, asset_list, canvas_width, canvas_height, review_feedback
-        )
-    except Exception as e:
-        logger.error(f"❌ Layout (DSL) 失败: {type(e).__name__}: {e}")
-        import traceback
-        logger.error(f"   堆栈:\n{traceback.format_exc()}")
-        logger.warning("⚠️  回退到传统 Layout 模式...")
-        return run_layout_agent_legacy(
-            design_brief, asset_list, canvas_width, canvas_height, review_feedback
-        )
-
-
-def run_layout_agent_legacy(
-    design_brief: Dict[str, Any],
-    asset_list: Dict[str, Any],
-    canvas_width: int,
-    canvas_height: int,
-    review_feedback: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """
-    传统方式运行 Layout Agent（旧版本，作为备选）
-    
-    让 LLM 直接输出完整的海报 JSON。
-    """
-    logger.info("📐 Layout Agent (传统模式) 正在计算布局...")
-
-    if review_feedback and review_feedback.get("status") == "REJECT":
-        logger.info(f"📝 收到审核反馈: {review_feedback.get('feedback', '')}")
-
-    try:
-        # 使用配置化的 prompt
-        prompt_content = get_layout_prompt(
-            design_brief=design_brief,
-            asset_list=asset_list,
-            canvas_width=canvas_width,
-            canvas_height=canvas_height,
-            review_feedback=review_feedback,
-        )
-
-        from .base import AgentFactory
-        agent = AgentFactory.get_layout_agent()
-
-        response = agent.invoke(contents=prompt_content)
-
-        # 解析结果
-        if hasattr(response, "text"):
-            content = response.text
-        elif hasattr(response, "choices") and len(response.choices) > 0:
-            content = response.choices[0].message.content
-        else:
-            raise ValueError(f"Unknown response format: {type(response)}")
-
-        # 清理 markdown 标记
-        if "```json" in content:
-            content = content.replace("```json", "").replace("```", "")
-
-        # 移除 base64 占位符
-        base64_pattern = r'"src":\s*"data:image[^"]*'
-        content_cleaned = re.sub(base64_pattern, '"src": "{{PLACEHOLDER}}"', content)
-
-        poster_json = json.loads(content_cleaned)
-
-        # 确保画布尺寸正确
-        if "canvas" not in poster_json:
-            poster_json["canvas"] = {}
-        poster_json["canvas"]["width"] = canvas_width
-        poster_json["canvas"]["height"] = canvas_height
-        if "backgroundColor" not in poster_json["canvas"]:
-            poster_json["canvas"]["backgroundColor"] = design_brief.get("background_color", "#FFFFFF")
-
-        # 填充图片 src
-        for layer in poster_json.get("layers", []):
-            if layer.get("type") == "image":
-                layer_id = layer.get("id", "")
-                if layer_id == "bg" and asset_list.get("background_layer"):
-                    layer["src"] = asset_list["background_layer"].get("src", "")
-                elif layer_id in ["person", "foreground"] and asset_list.get("foreground_layer"):
-                    layer["src"] = asset_list["foreground_layer"].get("src", "")
-
-        # 确保基本属性存在
-        for layer in poster_json.get("layers", []):
-            if "x" not in layer:
-                layer["x"] = 0
-            if "y" not in layer:
-                layer["y"] = 0
-            if "width" not in layer or layer.get("width", 0) <= 0:
-                layer["width"] = 100 if layer.get("type") == "image" else 200
-            if "height" not in layer or layer.get("height", 0) <= 0:
-                layer["height"] = 100 if layer.get("type") == "image" else 50
-            if "z_index" not in layer:
-                if layer.get("id") == "bg":
-                    layer["z_index"] = 0
-                elif layer.get("id") in ["person", "foreground"]:
-                    layer["z_index"] = 1
-                else:
-                    layer["z_index"] = 2
-
-        logger.info(f"✅ Layout (传统) 完成，生成了 {len(poster_json.get('layers', []))} 个图层")
-        return poster_json
-
+        return ERROR_FALLBACKS["layout"]
     except Exception as e:
         logger.error(f"❌ Layout Error: {type(e).__name__}: {e}")
-        return settings.ERROR_FALLBACKS["layout"]
-
-
-# 默认使用 DSL 模式
-def run_layout_agent(
-    design_brief: Dict[str, Any],
-    asset_list: Dict[str, Any],
-    canvas_width: int,
-    canvas_height: int,
-    review_feedback: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """
-    运行 Layout Agent（入口函数）
-    
-    默认使用 DSL 模式（OOP 布局引擎），失败时回退到传统模式。
-    
-    Args:
-        design_brief: 设计简报
-        asset_list: 资产列表
-        canvas_width: 画布宽度
-        canvas_height: 画布高度
-        review_feedback: 审核反馈
-    
-    Returns:
-        海报 JSON 数据
-    """
-    # 使用环境变量或配置决定使用哪种模式
-    use_dsl_mode = getattr(settings.layout, "USE_DSL_MODE", True)
-    
-    if use_dsl_mode:
-        return run_layout_agent_dsl(
-            design_brief, asset_list, canvas_width, canvas_height, review_feedback
-        )
-    else:
-        return run_layout_agent_legacy(
-            design_brief, asset_list, canvas_width, canvas_height, review_feedback
-        )
+        import traceback
+        logger.error(f"   堆栈:\n{traceback.format_exc()}")
+        return ERROR_FALLBACKS["layout"]
 
 
 def layout_node(state: Dict[str, Any]) -> Dict[str, Any]:

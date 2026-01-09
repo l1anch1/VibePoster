@@ -4,7 +4,7 @@ Visual Agent - 视觉感知中心
 """
 
 from typing import Dict, Any, Optional, List
-from ..core.config import settings
+from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
 from ..tools.vision import process_cutout, image_to_base64
@@ -237,7 +237,7 @@ def run_visual_agent(
 
     except Exception as e:
         logger.error(f"❌ Visual Agent 出错: {e}")
-        return settings.ERROR_FALLBACKS["visual"]
+        return ERROR_FALLBACKS["visual"]
 
 
 def visual_node(state: Dict[str, Any]) -> Dict[str, Any]:

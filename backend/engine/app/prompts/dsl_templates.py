@@ -69,11 +69,7 @@ LAYOUT_DSL_PROMPT = """
      "color": "#0066FF"  // 可选，默认使用强调色
    }}
 
-6. set_background_color - 设置画布背景色
-   {{
-     "command": "set_background_color",
-     "color": "#1A1A2E"
-   }}
+【注意】背景色从 design_brief.background_color 自动获取，不需要输出指令。
 
 【设计原则】
 1. 从设计简报 (design_brief) 中获取：
@@ -102,17 +98,15 @@ LAYOUT_DSL_PROMPT = """
    - 图片 src 使用占位符，系统会自动填充
 
 【输出格式】
-仅输出 JSON 数组，不要包含任何其他文本：
+仅输出 JSON，不要包含任何其他文本：
 
 {{
   "dsl_instructions": [
-    {{"command": "set_background_color", "color": "#1A1A2E"}},
     {{"command": "add_image", "src": "{{ASSET_BG}}", "width": 1080, "height": 1920, "layer_type": "background"}},
     {{"command": "add_title", "content": "主标题", "font_size": 64, "color": "#FFFFFF"}},
     {{"command": "add_subtitle", "content": "副标题", "font_size": 36, "color": "#AAAAAA"}},
     {{"command": "add_cta", "content": "了解更多 →", "color": "#FF6B6B"}}
-  ],
-  "design_notes": "简短的设计说明（可选）"
+  ]
 }}
 
 请根据输入生成合适的 DSL 指令列表。

@@ -1,120 +1,302 @@
 {
-  "description": "Knowledge Graph 设计规则数据",
-  "version": "1.0.0",
-  "last_updated": "2025-01-08",
+  "$schema": "design_knowledge_graph_v2",
+  "$version": "2.0.0",
+  "$description": "语义化设计知识图谱 - 支持 Industry → Emotion → Visual 推理链",
+
+  "emotions": {
+    "Trust": {
+      "description": "可靠、稳定、专业的信任感",
+      "color_strategies": ["Monochromatic", "Analogous"],
+      "color_palettes": {
+        "primary": ["#0066CC", "#1E3A5F", "#2C5282"],
+        "accent": ["#48BB78", "#38B2AC"]
+      },
+      "typography": {
+        "style": "Sans-Serif",
+        "weight": "Medium",
+        "characteristics": ["Clean", "Geometric", "Balanced"]
+      },
+      "layout": {
+        "strategy": "Structured",
+        "intent": "Stability",
+        "patterns": ["Grid", "Symmetrical", "Centered"]
+      }
+    },
+    "Innovation": {
+      "description": "前沿、突破、科技感",
+      "color_strategies": ["Triadic", "Split-Complementary"],
+      "color_palettes": {
+        "primary": ["#6366F1", "#8B5CF6", "#0EA5E9"],
+        "accent": ["#22D3EE", "#A855F7"],
+        "gradient": ["linear-gradient(135deg, #667eea 0%, #764ba2 100%)"]
+      },
+      "typography": {
+        "style": "Sans-Serif",
+        "weight": "Bold",
+        "characteristics": ["Modern", "Geometric", "Sharp"]
+      },
+      "layout": {
+        "strategy": "Dynamic",
+        "intent": "Forward-thinking",
+        "patterns": ["Diagonal", "Asymmetric", "Layered"]
+      }
+    },
+    "Excitement": {
+      "description": "活力、热情、行动力",
+      "color_strategies": ["Complementary", "High-Contrast"],
+      "color_palettes": {
+        "primary": ["#EF4444", "#F97316", "#FBBF24"],
+        "accent": ["#EC4899", "#F43F5E"]
+      },
+      "typography": {
+        "style": "Display",
+        "weight": "Black",
+        "characteristics": ["Bold", "Expressive", "Dynamic"]
+      },
+      "layout": {
+        "strategy": "Energetic",
+        "intent": "Dynamism",
+        "patterns": ["Diagonal", "Overlapping", "Burst"]
+      }
+    },
+    "Premium": {
+      "description": "奢华、高端、独特品位",
+      "color_strategies": ["Monochromatic", "Neutral-with-Accent"],
+      "color_palettes": {
+        "primary": ["#1A1A1A", "#2D2D2D", "#0F0F0F"],
+        "accent": ["#D4AF37", "#C9A962", "#B8860B"],
+        "metallic": ["#FFD700", "#C0C0C0", "#E8D5B7"]
+      },
+      "typography": {
+        "style": "Serif",
+        "weight": "Light",
+        "characteristics": ["Elegant", "Refined", "Classic"]
+      },
+      "layout": {
+        "strategy": "Minimal",
+        "intent": "Sophistication",
+        "patterns": ["Centered", "Generous-whitespace", "Golden-ratio"]
+      }
+    },
+    "Warmth": {
+      "description": "温暖、亲切、自然",
+      "color_strategies": ["Analogous", "Earth-tones"],
+      "color_palettes": {
+        "primary": ["#D97706", "#B45309", "#92400E"],
+        "accent": ["#059669", "#10B981"],
+        "natural": ["#F5F0E6", "#E7DDD0", "#D4C4A8"]
+      },
+      "typography": {
+        "style": "Rounded-Sans",
+        "weight": "Regular",
+        "characteristics": ["Friendly", "Organic", "Approachable"]
+      },
+      "layout": {
+        "strategy": "Organic",
+        "intent": "Comfort",
+        "patterns": ["Curved", "Flowing", "Natural-hierarchy"]
+      }
+    },
+    "Freshness": {
+      "description": "新鲜、健康、活力",
+      "color_strategies": ["Complementary", "Nature-inspired"],
+      "color_palettes": {
+        "primary": ["#22C55E", "#16A34A", "#15803D"],
+        "accent": ["#FBBF24", "#F59E0B"],
+        "fresh": ["#ECFDF5", "#D1FAE5", "#A7F3D0"]
+      },
+      "typography": {
+        "style": "Sans-Serif",
+        "weight": "Medium",
+        "characteristics": ["Clean", "Vibrant", "Modern"]
+      },
+      "layout": {
+        "strategy": "Clean",
+        "intent": "Clarity",
+        "patterns": ["Grid", "Whitespace-rich", "Balanced"]
+      }
+    },
+    "Playfulness": {
+      "description": "趣味、童趣、创意",
+      "color_strategies": ["Multi-color", "High-saturation"],
+      "color_palettes": {
+        "primary": ["#EC4899", "#8B5CF6", "#06B6D4"],
+        "accent": ["#FBBF24", "#22C55E", "#F43F5E"],
+        "pop": ["#FF6B6B", "#4ECDC4", "#FFE66D"]
+      },
+      "typography": {
+        "style": "Rounded-Sans",
+        "weight": "Bold",
+        "characteristics": ["Fun", "Bouncy", "Expressive"]
+      },
+      "layout": {
+        "strategy": "Playful",
+        "intent": "Engagement",
+        "patterns": ["Scattered", "Overlapping", "Irregular-grid"]
+      }
+    }
+  },
   
   "industries": {
     "Tech": {
-      "colors": ["#0066FF", "#00C9FF", "#1E1E1E"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Grid", "Center"],
-      "description": "科技行业 - 蓝色系、无衬线字体、网格布局"
+      "description": "科技、互联网、软件行业",
+      "embodies": ["Trust", "Innovation"],
+      "design_principles": [
+        "Clean interfaces",
+        "Data visualization friendly",
+        "Scalable design system"
+      ],
+      "avoid": ["Overly decorative", "Warm earth tones", "Script fonts"]
     },
     "Food": {
-      "colors": ["#FFA500", "#FF6B6B", "#FFD93D", "#8BC34A"],
-      "fonts": ["Handwritten"],
-      "layouts": ["Center"],
-      "description": "食品行业 - 暖色系、手写字体、居中布局"
+      "description": "餐饮、食品、饮料行业",
+      "embodies": ["Warmth", "Freshness", "Excitement"],
+      "design_principles": [
+        "Appetite appeal",
+        "High-quality food photography",
+        "Sensory engagement"
+      ],
+      "avoid": ["Cold blue tones", "Sterile layouts", "Technical fonts"]
     },
-    "Education": {
-      "colors": ["#4CAF50", "#2196F3", "#FFC107"],
-      "fonts": ["Sans-Serif", "Serif"],
-      "layouts": ["Grid"],
-      "description": "教育行业 - 蓝绿色系、多种字体、网格布局"
-    },
-    "Fashion": {
-      "colors": ["#000000", "#FFFFFF", "#E91E63", "#9C27B0"],
-      "fonts": ["Serif"],
-      "layouts": ["Diagonal"],
-      "description": "时尚行业 - 黑白粉紫、衬线字体、对角线布局"
-    },
-    "Real Estate": {
-      "colors": ["#795548", "#607D8B", "#FFD700"],
-      "fonts": ["Serif"],
-      "layouts": ["Grid"],
-      "description": "房地产 - 棕灰金色、衬线字体、网格布局"
+    "Luxury": {
+      "description": "奢侈品、高端消费、时尚行业",
+      "embodies": ["Premium", "Trust"],
+      "design_principles": [
+        "Less is more",
+        "Quality over quantity",
+        "Timeless aesthetics"
+      ],
+      "avoid": ["Bright neon colors", "Cluttered layouts", "Casual fonts"]
     },
     "Healthcare": {
-      "colors": ["#00BCD4", "#4CAF50", "#FFFFFF"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Center"],
-      "description": "医疗健康 - 青绿白色、无衬线字体、居中布局"
+      "description": "医疗、健康、制药行业",
+      "embodies": ["Trust", "Freshness"],
+      "design_principles": [
+        "Clear information hierarchy",
+        "Accessible design",
+        "Professional credibility"
+      ],
+      "avoid": ["Aggressive colors", "Complex patterns", "Decorative fonts"]
     },
-    "Finance": {
-      "colors": ["#1565C0", "#2E7D32", "#424242"],
-      "fonts": ["Serif"],
-      "layouts": ["Grid"],
-      "description": "金融行业 - 深蓝深绿、衬线字体、网格布局"
+    "Education": {
+      "description": "教育、培训、知识服务",
+      "embodies": ["Trust", "Innovation", "Playfulness"],
+      "design_principles": [
+        "Easy to read",
+        "Engaging visuals",
+        "Clear structure"
+      ],
+      "avoid": ["Monotonous layouts", "Small text", "Distracting elements"]
     },
-    "Travel": {
-      "colors": ["#00BCD4", "#FF9800", "#4CAF50"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Center", "Diagonal"],
-      "description": "旅游行业 - 青橙绿色、无衬线字体、多种布局"
-    },
-    "Music": {
-      "colors": ["#9C27B0", "#E91E63", "#000000"],
-      "fonts": ["Sans-Serif", "Handwritten"],
-      "layouts": ["Diagonal"],
-      "description": "音乐行业 - 紫粉黑色、多种字体、对角线布局"
+    "Entertainment": {
+      "description": "娱乐、游戏、媒体行业",
+      "embodies": ["Excitement", "Playfulness", "Innovation"],
+      "design_principles": [
+        "High visual impact",
+        "Immersive experience",
+        "Bold statements"
+      ],
+      "avoid": ["Conservative colors", "Static layouts", "Formal typography"]
     }
   },
   
   "vibes": {
     "Minimalist": {
-      "colors": ["#FFFFFF", "#000000", "#F5F5F5"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Center"],
-      "description": "极简主义 - 黑白灰、无衬线字体、居中布局"
+      "description": "极简主义风格",
+      "embodies": ["Premium", "Trust"],
+      "modifiers": {
+        "whitespace": "generous",
+        "elements": "essential-only",
+        "color_count": "1-2"
+      }
     },
     "Energetic": {
-      "colors": ["#FF5722", "#FFEB3B", "#FF4081"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Diagonal"],
-      "description": "活力充沛 - 橙黄粉色、无衬线字体、对角线布局"
-    },
-    "Luxury": {
-      "colors": ["#000000", "#FFD700", "#8B4513", "#4A148C"],
-      "fonts": ["Serif"],
-      "layouts": ["Center"],
-      "description": "奢华高端 - 黑金棕紫、衬线字体、居中布局"
-    },
-    "Friendly": {
-      "colors": ["#FFC107", "#FF9800", "#8BC34A"],
-      "fonts": ["Handwritten"],
-      "layouts": ["Center"],
-      "description": "友好亲切 - 黄橙绿色、手写字体、居中布局"
+      "description": "充满活力的风格",
+      "embodies": ["Excitement", "Playfulness"],
+      "modifiers": {
+        "whitespace": "minimal",
+        "elements": "abundant",
+        "color_count": "3-5"
+      }
     },
     "Professional": {
-      "colors": ["#1976D2", "#424242", "#FFFFFF"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Grid"],
-      "description": "专业严谨 - 蓝灰白色、无衬线字体、网格布局"
+      "description": "专业商务风格",
+      "embodies": ["Trust", "Premium"],
+      "modifiers": {
+        "whitespace": "balanced",
+        "elements": "structured",
+        "color_count": "2-3"
+      }
     },
-    "Promotion": {
-      "colors": ["#FF0000", "#FFD700", "#FF6B00"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Diagonal"],
-      "description": "促销活动 - 红金橙色、无衬线字体、对角线布局"
+    "Friendly": {
+      "description": "亲切友好风格",
+      "embodies": ["Warmth", "Playfulness"],
+      "modifiers": {
+        "whitespace": "comfortable",
+        "elements": "rounded",
+        "color_count": "3-4"
+      }
     },
-    "Vintage": {
-      "colors": ["#8B4513", "#D2691E", "#F5DEB3"],
-      "fonts": ["Serif", "Handwritten"],
-      "layouts": ["Center"],
-      "description": "复古怀旧 - 棕色系、衬线/手写字体、居中布局"
+    "Bold": {
+      "description": "大胆醒目风格",
+      "embodies": ["Excitement", "Innovation"],
+      "modifiers": {
+        "whitespace": "strategic",
+        "elements": "oversized",
+        "color_count": "2-4"
+      }
+    }
+  },
+
+  "design_strategies": {
+    "color": {
+      "Monochromatic": {
+        "description": "单色系配色",
+        "method": "使用同一色相的不同明度和饱和度",
+        "effect": "统一、和谐、专业"
+      },
+      "Complementary": {
+        "description": "互补色配色",
+        "method": "使用色轮上相对的两种颜色",
+        "effect": "对比强烈、视觉冲击、活力"
     },
-    "Modern": {
-      "colors": ["#212121", "#757575", "#BDBDBD"],
-      "fonts": ["Sans-Serif"],
-      "layouts": ["Grid"],
-      "description": "现代风格 - 灰色系、无衬线字体、网格布局"
+      "Analogous": {
+        "description": "类似色配色",
+        "method": "使用色轮上相邻的颜色",
+        "effect": "和谐、自然、舒适"
+      },
+      "Triadic": {
+        "description": "三色配色",
+        "method": "使用色轮上等距的三种颜色",
+        "effect": "丰富、平衡、创意"
+      },
+      "Split-Complementary": {
+        "description": "分裂互补色配色",
+        "method": "一种颜色加其互补色两侧的颜色",
+        "effect": "对比但不冲突、现代感"
+      }
     },
-    "Natural": {
-      "colors": ["#4CAF50", "#8BC34A", "#795548"],
-      "fonts": ["Serif"],
-      "layouts": ["Center"],
-      "description": "自然风格 - 绿棕色系、衬线字体、居中布局"
+    "layout": {
+      "Stability": {
+        "description": "稳定布局",
+        "patterns": ["Grid", "Symmetrical", "Centered"],
+        "effect": "可靠、专业、平衡"
+      },
+      "Dynamism": {
+        "description": "动态布局",
+        "patterns": ["Diagonal", "Asymmetric", "Overlapping"],
+        "effect": "活力、现代、吸引力"
+    },
+      "Sophistication": {
+        "description": "精致布局",
+        "patterns": ["Golden-ratio", "Generous-whitespace", "Minimal"],
+        "effect": "高端、优雅、品位"
+      },
+      "Engagement": {
+        "description": "互动布局",
+        "patterns": ["Z-pattern", "F-pattern", "Visual-hierarchy"],
+        "effect": "引导、易读、转化"
     }
   }
 }
-
+}
