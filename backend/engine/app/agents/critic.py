@@ -8,7 +8,7 @@ from typing import Dict, Any
 from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
-from ..prompts import get_critic_prompt
+from ..prompts import critic as critic_prompt
 from .base import BaseAgent
 
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ def run_critic_agent(poster_data: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         # 使用配置化的 prompt
-        prompt_content = get_critic_prompt(poster_data)
+        prompts = critic_prompt.get_prompt(poster_data)
 
         # 使用工厂类获取 Agent
         from .base import AgentFactory
@@ -60,8 +60,8 @@ def run_critic_agent(poster_data: Dict[str, Any]) -> Dict[str, Any]:
         # 调用 Agent（使用统一的 invoke 接口）
         response = agent.invoke(
             messages=[
-                {"role": "system", "content": agent.config["system_prompt"]},
-                {"role": "user", "content": prompt_content},
+                {"role": "system", "content": prompts["system"]},
+                {"role": "user", "content": prompts["user"]},
             ]
         )
 

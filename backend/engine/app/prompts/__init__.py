@@ -1,18 +1,15 @@
 """
-Prompts 模块 - Prompt 管理
-"""
-from .manager import (
-    get_planner_prompt,
-    get_visual_routing_prompt,
-    get_layout_prompt,
-    get_critic_prompt,
-)
-from .dsl_templates import get_layout_dsl_prompt
+Prompts 模块 - 按 Agent 组织的 Prompt 管理
 
-__all__ = [
-    "get_planner_prompt",
-    "get_visual_routing_prompt",
-    "get_layout_prompt",
-    "get_layout_dsl_prompt",
-    "get_critic_prompt",
-]
+每个 Agent 有独立的 prompt 文件：
+- planner.py: Planner Agent (设计简报生成)
+- visual.py: Visual Agent (图像分析)
+- layout.py: Layout Agent (DSL 布局指令)
+- critic.py: Critic Agent (质量审核)
+"""
+from . import planner
+from . import visual
+from . import layout
+from . import critic
+
+__all__ = ["planner", "visual", "layout", "critic"]

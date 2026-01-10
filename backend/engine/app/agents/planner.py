@@ -18,7 +18,7 @@ from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
 from ..core.dependencies import get_knowledge_service
-from ..prompts import get_planner_prompt
+from ..prompts import planner as planner_prompt
 from .base import BaseAgent
 
 logger = get_logger(__name__)
@@ -84,7 +84,7 @@ def run_planner_agent(
         template_context = ks.build_prompt_context(kg_rules, brand_knowledge)
         
         # 获取 Prompt
-        prompts = get_planner_prompt(user_prompt, chat_history, template_context)
+        prompts = planner_prompt.get_prompt(user_prompt, chat_history, template_context)
 
         # 调用 Agent
         from .base import AgentFactory

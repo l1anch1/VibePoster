@@ -1,17 +1,15 @@
 """
-素材库工具 - 负责查询素材
-支持 Pexels API 和本地占位符回退
-
-注意：Planner Agent 会直接生成英文关键词（style_keywords），无需中英文转换。
-关键词会直接组合成搜索词用于图片搜索。
+素材库工具 - 负责查询素材和生成背景图
 
 搜索优先级：
-1. Pexels API（最高优先级，如果配置了 PEXELS_API_KEY）
-2. 本地占位符库（如果所有 API 都失败或未配置）
+1. Flux 文生图 API（最高优先级，当用户没有上传图片时）
+2. Pexels API（备选，如果 Flux 失败或未配置）
+3. 本地占位符库（如果所有 API 都失败）
 """
 import json
 import random
 import requests
+import base64
 from pathlib import Path
 from typing import Optional, Dict, List
 from ..core.config import settings
@@ -19,9 +17,13 @@ from ..core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Pexels API 配置
+# API 配置
 PEXELS_API_KEY = settings.visual.PEXELS_API_KEY
 PEXELS_API_URL = "https://api.pexels.com/v1/search"
+
+FLUX_API_KEY = settings.visual.FLUX_API_KEY
+FLUX_API_URL = settings.visual.FLUX_API_URL
+FLUX_MODEL = settings.visual.FLUX_MODEL
 
 # 数据文件路径
 DATA_FILE = Path(__file__).parent / "data" / "asset_library.json"
@@ -58,6 +60,103 @@ def get_color_keywords() -> Dict[str, List[str]]:
     if _asset_data is None:
         _asset_data = _load_asset_library()
     return _asset_data.get("color_keywords", {})
+
+
+def generate_flux_image(
+    prompt: str,
+    aspect_ratio: str = "9:16",
+    output_format: str = "jpeg"
+) -> Optional[str]:
+    """
+    使用 Flux API 生成背景图
+    
+    Args:
+        prompt: 图像生成提示词
+        aspect_ratio: 宽高比 (16:9, 9:16, 1:1 等)
+        output_format: 输出格式 (jpeg, png)
+        
+    Returns:
+        base64 编码的图片 URL 或 None
+    """
+    if not FLUX_API_KEY:
+        logger.debug("未配置 FLUX_API_KEY，跳过 Flux 生成")
+        return None
+    
+    logger.info(f"🎨 使用 Flux 生成背景图: {prompt[:50]}...")
+    
+    payload = {
+        "prompt": prompt,
+        "enableTranslation": True,
+        "aspectRatio": aspect_ratio,
+        "outputFormat": output_format,
+        "promptUpsampling": False,
+        "model": FLUX_MODEL,
+        "safetyTolerance": 2
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {FLUX_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(
+            FLUX_API_URL,
+            json=payload,
+            headers=headers,
+            timeout=60  # 生成图片可能需要较长时间
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        # Flux API 返回格式可能是 {"image": "base64..."} 或 {"url": "..."}
+        if "image" in result:
+            # 直接返回 base64
+            image_base64 = result["image"]
+            mime_type = f"image/{output_format}"
+            base64_url = f"data:{mime_type};base64,{image_base64}"
+            logger.info("✅ Flux 图片生成成功")
+            return base64_url
+        elif "url" in result:
+            # 下载图片并转换为 base64
+            image_url = result["url"]
+            logger.info(f"📥 正在下载 Flux 生成的图片...")
+            img_response = requests.get(image_url, timeout=30)
+            img_response.raise_for_status()
+            
+            image_data = img_response.content
+            image_base64 = base64.b64encode(image_data).decode("utf-8")
+            mime_type = f"image/{output_format}"
+            base64_url = f"data:{mime_type};base64,{image_base64}"
+            logger.info("✅ Flux 图片生成成功")
+            return base64_url
+        elif "result" in result and "sample" in result["result"]:
+            # 另一种可能的返回格式
+            image_url = result["result"]["sample"]
+            logger.info(f"📥 正在下载 Flux 生成的图片...")
+            img_response = requests.get(image_url, timeout=30)
+            img_response.raise_for_status()
+            
+            image_data = img_response.content
+            image_base64 = base64.b64encode(image_data).decode("utf-8")
+            mime_type = f"image/{output_format}"
+            base64_url = f"data:{mime_type};base64,{image_base64}"
+            logger.info("✅ Flux 图片生成成功")
+            return base64_url
+        else:
+            logger.warning(f"⚠️ Flux API 返回格式未知: {list(result.keys())}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        logger.warning("⚠️ Flux API 请求超时")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"⚠️ Flux API 调用失败: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Flux 生成失败: {type(e).__name__}: {e}")
+        return None
 
 
 def search_pexels(query: str, orientation: str = "portrait", max_retries: int = 2) -> Optional[str]:
@@ -196,34 +295,107 @@ def combine_keywords(keywords: list) -> str:
     return " ".join(keywords[:3])
 
 
-def search_assets(keywords: list) -> str:
+def build_flux_prompt(design_brief: Dict, keywords: List[str]) -> str:
     """
-    根据关键词在素材库里找图片
-    优先使用 Pexels API，失败则回退到本地占位符
+    根据设计简报构建 Flux 生成提示词
+    
+    Args:
+        design_brief: 设计简报
+        keywords: 风格关键词
+        
+    Returns:
+        Flux 提示词
+    """
+    parts = []
+    
+    # 基础描述
+    title = design_brief.get("title", "")
+    subtitle = design_brief.get("subtitle", "")
+    intent = design_brief.get("intent", "poster")
+    
+    # 构建场景描述
+    if keywords:
+        parts.append(f"A {', '.join(keywords[:3])} style background")
+    else:
+        parts.append("A professional background")
+    
+    # 添加海报意图
+    intent_descriptions = {
+        "poster": "suitable for a promotional poster",
+        "banner": "suitable for a web banner",
+        "social": "suitable for social media",
+        "event": "suitable for an event announcement",
+    }
+    parts.append(intent_descriptions.get(intent, "suitable for a poster"))
+    
+    # 添加颜色提示
+    main_color = design_brief.get("main_color")
+    bg_color = design_brief.get("background_color")
+    if main_color:
+        parts.append(f"with {main_color} as the main color tone")
+    
+    # 添加风格要求
+    parts.append("high quality, professional, clean composition")
+    
+    # 避免文字
+    parts.append("no text, no letters, no words")
+    
+    return ", ".join(parts)
+
+
+def search_assets(
+    keywords: list,
+    design_brief: Optional[Dict] = None,
+    use_generation: bool = True
+) -> str:
+    """
+    根据关键词获取背景图
+    
+    优先级：
+    1. Flux 文生图（当 use_generation=True 且配置了 FLUX_API_KEY）
+    2. Pexels 图片搜索
+    3. 本地占位符
     
     Args:
         keywords: 风格关键词列表
+        design_brief: 设计简报（用于构建 Flux 提示词）
+        use_generation: 是否使用文生图（默认 True）
         
     Returns:
-        素材 URL
+        素材 URL (base64 或占位符)
     """
-    logger.info(f"📚 正在检索素材库，关键词: {keywords}")
+    logger.info(f"📚 正在获取背景图，关键词: {keywords}")
 
+    # 1. 优先尝试 Flux 文生图
+    if use_generation and FLUX_API_KEY:
+        flux_prompt = build_flux_prompt(design_brief or {}, keywords)
+        logger.info(f"🎨 使用 Flux 生成背景图...")
+        
+        image_url = generate_flux_image(
+            prompt=flux_prompt,
+            aspect_ratio="9:16",  # 竖版海报
+            output_format="jpeg"
+        )
+        if image_url:
+            logger.info("✅ 成功使用 Flux 生成背景图")
+            return image_url
+        else:
+            logger.warning("⚠️ Flux 生成失败，回退到 Pexels")
+
+    # 2. 尝试 Pexels API
     search_query = combine_keywords(keywords)
-
-    # 1. 优先尝试 Pexels API
     if PEXELS_API_KEY:
         logger.info(f"🔍 使用 Pexels 搜索: {search_query}")
         image_url = search_pexels(search_query, orientation="portrait")
         if image_url:
-            logger.info(f"✅ 成功从 Pexels 获取图片，返回 URL")
+            logger.info(f"✅ 成功从 Pexels 获取图片")
             return image_url
         else:
             logger.warning("⚠️ Pexels 搜索未返回图片，使用本地占位符")
     else:
         logger.warning("⚠️ 未配置 PEXELS_API_KEY，使用本地占位符")
 
-    # 2. 回退到本地占位符库
+    # 3. 回退到本地占位符库
     logger.info("📦 使用本地占位符库")
     
     asset_library = get_asset_library()
@@ -243,4 +415,4 @@ def search_assets(keywords: list) -> str:
     if default_assets:
         return default_assets[0]
     
-    return "https://placehold.co/1080x1920/333333/FFF?text=Default+Background"
+    return "https://placehold.co/1080x1920/333333/333333"

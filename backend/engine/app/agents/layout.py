@@ -15,7 +15,7 @@ from typing import Dict, Any, Optional
 from ..core.config import settings, ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
-from ..prompts.dsl_templates import get_layout_dsl_prompt
+from ..prompts import layout as layout_prompt
 from ..services.renderer import RendererService
 from .base import BaseAgent
 
@@ -106,7 +106,7 @@ def run_layout_agent(
     
     try:
         # 1. 生成 DSL Prompt
-        prompt_content = get_layout_dsl_prompt(
+        prompts = layout_prompt.get_prompt(
             design_brief=design_brief,
             asset_list=asset_list,
             canvas_width=canvas_width,
@@ -119,7 +119,7 @@ def run_layout_agent(
         agent = AgentFactory.get_layout_agent()
         
         logger.debug(f"📤 发送 DSL Prompt 到 LLM...")
-        response = agent.invoke(contents=prompt_content)
+        response = agent.invoke(contents=f"{prompts['system']}\n\n{prompts['user']}")
         
         # 3. 解析 LLM 响应
         if hasattr(response, "text"):

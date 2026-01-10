@@ -154,10 +154,11 @@ VibePoster/
 │   │   │   │   ├── image_understanding.py  # OCR + 图像理解
 │   │   │   │   └── asset_db.py        # 素材搜索
 │   │   │   │
-│   │   │   ├── prompts/        # Prompt 管理
-│   │   │   │   ├── templates.py
-│   │   │   │   ├── dsl_templates.py
-│   │   │   │   └── manager.py
+│   │   │   ├── prompts/        # Prompt 管理（按 Agent 组织）
+│   │   │   │   ├── planner.py        # Planner Agent prompt
+│   │   │   │   ├── visual.py         # Visual Agent prompt
+│   │   │   │   ├── layout.py         # Layout Agent prompt (DSL)
+│   │   │   │   └── critic.py         # Critic Agent prompt
 │   │   │   │
 │   │   │   └── main.py         # FastAPI 入口
 │   │   │
@@ -242,22 +243,48 @@ class APIResponse(BaseModel, Generic[T]):
 **目录结构**：
 ```
 knowledge/
-├── kg/                  # Knowledge Graph 子模块
-│   └── design_rules.py  # 设计规则推理引擎
-├── rag/                 # RAG 子模块
-│   └── rag_engine.py    # 品牌知识检索引擎
-└── __init__.py          # 统一导出
+├── kg/                        # Knowledge Graph 子模块
+│   ├── types.py               # Pydantic 类型定义
+│   ├── loader.py              # 数据加载
+│   ├── graph.py               # NetworkX 图操作
+│   ├── inference.py           # 推理逻辑
+│   └── knowledge_graph.py     # 主入口
+├── rag/                       # RAG 子模块
+│   ├── types.py               # Pydantic 类型定义
+│   ├── embedder.py            # 向量编码
+│   ├── loader.py              # 数据加载
+│   ├── retriever.py           # 检索逻辑
+│   └── knowledge_base.py      # 主入口
+└── __init__.py                # 统一导出
 ```
 
-**数据文件** (`data/`)：
-- `kg_rules.json`: KG 规则数据（行业/氛围 → 颜色/字体/布局）
-- `default_brand_knowledge.json`: RAG 默认品牌知识（华为品牌数据）
+### 5. Prompt 模块 (`prompts/`)
 
-**模块**：
-- `DesignKnowledgeGraph`: 使用 networkx 存储行业→颜色/字体/布局的规则
-- `BrandKnowledgeBase`: 使用 sentence-transformers 实现 RAG 检索
+**职责**：
+- 管理各 Agent 的 Prompt 模板
+- 按 Agent 组织，职责清晰
 
-### 5. 工具层 (`tools/`)
+**目录结构**：
+```
+prompts/
+├── __init__.py       # 统一导出
+├── planner.py        # Planner Agent (设计简报生成)
+├── visual.py         # Visual Agent (图像分析)
+├── layout.py         # Layout Agent (DSL 布局指令)
+└── critic.py         # Critic Agent (质量审核)
+```
+
+**文件结构一致**：
+```python
+# 每个文件包含：
+SYSTEM_PROMPT = """..."""          # 系统 prompt
+USER_PROMPT_TEMPLATE = """..."""   # 用户 prompt 模板（可选）
+
+def get_prompt(...) -> Dict[str, str]:
+    """返回 {"system": ..., "user": ...}"""
+```
+
+### 6. 工具层 (`tools/`)
 
 **职责**：
 - 具体的技术实现
@@ -265,7 +292,7 @@ knowledge/
 - OCR + 图像理解
 - 素材搜索
 
-### 6. 核心层 (`core/`)
+### 7. 核心层 (`core/`)
 
 **职责**：
 - 配置管理 (`config.py`)
@@ -278,7 +305,7 @@ knowledge/
 
 **注意**：工作流相关代码已移至 `workflow/` 模块。
 
-### 7. 工作流模块 (`workflow/`)
+### 8. 工作流模块 (`workflow/`)
 
 **职责**：
 - 定义工作流状态 (`state.py`)
@@ -511,4 +538,4 @@ results = rag.search("华为的配色", top_k=2)
 
 ---
 
-**最后更新**: 2025-01-08
+**最后更新**: 2025-01-09

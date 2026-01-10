@@ -94,13 +94,6 @@ class AgentFactory:
             "api_key": settings.layout.API_KEY,
             "base_url": settings.layout.BASE_URL,
             "response_mime_type": "application/json",
-            "foreground_max_width_ratio": settings.layout.FG_MAX_WIDTH_RATIO,
-            "foreground_max_height_ratio": settings.layout.FG_MAX_HEIGHT_RATIO,
-            "z_index": {
-                "background": settings.layout.Z_INDEX_BG,
-                "foreground": settings.layout.Z_INDEX_FG,
-                "text": settings.layout.Z_INDEX_TEXT,
-            },
         }
         return cls._get_or_create_agent("layout", LayoutAgent, config_dict)
 

@@ -183,13 +183,7 @@ VibePoster/
 │   ├── engine/              # Python 后端引擎 (FastAPI + LangGraph)
 │   │   ├── app/
 │   │   │   ├── api/         # API 路由层
-│   │   │   │   ├── routes/
-│   │   │   │   │   ├── poster.py      # 海报生成路由
-│   │   │   │   │   └── knowledge.py   # 知识模块路由 (KG + RAG)
-│   │   │   │   └── schemas.py         # 请求模型
 │   │   │   ├── workflow/    # 工作流模块 (LangGraph)
-│   │   │   │   ├── orchestrator.py    # 工作流编排
-│   │   │   │   └── state.py           # 状态定义
 │   │   │   ├── core/        # 核心基础设施 (config, llm, logger)
 │   │   │   ├── agents/      # 四个智能体 (planner, visual, layout, critic)
 │   │   │   ├── knowledge/   # 知识模块 (Knowledge Graph + RAG)

@@ -80,7 +80,17 @@ class VisualAgentConfig(BaseSettings):
 
     # Visual 专用参数
     DEFAULT_POSITION: str = Field(default="center_bottom", description="前景图层默认位置")
-    PEXELS_API_KEY: str = Field(..., description="Pexels 素材库 API Key")
+    
+    # 素材搜索配置
+    PEXELS_API_KEY: str = Field(default="", description="Pexels 素材库 API Key（备选）")
+    
+    # Flux 文生图配置（优先）
+    FLUX_API_KEY: str = Field(default="", description="Flux 文生图 API Key")
+    FLUX_API_URL: str = Field(
+        default="https://api.fluxapi.ai/api/v1/flux/kontext/generate",
+        description="Flux API URL"
+    )
+    FLUX_MODEL: str = Field(default="flux-kontext-pro", description="Flux 模型名称")
 
 
 class LayoutAgentConfig(BaseSettings):
@@ -102,16 +112,6 @@ class LayoutAgentConfig(BaseSettings):
         default=0.1, ge=0.0, le=2.0, description="Layout Agent 的温度参数（非常低以确保精确性）"
     )
 
-    # Layout 专用参数（排版约束）
-    FG_MAX_WIDTH_RATIO: float = Field(
-        default=0.5, ge=0.1, le=1.0, description="前景图层最大宽度占画布比例"
-    )
-    FG_MAX_HEIGHT_RATIO: float = Field(
-        default=0.6, ge=0.1, le=1.0, description="前景图层最大高度占画布比例"
-    )
-    Z_INDEX_BG: int = Field(default=0, description="背景图层 z-index")
-    Z_INDEX_FG: int = Field(default=10, description="前景图层 z-index")
-    Z_INDEX_TEXT: int = Field(default=20, description="文字图层 z-index")
 
 
 class CriticAgentConfig(BaseSettings):

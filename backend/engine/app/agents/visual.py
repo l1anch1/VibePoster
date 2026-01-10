@@ -122,17 +122,18 @@ def run_visual_agent(
             design_brief["style_keywords"] = combined_keywords[:5]  # 最多5个
             logger.info(f"🎨 合并后的风格关键词: {combined_keywords[:5]}")
 
-        # 情况 C：无图，直接搜索素材库
+        # 情况 C：无图，使用文生图或搜索素材库
         if image_count == 0:
-            logger.info("📚 情况 C：无图，搜索素材库...")
+            logger.info("📚 情况 C：无图，生成/搜索背景图...")
             keywords = design_brief.get("style_keywords", [])
-            bg_url = search_assets(keywords)
+            # 传递 design_brief 以便构建更精确的 Flux 提示词
+            bg_url = search_assets(keywords, design_brief=design_brief, use_generation=True)
 
             return {
                 "background_layer": {
                     "type": "image",
                     "src": bg_url,
-                    "source_type": "stock",
+                    "source_type": "generated" if bg_url.startswith("data:") else "stock",
                 },
                 "image_analyses": image_analyses,  # 即使无图也返回（为空列表）
             }
@@ -150,9 +151,9 @@ def run_visual_agent(
                 # 抠图
                 cutout_result = process_cutout(image_data)
 
-                # 搜索背景（优先使用图像理解提取的风格关键词）
+                # 生成/搜索背景（优先使用图像理解提取的风格关键词）
                 keywords = design_brief.get("style_keywords", [])
-                bg_url = search_assets(keywords)
+                bg_url = search_assets(keywords, design_brief=design_brief, use_generation=True)
 
                 result = {
                     "background_layer": {

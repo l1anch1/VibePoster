@@ -1,26 +1,16 @@
 """
-DSL Prompt Templates - 用于让 LLM 输出 DSL 指令
-
-这是新版本的 Layout Prompt，让 LLM 输出 DSL 指令而不是完整的海报 JSON。
-DSL 指令由 RendererService 解析，使用 OOP 布局引擎动态生成布局。
-
-Author: VibePoster Team
-Date: 2025-01
+Layout Agent Prompt - DSL 布局指令生成
 """
+import json
+from typing import Dict, Any, Optional
 
-# Layout Agent 的 DSL Prompt 模板
-LAYOUT_DSL_PROMPT = """
+
+SYSTEM_PROMPT = """
 [System Request]
 你是一个智能布局规划器。请根据设计简报和素材，输出 DSL (Domain Specific Language) 指令列表。
 
 [User Request]
 你是一个专业的海报布局规划器。请根据输入生成布局指令。
-
-【输入】
-- 设计简报: {design_brief}
-- 素材列表: {asset_list}
-- 画布尺寸: {canvas_width}x{canvas_height}
-{review_feedback_section}
 
 【DSL 指令格式】
 你需要输出一个 JSON 数组，每个元素是一条布局指令。
@@ -96,6 +86,15 @@ LAYOUT_DSL_PROMPT = """
    - 如果 asset_list 中有 background_layer，添加背景图
    - 如果 asset_list 中有 foreground_layer，添加前景图
    - 图片 src 使用占位符，系统会自动填充
+"""
+
+
+USER_PROMPT_TEMPLATE = """
+【输入】
+- 设计简报: {design_brief}
+- 素材列表: {asset_list}
+- 画布尺寸: {canvas_width}x{canvas_height}
+{review_feedback_section}
 
 【输出格式】
 仅输出 JSON，不要包含任何其他文本：
@@ -113,15 +112,15 @@ LAYOUT_DSL_PROMPT = """
 """
 
 
-def get_layout_dsl_prompt(
-    design_brief: dict,
-    asset_list: dict,
+def get_prompt(
+    design_brief: Dict[str, Any],
+    asset_list: Dict[str, Any],
     canvas_width: int,
     canvas_height: int,
-    review_feedback: dict = None
-) -> str:
+    review_feedback: Optional[Dict[str, Any]] = None
+) -> Dict[str, str]:
     """
-    生成 Layout DSL Prompt
+    获取 Layout Agent 的 DSL prompt
     
     Args:
         design_brief: 设计简报
@@ -131,10 +130,8 @@ def get_layout_dsl_prompt(
         review_feedback: 审核反馈（可选）
     
     Returns:
-        格式化的 prompt 字符串
+        包含 system 和 user prompt 的字典
     """
-    import json
-    
     # 构建审核反馈部分
     review_feedback_section = ""
     if review_feedback and review_feedback.get("status") == "REJECT":
@@ -151,11 +148,16 @@ def get_layout_dsl_prompt(
 请根据反馈调整 DSL 指令。
 """
     
-    return LAYOUT_DSL_PROMPT.format(
+    user_prompt = USER_PROMPT_TEMPLATE.format(
         design_brief=json.dumps(design_brief, ensure_ascii=False, indent=2),
         asset_list=json.dumps(asset_list, ensure_ascii=False, indent=2),
         canvas_width=canvas_width,
         canvas_height=canvas_height,
         review_feedback_section=review_feedback_section
     )
+    
+    return {
+        "system": SYSTEM_PROMPT,
+        "user": user_prompt,
+    }
 

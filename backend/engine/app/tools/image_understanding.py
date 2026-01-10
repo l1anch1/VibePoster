@@ -8,7 +8,7 @@ from ..core.logger import get_logger
 from ..core.llm import LLMClientFactory
 from ..core.config import settings
 from ..core.exceptions import VibePosterException
-from ..prompts.templates import IMAGE_ANALYSIS_PROMPT_TEMPLATE
+from ..prompts import visual as visual_prompt
 from ..core.utils import parse_llm_json_response
 
 logger = get_logger(__name__)
@@ -40,9 +40,8 @@ def analyze_image_with_llm(
         image_base64 = base64.b64encode(image_data).decode('utf-8')
         
         # 使用统一的 Prompt 模板（OCR + 图像理解）
-        prompt = IMAGE_ANALYSIS_PROMPT_TEMPLATE.format(
-            user_prompt=user_prompt if user_prompt else "无"
-        )
+        prompts = visual_prompt.get_prompt(user_prompt if user_prompt else "无")
+        prompt = f"{prompts['system']}\n\n{prompts['user']}"
         
         logger.info("🔍 开始图像分析（OCR + 图像理解，一次调用）...")
         
