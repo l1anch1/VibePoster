@@ -1,40 +1,16 @@
 """
 Visual Agent - 视觉感知中心
-处理图片（抠图、分析、搜图），是"视觉感知中心"
+处理图片（分析、搜图、素材处理）
 """
 
 from typing import Dict, Any, Optional, List
 from ..core.config import settings, ERROR_FALLBACKS
-from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
-from ..tools.vision import process_cutout, image_to_base64
+from ..tools.vision import image_to_base64
 from ..tools import search_assets
 from ..tools.image_understanding import understand_image
-from .base import BaseAgent
 
 logger = get_logger(__name__)
-
-
-class VisualAgent(BaseAgent):
-    """Visual Agent 实现类（用于路由决策）"""
-
-    def _create_client(self):
-        return LLMClientFactory.get_client(
-            provider=self.config.get("provider", "deepseek"),
-            api_key=self.config.get("api_key"),
-            base_url=self.config.get("base_url"),
-        )
-
-    def invoke(self, messages: list, **kwargs) -> Dict[str, Any]:
-        """调用 Visual Agent"""
-        response = self.client.chat.completions.create(
-            model=self.config["model"],
-            messages=messages,
-            temperature=self.config["temperature"],
-            response_format=self.config.get("response_format"),
-            **kwargs,
-        )
-        return response
 
 
 def run_visual_agent(
@@ -44,13 +20,13 @@ def run_visual_agent(
     """
     运行 Visual Agent（增强版：包含 OCR + 图像理解）
 
-    路由逻辑：
-    - 情况 A（双图）：用户传了 Image A (背景) + Image B (人) -> 抠图 B，保留 A
-    - 情况 B（单图）：用户传了 Image B (人) -> 抠图 B，去素材库搜/生成背景 A
-    - 情况 C（无图）：去素材库搜/生成背景 A
+    路由逻辑（对应前端三种模式）：
+    - Text Only（无图）：去素材库搜/生成背景
+    - Style Reference（单图 type=background）：提取参考图风格，生成新背景
+    - With Material（单图 type=subject）：直接使用主体素材 + 搜索/生成背景
 
     Args:
-        user_images: 用户上传的图片列表 [{"type": "person"|"background", "data": bytes}]
+        user_images: 用户上传的图片列表 [{"type": "subject"|"background", "data": bytes}]
         design_brief: 设计简报
 
     Returns:
@@ -139,19 +115,60 @@ def run_visual_agent(
             }
 
         # 情况 A 或 B：有图，需要路由决策
-        # 使用 LLM 做路由决策（如果图片数量不明确）
         if image_count == 1:
-            # 单图情况：判断是人物还是背景
-            # 简化处理：假设是人物，进行抠图
-            logger.info("📸 情况 B：单图，假设是人物，进行抠图...")
-            image_data = user_images[0].get("data")
+            img = user_images[0]
+            image_data = img.get("data")
+            image_type = img.get("type", "unknown")
             image_analysis = image_analyses[0] if image_analyses else None
 
-            if image_data:
-                # 抠图
-                cutout_result = process_cutout(image_data)
+            if image_type == "background":
+                # Style Clone：提取参考图的风格，然后生成全新背景
+                logger.info("🎨 Style Clone：提取参考图风格，生成新背景...")
 
-                # 生成/搜索背景（优先使用图像理解提取的风格关键词）
+                # 图像理解已在上方完成，风格关键词已合并进 design_brief
+                # 额外将参考图的配色注入 design_brief，让 Flux/搜索更精准
+                if image_analysis:
+                    understanding = image_analysis.get("analysis", {}).get("understanding", {})
+                    if understanding:
+                        ref_palette = understanding.get("color_palette", [])
+                        ref_style = understanding.get("style")
+                        if ref_palette:
+                            design_brief["reference_palette"] = ref_palette
+                        if ref_style:
+                            existing = design_brief.get("style_keywords", [])
+                            if ref_style not in existing:
+                                design_brief["style_keywords"] = (existing + [ref_style])[:6]
+                        logger.info(f"🎨 参考图风格: {ref_style}, 配色: {ref_palette}")
+
+                keywords = design_brief.get("style_keywords", [])
+                bg_url = search_assets(keywords, design_brief=design_brief, use_generation=True)
+
+                result = {
+                    "background_layer": {
+                        "type": "image",
+                        "src": bg_url,
+                        "source_type": "generated" if bg_url.startswith("data:") else "stock",
+                    },
+                    "image_analyses": image_analyses,
+                }
+
+                if image_analysis:
+                    understanding = image_analysis.get("analysis", {}).get("understanding", {})
+                    if understanding:
+                        result["color_suggestions"] = {
+                            "primary": understanding.get("main_color"),
+                            "palette": understanding.get("color_palette", []),
+                            "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion"),
+                        }
+
+                return result
+
+            # 情况 B：单图(主体素材) → 直接编码 + 搜索/生成背景
+            logger.info("📸 情况 B：单图(主体素材)，直接使用透明 PNG...")
+
+            if image_data:
+                subject_b64 = image_to_base64(image_data)
+
                 keywords = design_brief.get("style_keywords", [])
                 bg_url = search_assets(keywords, design_brief=design_brief, use_generation=True)
 
@@ -161,80 +178,28 @@ def run_visual_agent(
                         "src": bg_url,
                         "source_type": "stock",
                     },
-                    "foreground_layer": {
+                    "subject_layer": {
                         "type": "image",
-                        "src": cutout_result["processed_image_base64"],
+                        "src": subject_b64,
                         "source_type": "user_upload",
-                        "width": cutout_result["width"],
-                        "height": cutout_result["height"],
                         "suggested_position": settings.visual.DEFAULT_POSITION,
-                        "subject_bbox": cutout_result.get("subject_bbox"),
                     },
                     "image_analyses": image_analyses,
                 }
-                
-                # 如果图像理解提供了配色建议，添加到结果中
+
                 if image_analysis:
                     understanding = image_analysis.get("analysis", {}).get("understanding", {})
                     if understanding:
                         result["color_suggestions"] = {
                             "primary": understanding.get("main_color"),
                             "palette": understanding.get("color_palette", []),
-                            "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion")
+                            "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion"),
                         }
-                
+
                 return result
 
-        elif image_count >= 2:
-            # 情况 A：双图，第一张是背景，第二张是人物
-            logger.info("📸 情况 A：双图融合，第一张背景，第二张人物...")
-            bg_data = user_images[0].get("data")
-            person_data = user_images[1].get("data")
-            
-            bg_analysis = image_analyses[0] if len(image_analyses) > 0 else None
-            person_analysis = image_analyses[1] if len(image_analyses) > 1 else None
-
-            # 背景图转 Base64
-            bg_base64 = image_to_base64(bg_data) if bg_data else None
-
-            # 人物图抠图
-            cutout_result = process_cutout(person_data) if person_data else None
-
-            if not bg_base64 or not cutout_result:
-                raise ValueError("图片处理失败")
-
-            result = {
-                "background_layer": {
-                    "type": "image",
-                    "src": bg_base64,
-                    "source_type": "user_upload",
-                },
-                "foreground_layer": {
-                    "type": "image",
-                    "src": cutout_result["processed_image_base64"],
-                    "source_type": "user_upload",
-                    "width": cutout_result["width"],
-                    "height": cutout_result["height"],
-                    "suggested_position": settings.visual.DEFAULT_POSITION,
-                    "subject_bbox": cutout_result.get("subject_bbox"),
-                },
-                "image_analyses": image_analyses,
-            }
-            
-            # 如果背景图有图像理解结果，添加配色建议
-            if bg_analysis:
-                understanding = bg_analysis.get("analysis", {}).get("understanding", {})
-                if understanding:
-                    result["color_suggestions"] = {
-                        "primary": understanding.get("main_color"),
-                        "palette": understanding.get("color_palette", []),
-                        "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion")
-                    }
-            
-            return result
-
-        # 默认情况
-        raise ValueError(f"无法处理的图片数量: {image_count}")
+        # 不支持的图片数量
+        raise ValueError(f"不支持的图片数量: {image_count}，请使用 Text Only / Style Reference / With Material 三种模式")
 
     except Exception as e:
         logger.error(f"❌ Visual Agent 出错: {e}")

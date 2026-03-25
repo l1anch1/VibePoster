@@ -75,23 +75,23 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ layer, onUpdate, onDele
   <div className="p-4">
     {/* 图层信息 */}
     <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20">
-        <span className="text-lg">{layer.type === 'text' ? '📝' : '🖼️'}</span>
+      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20">
+        <span className="text-sm">{layer.type === 'text' ? '📝' : '🖼️'}</span>
       </div>
       <div className="flex-1 min-w-0">
         <input
           type="text"
           value={layer.name}
           onChange={(e) => onUpdate(layer.id, { name: e.target.value })}
-          className="w-full px-2 py-1.5 bg-white text-base font-semibold text-gray-900 border border-gray-300 rounded-lg focus:border-violet-500 focus:outline-none truncate shadow-sm"
+          className="w-full px-2 py-1 bg-white text-sm font-semibold text-gray-900 border border-gray-300 rounded-lg focus:border-violet-500 focus:outline-none truncate shadow-sm"
         />
-        <div className="text-sm text-gray-500 capitalize mt-1">{layer.type} Layer</div>
+        <div className="text-xs text-gray-500 capitalize mt-0.5">{layer.type} Layer</div>
       </div>
     </div>
 
     {/* Transform */}
     <div className="py-4 border-b border-gray-200">
-      <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
         Transform
       </h4>
       <div className="grid grid-cols-2 gap-2">
@@ -102,14 +102,14 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ layer, onUpdate, onDele
           { key: 'height', label: 'H' },
         ].map(({ key, label }) => (
           <div key={key} className="relative">
-            <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+            <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">
               {label}
             </label>
             <input
               type="number"
               value={Math.round(layer[key as keyof typeof layer] as number)}
               onChange={(e) => onUpdate(layer.id, { [key]: Number(e.target.value) })}
-              className="w-full pl-8 pr-2 py-2.5 text-base bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
+              className="w-full pl-7 pr-2 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
             />
           </div>
         ))}
@@ -123,7 +123,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ layer, onUpdate, onDele
     <div className="pt-4">
       <button
         onClick={() => onDelete(layer.id)}
-        className="w-full py-3 text-base font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
+        className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -150,7 +150,7 @@ interface TextPropertiesProps {
 
 const TextProperties: React.FC<TextPropertiesProps> = ({ layer, onUpdate }) => (
   <div className="py-4 border-b border-gray-200">
-    <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
       Typography
     </h4>
 
@@ -159,21 +159,21 @@ const TextProperties: React.FC<TextPropertiesProps> = ({ layer, onUpdate }) => (
       value={layer.content}
       onChange={(e) => onUpdate(layer.id, { content: e.target.value })}
       rows={2}
-      className="w-full px-3 py-2.5 text-base bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none resize-none mb-3 transition-all text-gray-900 shadow-sm"
+      className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none resize-none mb-3 transition-all text-gray-900 shadow-sm"
       placeholder="Enter text..."
     />
 
     {/* 字号和颜色 */}
     <div className="grid grid-cols-2 gap-2 mb-3">
       <div className="relative">
-        <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+        <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">
           Size
         </label>
         <input
           type="number"
           value={layer.fontSize}
           onChange={(e) => onUpdate(layer.id, { fontSize: Number(e.target.value) })}
-          className="w-full pl-11 pr-2 py-2.5 text-base bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
+          className="w-full pl-10 pr-2 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
         />
       </div>
       <div className="relative">
@@ -183,12 +183,12 @@ const TextProperties: React.FC<TextPropertiesProps> = ({ layer, onUpdate }) => (
           onChange={(e) => onUpdate(layer.id, { color: e.target.value })}
           className="absolute inset-0 opacity-0 cursor-pointer"
         />
-        <div className="flex items-center gap-2 px-2.5 py-2.5 bg-white border border-gray-300 rounded-xl cursor-pointer shadow-sm hover:border-violet-400 transition-colors">
+        <div className="flex items-center gap-2 px-2.5 py-2 bg-white border border-gray-300 rounded-xl cursor-pointer shadow-sm hover:border-violet-400 transition-colors">
           <div
-            className="w-5 h-5 rounded-md border border-gray-300 shadow-inner"
+            className="w-4 h-4 rounded-md border border-gray-300 shadow-inner"
             style={{ backgroundColor: layer.color }}
           />
-          <span className="text-sm text-gray-600 font-mono truncate">{layer.color}</span>
+          <span className="text-xs text-gray-600 font-mono truncate">{layer.color}</span>
         </div>
       </div>
     </div>
@@ -199,7 +199,7 @@ const TextProperties: React.FC<TextPropertiesProps> = ({ layer, onUpdate }) => (
         <button
           key={align}
           onClick={() => onUpdate(layer.id, { textAlign: align })}
-          className={`flex-1 py-2.5 rounded-xl transition-all text-base font-medium ${layer.textAlign === align
+          className={`flex-1 py-2 rounded-xl transition-all text-sm font-medium ${layer.textAlign === align
             ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/30'
             : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-300 shadow-sm'
             }`}
@@ -228,8 +228,8 @@ const EmptyState: React.FC = () => (
           />
         </svg>
       </div>
-      <p className="text-base text-gray-600 font-medium">Select a layer to edit</p>
-      <p className="text-sm text-gray-400 mt-1">or click on canvas</p>
+      <p className="text-sm text-gray-600 font-medium">Select a layer to edit</p>
+      <p className="text-xs text-gray-400 mt-1">or click on canvas</p>
     </div>
   </div>
 );
@@ -246,29 +246,29 @@ interface LayerListProps {
 
 const LayerList: React.FC<LayerListProps> = ({ layers, selectedLayerId, onSelectLayer }) => (
   <div className="border-t border-gray-200">
-    <div className="h-11 px-4 flex items-center justify-between bg-gray-50/80">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Layers</h3>
-      <span className="text-sm text-gray-600 bg-white px-2 py-0.5 rounded-md border border-gray-200 shadow-sm">
+    <div className="h-10 px-4 flex items-center justify-between bg-gray-50/80">
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Layers</h3>
+      <span className="text-xs text-gray-600 bg-white px-1.5 py-0.5 rounded-md border border-gray-200 shadow-sm">
         {layers.length}
       </span>
     </div>
     <div className="max-h-48 overflow-y-auto p-2">
       {layers.length === 0 ? (
-        <div className="text-center py-6 text-sm text-gray-400">No layers yet</div>
+        <div className="text-center py-6 text-xs text-gray-400">No layers yet</div>
       ) : (
         [...layers].reverse().map((layer, i) => (
           <button
             key={layer.id}
             onClick={() => onSelectLayer(layer.id)}
-            className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl mb-1 text-left transition-all ${selectedLayerId === layer.id
+            className={`flex items-center gap-2 w-full px-3 py-2 rounded-xl mb-1 text-left transition-all ${selectedLayerId === layer.id
               ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/20'
               : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm'
               }`}
           >
-            <span className="text-base">{layer.type === 'text' ? '📝' : '🖼️'}</span>
-            <span className="text-base font-medium truncate flex-1">{layer.name}</span>
+            <span className="text-sm">{layer.type === 'text' ? '📝' : '🖼️'}</span>
+            <span className="text-sm font-medium truncate flex-1">{layer.name}</span>
             <span
-              className={`text-sm ${selectedLayerId === layer.id ? 'text-white/70' : 'text-gray-400'
+              className={`text-xs ${selectedLayerId === layer.id ? 'text-white/70' : 'text-gray-400'
                 }`}
             >
               {layers.length - i}

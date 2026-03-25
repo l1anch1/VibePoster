@@ -66,23 +66,6 @@ class AgentFactory:
         return cls._get_or_create_agent("planner", PlannerAgent, config_dict)
 
     @classmethod
-    def get_visual_agent(cls):
-        """获取 Visual Agent"""
-        from .visual import VisualAgent
-        from ..core.config import settings
-
-        config_dict = {
-            "provider": settings.visual.PROVIDER,
-            "model": settings.visual.MODEL,
-            "temperature": settings.visual.TEMPERATURE,
-            "api_key": settings.visual.API_KEY,
-            "base_url": settings.visual.BASE_URL,
-            "response_format": {"type": "json_object"},
-            "default_position": settings.visual.DEFAULT_POSITION,
-        }
-        return cls._get_or_create_agent("visual", VisualAgent, config_dict)
-
-    @classmethod
     def get_layout_agent(cls):
         """获取 Layout Agent"""
         from .layout import LayoutAgent

@@ -27,7 +27,6 @@ class Element(ABC):
     属性：
         x, y: 元素的绝对位置
         width, height: 元素的尺寸
-        z_index: 层级
         style: 样式配置
     """
     
@@ -37,14 +36,12 @@ class Element(ABC):
         y: float = 0,
         width: float = 100,
         height: float = 100,
-        z_index: int = 0,
         style: Optional[Style] = None
     ):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.z_index = z_index
         self.style = style or Style()
         self._parent: Optional['Container'] = None
     
@@ -93,7 +90,6 @@ class TextBlock(Element):
         line_height: float = 1.5,
         x: float = 0,
         y: float = 0,
-        z_index: int = 0,
         style: Optional[Style] = None
     ):
         """
@@ -105,7 +101,6 @@ class TextBlock(Element):
             max_width: 最大宽度
             line_height: 行高倍数
             x, y: 初始位置
-            z_index: 层级
             style: 样式配置
         """
         self.content = content
@@ -122,7 +117,6 @@ class TextBlock(Element):
             y=y,
             width=max_width,
             height=calculated_height,
-            z_index=z_index,
             style=style or Style(font_size=font_size)
         )
     
@@ -173,7 +167,6 @@ class TextBlock(Element):
             "textAlign": self.style.text_align,
             "opacity": self.style.opacity,
             "rotation": self.style.rotation,
-            "z_index": self.z_index
         }
     
     def update_content(self, new_content: str):
@@ -202,7 +195,6 @@ class ImageBlock(Element):
         height: float,
         x: float = 0,
         y: float = 0,
-        z_index: int = 0,
         maintain_aspect_ratio: bool = True,
         style: Optional[Style] = None
     ):
@@ -214,7 +206,6 @@ class ImageBlock(Element):
             width: 宽度
             height: 高度
             x, y: 初始位置
-            z_index: 层级
             maintain_aspect_ratio: 是否保持宽高比
             style: 样式配置
         """
@@ -223,7 +214,6 @@ class ImageBlock(Element):
             y=y,
             width=width,
             height=height,
-            z_index=z_index,
             style=style or Style()
         )
         self.src = src
@@ -240,7 +230,6 @@ class ImageBlock(Element):
             "src": self.src,
             "opacity": self.style.opacity,
             "rotation": self.style.rotation,
-            "z_index": self.z_index
         }
     
     def resize(self, width: float, height: Optional[float] = None):

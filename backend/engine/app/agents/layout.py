@@ -79,6 +79,7 @@ def run_layout_agent(
     canvas_width: int,
     canvas_height: int,
     review_feedback: Optional[Dict[str, Any]] = None,
+    style_hint: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     运行 Layout Agent（DSL 模式）
@@ -95,6 +96,7 @@ def run_layout_agent(
         canvas_width: 画布宽度
         canvas_height: 画布高度
         review_feedback: 审核反馈（可选）
+        style_hint: 多样性引导提示（可选，用于并行生成）
     
     Returns:
         海报 JSON 数据
@@ -111,7 +113,8 @@ def run_layout_agent(
             asset_list=asset_list,
             canvas_width=canvas_width,
             canvas_height=canvas_height,
-            review_feedback=review_feedback
+            review_feedback=review_feedback,
+            style_hint=style_hint,
         )
         
         # 2. 调用 LLM 获取 DSL 指令
@@ -142,7 +145,12 @@ def run_layout_agent(
         for i, instr in enumerate(dsl_instructions[:5]):  # 只打印前 5 条
             logger.debug(f"  [{i+1}] {instr.get('command')}: {str(instr)[:50]}...")
         
-        # 4. 替换图片 src 占位符
+        # 4. 提取顶层 font_style（LLM 新增字段）
+        font_style = dsl_response.get("font_style")
+        if font_style:
+            logger.info(f"🔤 LLM 指定 font_style: {font_style}")
+
+        # 5. 替换图片 src 占位符
         for instr in dsl_instructions:
             if instr.get("command") == "add_image":
                 src = instr.get("src", "")
@@ -151,34 +159,37 @@ def run_layout_agent(
                 if "ASSET_BG" in src or layer_type == "background":
                     if asset_list.get("background_layer"):
                         instr["src"] = asset_list["background_layer"].get("src", "")
-                elif "ASSET_FG" in src or layer_type == "foreground":
-                    if asset_list.get("foreground_layer"):
-                        instr["src"] = asset_list["foreground_layer"].get("src", "")
+                elif "ASSET_FG" in src or layer_type == "subject":
+                    if asset_list.get("subject_layer"):
+                        instr["src"] = asset_list["subject_layer"].get("src", "")
         
-        # 5. 使用 RendererService 构建布局
+        # 6. 使用 RendererService 构建布局
         renderer = RendererService()
-        
-        container = renderer.parse_dsl_and_build_layout(
+
+        elements = renderer.parse_dsl_and_build_layout(
             dsl_instructions=dsl_instructions,
             canvas_width=canvas_width,
             canvas_height=canvas_height,
-            design_brief=design_brief
+            design_brief=design_brief,
+            font_style=font_style,
         )
-        
-        # 6. 转换为 Pydantic Schema
+
+        # 7. 转换为 Pydantic Schema
         poster_data = renderer.convert_to_pydantic_schema(
-            container=container,
-            design_brief=design_brief
+            elements=elements,
+            design_brief=design_brief,
+            canvas_width=canvas_width,
+            canvas_height=canvas_height,
         )
-        
-        # 7. 合并素材数据
+
+        # 8. 合并素材数据
         poster_data = renderer.merge_with_design_brief(
             poster_data=poster_data,
             design_brief=design_brief,
-            asset_list=asset_list
+            asset_list=asset_list,
         )
-        
-        # 8. 转换为字典格式返回
+
+        # 9. 转换为字典格式返回
         poster_json = poster_data.model_dump()
         
         logger.info(f"✅ Layout 完成，生成了 {len(poster_json.get('layers', []))} 个图层")

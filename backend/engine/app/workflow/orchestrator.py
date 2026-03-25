@@ -13,7 +13,7 @@ Date: 2025-01
 from langgraph.graph import StateGraph, END
 
 from .state import AgentState
-from ..core.config import settings, WORKFLOW_CONFIG
+from ..core.config import WORKFLOW_CONFIG
 from ..agents import (
     planner_node,
     visual_node,

@@ -27,19 +27,14 @@ class ServiceContainer:
     """服务容器 - 统一管理所有服务实例"""
     
     _poster_service = None
-    _knowledge_service = None
     _knowledge_graph = None
     _knowledge_base = None
-    _renderer_service = None
-    
     @classmethod
     def reset_all(cls):
         """重置所有服务实例（用于测试）"""
         cls._poster_service = None
-        cls._knowledge_service = None
         cls._knowledge_graph = None
         cls._knowledge_base = None
-        cls._renderer_service = None
         logger.debug("已重置所有服务实例")
 
 
@@ -75,43 +70,6 @@ def get_knowledge_base():
     return ServiceContainer._knowledge_base
 
 
-def get_knowledge_service():
-    """
-    获取知识服务实例（单例）
-    
-    KnowledgeService 统一管理 KG 和 RAG。
-    
-    Returns:
-        KnowledgeService 实例
-    """
-    if ServiceContainer._knowledge_service is None:
-        from ..services.knowledge_service import KnowledgeService
-        logger.debug("创建 KnowledgeService 实例（单例）")
-        ServiceContainer._knowledge_service = KnowledgeService(
-            knowledge_graph=get_knowledge_graph(),
-            knowledge_base=get_knowledge_base()
-        )
-    return ServiceContainer._knowledge_service
-
-
-# ============================================================================
-# 渲染服务依赖
-# ============================================================================
-
-def get_renderer_service():
-    """
-    获取渲染服务实例（单例）
-    
-    Returns:
-        RendererService 实例
-    """
-    if ServiceContainer._renderer_service is None:
-        from ..services.renderer import RendererService
-        logger.debug("创建 RendererService 实例（单例）")
-        ServiceContainer._renderer_service = RendererService()
-    return ServiceContainer._renderer_service
-
-
 # ============================================================================
 # 海报服务依赖
 # ============================================================================
@@ -124,7 +82,7 @@ def get_poster_service():
         PosterService 实例
     """
     if ServiceContainer._poster_service is None:
-        from ..services import PosterService
+        from ..services.poster_service import PosterService
         logger.debug("创建 PosterService 实例（单例）")
         ServiceContainer._poster_service = PosterService()
     return ServiceContainer._poster_service
@@ -167,6 +125,88 @@ def get_settings():
 
 
 # ============================================================================
+# Skills 依赖
+# ============================================================================
+
+class SkillContainer:
+    """Skill 容器 - 统一管理所有 Skill 实例"""
+    
+    _intent_parse_skill = None
+    _design_rule_skill = None
+    _brand_context_skill = None
+    _design_brief_skill = None
+    
+    @classmethod
+    def reset_all(cls):
+        """重置所有 Skill 实例"""
+        cls._intent_parse_skill = None
+        cls._design_rule_skill = None
+        cls._brand_context_skill = None
+        cls._design_brief_skill = None
+        logger.debug("已重置所有 Skill 实例")
+
+
+def get_intent_parse_skill():
+    """
+    获取意图解析 Skill 实例（单例）
+    
+    Returns:
+        IntentParseSkill 实例
+    """
+    if SkillContainer._intent_parse_skill is None:
+        from ..skills import IntentParseSkill
+        logger.debug("创建 IntentParseSkill 实例（单例）")
+        SkillContainer._intent_parse_skill = IntentParseSkill()
+    return SkillContainer._intent_parse_skill
+
+
+def get_design_rule_skill():
+    """
+    获取设计规则 Skill 实例（单例）
+    
+    Returns:
+        DesignRuleSkill 实例
+    """
+    if SkillContainer._design_rule_skill is None:
+        from ..skills import DesignRuleSkill
+        logger.debug("创建 DesignRuleSkill 实例（单例）")
+        SkillContainer._design_rule_skill = DesignRuleSkill(
+            knowledge_graph=get_knowledge_graph()
+        )
+    return SkillContainer._design_rule_skill
+
+
+def get_brand_context_skill():
+    """
+    获取品牌上下文 Skill 实例（单例）
+    
+    Returns:
+        BrandContextSkill 实例
+    """
+    if SkillContainer._brand_context_skill is None:
+        from ..skills import BrandContextSkill
+        logger.debug("创建 BrandContextSkill 实例（单例）")
+        SkillContainer._brand_context_skill = BrandContextSkill(
+            knowledge_base=get_knowledge_base()
+        )
+    return SkillContainer._brand_context_skill
+
+
+def get_design_brief_skill():
+    """
+    获取设计简报 Skill 实例（单例）
+    
+    Returns:
+        DesignBriefSkill 实例
+    """
+    if SkillContainer._design_brief_skill is None:
+        from ..skills import DesignBriefSkill
+        logger.debug("创建 DesignBriefSkill 实例（单例）")
+        SkillContainer._design_brief_skill = DesignBriefSkill()
+    return SkillContainer._design_brief_skill
+
+
+# ============================================================================
 # 测试辅助
 # ============================================================================
 
@@ -177,5 +217,6 @@ def reset_all_services():
     在测试中调用此函数可确保测试隔离。
     """
     ServiceContainer.reset_all()
+    SkillContainer.reset_all()
     get_settings.cache_clear()
-    logger.info("已重置所有服务和配置缓存")
+    logger.info("已重置所有服务、Skill 和配置缓存")

@@ -7,12 +7,13 @@
 
 import { useState } from 'react';
 import { LandingPage, Editor } from './components';
+import { ENABLE_LANDING_PAGE } from './config';
 
 function App() {
-  const [showEditor, setShowEditor] = useState(false);
+  const [showEditor, setShowEditor] = useState(!ENABLE_LANDING_PAGE);
 
   if (showEditor) {
-    return <Editor onBack={() => setShowEditor(false)} />;
+    return <Editor onBack={ENABLE_LANDING_PAGE ? () => setShowEditor(false) : undefined} />;
   }
 
   return <LandingPage onEnter={() => setShowEditor(true)} />;

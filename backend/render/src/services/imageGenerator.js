@@ -65,7 +65,7 @@ async function renderTextLayer(layer, canvasWidth, canvasHeight) {
 
   try {
     const fontSize = layer.fontSize || 16;
-    const fontFamily = layer.fontFamily || 'Arial';
+    const fontFamily = layer.fontFamily || 'PingFang SC';
     const color = layer.color || '#000000';
     const textAlign = layer.textAlign || 'left';
     const lineHeight = layer.lineHeight || 1.2;

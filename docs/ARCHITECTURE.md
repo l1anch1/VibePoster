@@ -95,10 +95,9 @@ VibePoster/
 │   ├── engine/                  # 海报生成引擎 (Python/FastAPI)
 │   │   ├── app/
 │   │   │   ├── api/            # API 路由层
-│   │   │   │   ├── schemas.py         # 请求模型（仅请求）
 │   │   │   │   ├── middleware.py      # 中间件
 │   │   │   │   └── routes/
-│   │   │   │       ├── poster.py      # 海报生成路由
+│   │   │   │       ├── steps.py       # 分步生成路由 /api/step/*
 │   │   │   │       └── knowledge.py   # 知识模块路由 (KG + RAG)
 │   │   │   │
 │   │   │   ├── workflow/       # 工作流模块（LangGraph 编排）
@@ -194,11 +193,10 @@ VibePoster/
 - 返回统一格式的响应
 
 **路由拆分**：
-- `routes/poster.py`: 海报生成接口 `/api/generate_multimodal`
+- `routes/steps.py`: 分步生成接口 `/api/step/*`（plan / assets / layouts / finalize）
 - `routes/knowledge.py`: 知识模块接口 `/api/kg/*`, `/api/brand/*`
 
-**模型分离**：
-- `schemas.py`: 仅包含请求模型
+**响应模型**：
 - `models/response.py`: 统一响应模型
 
 **统一响应格式**（定义在 `models/response.py`）：
@@ -490,7 +488,7 @@ results = rag.search("华为的配色", top_k=2)
 | **Web 框架** | FastAPI | RESTful API 服务 |
 | **AI 编排** | LangGraph | Agent 工作流编排 |
 | **LLM** | DeepSeek, Gemini | 大语言模型 |
-| **图像处理** | Pillow, rembg | 图像合成、抠图 |
+| **图像处理** | Pillow | 图像分析、合成 |
 | **知识图谱** | networkx | 设计规则存储与推理 |
 | **向量检索** | sentence-transformers | RAG 语义检索 |
 | **数据验证** | Pydantic V2 | 数据模型和配置管理 |

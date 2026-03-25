@@ -83,7 +83,6 @@ def sample_poster_data() -> dict:
                 "y": 0,
                 "width": 1080,
                 "height": 1920,
-                "z_index": 0
             },
             {
                 "id": "title",
@@ -98,7 +97,6 @@ def sample_poster_data() -> dict:
                 "fontFamily": "Yuanti TC",
                 "textAlign": "left",
                 "fontWeight": "normal",
-                "z_index": 2
             }
         ]
     }

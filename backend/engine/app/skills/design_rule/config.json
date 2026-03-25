@@ -1,0 +1,25 @@
+{
+  "name": "design_rule",
+  "description": "基于行业和风格关键词，从知识图谱推理设计规则（配色、字体、布局、设计原则）",
+  "version": "1.0",
+  "tags": ["knowledge-graph", "inference", "design"],
+  "input_schema": "DesignRuleInput",
+  "output_schema": "DesignRuleOutput",
+  "input_variables": [
+    {
+      "name": "industry",
+      "description": "行业关键词（与 KG 节点对齐）",
+      "default": ""
+    },
+    {
+      "name": "vibe",
+      "description": "风格关键词（与 KG 节点对齐）",
+      "default": ""
+    },
+    {
+      "name": "additional_keywords",
+      "description": "额外的关键词",
+      "default": ""
+    }
+  ]
+}

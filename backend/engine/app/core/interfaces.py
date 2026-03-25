@@ -12,6 +12,10 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 
 
+# ============================================================================
+# 知识模块接口
+# ============================================================================
+
 class IKnowledgeGraph(ABC):
     """知识图谱接口 v2"""
     
@@ -74,27 +78,4 @@ class IKnowledgeBase(ABC):
         pass
 
 
-class IRendererService(ABC):
-    """渲染服务接口"""
-    
-    @abstractmethod
-    def render_poster_from_workflow_state(
-        self,
-        workflow_state: Dict[str, Any]
-    ) -> Any:
-        """从工作流状态渲染海报"""
-        pass
-
-
-class IAssetSearcher(ABC):
-    """素材搜索接口"""
-    
-    @abstractmethod
-    def search(
-        self,
-        query: str,
-        **kwargs
-    ) -> List[Dict[str, Any]]:
-        """搜索素材"""
-        pass
 

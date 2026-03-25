@@ -15,8 +15,6 @@ Date: 2025-01
 from typing import TypeVar, Generic, Optional, Any, List, Dict
 from pydantic import BaseModel, Field
 
-from .poster import PosterData
-
 T = TypeVar('T')
 
 
@@ -51,14 +49,6 @@ class ErrorResponse(BaseModel):
 # ============================================================================
 # 海报相关响应模型
 # ============================================================================
-
-class PosterGenerateResponse(BaseModel):
-    """海报生成成功响应"""
-    
-    success: bool = Field(default=True, description="请求是否成功")
-    data: PosterData = Field(..., description="生成的海报数据")
-    message: str = Field(default="海报生成成功", description="响应消息")
-
 
 class HealthCheckResponse(BaseModel):
     """健康检查响应"""

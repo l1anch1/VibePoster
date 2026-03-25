@@ -212,7 +212,6 @@ poster_data = renderer.render_poster_from_workflow_state(
       "height": 96,
       "rotation": 0,
       "opacity": 1.0,
-      "z_index": 0,
       "content": "年终大促",
       "fontSize": 64,
       "color": "#FF0000",
@@ -230,7 +229,6 @@ poster_data = renderer.render_poster_from_workflow_state(
       "height": 600,
       "rotation": 0,
       "opacity": 1.0,
-      "z_index": 1,
       "src": "https://example.com/banner.jpg"
     }
   ]
@@ -391,7 +389,7 @@ planner_output = {
 # 2. Visual 输出
 visual_output = {
     "background_layer": {"src": "https://cdn.example.com/bg.jpg"},
-    "foreground_layer": {"src": "https://cdn.example.com/product.jpg"}
+    "subject_layer": {"src": "https://cdn.example.com/product.jpg"}
 }
 
 # 3. Layout 生成 DSL

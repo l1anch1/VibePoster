@@ -8,7 +8,7 @@ Date: 2025-01
 """
 
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from pathlib import Path
 
 from .types import Document
@@ -69,26 +69,4 @@ class BrandDataLoader:
             logger.error(f"加载品牌数据失败: {e}")
             return []
     
-    def load_from_dict(self, data: Dict[str, Any]) -> List[Document]:
-        """
-        从字典加载品牌数据
-        
-        Args:
-            data: 数据字典
-        
-        Returns:
-            文档列表
-        """
-        documents = []
-        brands = data.get("brands", [])
-        
-        for i, item in enumerate(brands):
-            doc = Document(
-                id=item.get("id", f"dict_{i}"),
-                text=item["text"],
-                metadata=item.get("metadata", {})
-            )
-            documents.append(doc)
-        
-        return documents
 

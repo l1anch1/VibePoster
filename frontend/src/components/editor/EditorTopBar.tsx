@@ -14,25 +14,30 @@ import { CANVAS_PRESETS, EXPORT_FORMATS } from '../../config/constants';
 import { uploadBrandDocument } from '../../services/api';
 
 interface EditorTopBarProps {
-  onBack: () => void;
+  onBack?: () => void;
   // 画布设置
   selectedPreset: CanvasPreset;
   onPresetChange: (preset: CanvasPreset) => void;
+  isLocked?: boolean;
   // 导出
   hasLayers: boolean;
   showExport: boolean;
   onToggleExport: () => void;
   onExport: (format: ExportFormat['format']) => void;
+  // 重置
+  onReset?: () => void;
 }
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onBack,
   selectedPreset,
   onPresetChange,
+  isLocked = false,
   hasLayers,
   showExport,
   onToggleExport,
   onExport,
+  onReset,
 }) => {
   // 品牌文档上传状态
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -86,7 +91,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
   return (
     <header
-      className="shrink-0"
+      className="shrink-0 relative z-20"
       style={{
         background: 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(20px) saturate(180%)',
@@ -97,30 +102,45 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200/50">
         {/* 左侧：返回 + Logo */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded-xl transition-all hover:bg-gray-50 shadow-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="h-5 w-px bg-gray-300" />
+          {onBack && (
+            <>
+              <button
+                onClick={onBack}
+                className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded-xl transition-all hover:bg-gray-50 shadow-sm"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div className="h-5 w-px bg-gray-300" />
+            </>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/30">
               <span className="text-white text-xs font-bold">V</span>
             </div>
-            <span className="font-semibold text-gray-800 text-base">VibePoster</span>
+            <span className="font-semibold text-gray-800 text-sm">VibePoster</span>
           </div>
         </div>
 
-        {/* 右侧：导出按钮 */}
-        <div className="flex items-center gap-3">
-          {hasLayers && (
+        {/* 右侧：清空 + 导出按钮（生成期间隐藏） */}
+        <div className="flex items-center gap-2">
+          {hasLayers && !isLocked && onReset && (
+            <button
+              onClick={onReset}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              New Poster
+            </button>
+          )}
+          {hasLayers && !isLocked && (
             <div className="relative">
               <button
                 onClick={onToggleExport}
-                className="flex items-center gap-2 px-4 py-2.5 text-base font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl hover:opacity-90 transition-all shadow-lg shadow-violet-500/30"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl hover:opacity-90 transition-all shadow-lg shadow-violet-500/30"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -146,7 +166,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
                     >
                       <span className="text-xl">{item.icon}</span>
                       <div>
-                        <div className="font-medium text-gray-900 text-base">{item.label}</div>
+                        <div className="font-medium text-gray-900 text-sm">{item.label}</div>
                         <div className="text-sm text-gray-500">{item.desc}</div>
                       </div>
                     </button>
@@ -162,13 +182,15 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       <div className="h-12 px-4 flex items-center gap-4">
         {/* 画布尺寸 */}
         <div
-          className="flex items-center gap-1 p-1 rounded-xl border border-gray-200 shadow-sm"
+          className={`flex items-center gap-1 p-1 rounded-xl border shadow-sm transition-opacity ${isLocked ? 'border-gray-200/60 opacity-50 pointer-events-none' : 'border-gray-200'}`}
           style={{ background: 'rgba(255,255,255,0.8)' }}
+          title={isLocked ? 'Canvas size is locked during generation' : undefined}
         >
           {CANVAS_PRESETS.map((preset) => (
             <button
               key={preset.id}
               onClick={() => onPresetChange(preset)}
+              disabled={isLocked}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${selectedPreset.id === preset.id
                 ? 'bg-white text-gray-900 shadow-md border border-gray-200'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
@@ -179,12 +201,19 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
               <span className="text-xs text-gray-400">{preset.width}×{preset.height}</span>
             </button>
           ))}
+          {isLocked && (
+            <div className="pl-1 pr-2 flex items-center gap-1 text-amber-600">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+          )}
         </div>
 
         <div className="h-6 w-px bg-gray-300" />
 
         {/* 品牌文档上传区 */}
-        <div className="flex items-center gap-2 flex-1">
+        <div className={`flex items-center gap-2 flex-1 transition-opacity ${isLocked ? 'opacity-40 pointer-events-none' : ''}`}>
           <div className="flex items-center gap-1.5 text-sm text-gray-500">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

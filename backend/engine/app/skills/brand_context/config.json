@@ -1,0 +1,19 @@
+{
+  "name": "brand_context",
+  "description": "从 RAG 知识库检索品牌相关的设计规范（配色、风格、设计规范）",
+  "version": "1.0",
+  "tags": ["rag", "brand", "retrieval"],
+  "input_schema": "BrandContextInput",
+  "output_schema": "BrandContextOutput",
+  "input_variables": [
+    {
+      "name": "brand_name",
+      "description": "品牌名称"
+    },
+    {
+      "name": "aspects",
+      "description": "检索的方面（color, style, guideline）",
+      "default": "color,style,guideline"
+    }
+  ]
+}

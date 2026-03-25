@@ -185,7 +185,7 @@ def search_pexels(query: str, orientation: str = "portrait", max_retries: int = 
     params = {
         "query": query,
         "orientation": pexels_orientation,
-        "per_page": 1,
+        "per_page": 5,
         "size": "large"
     }
     
@@ -276,6 +276,89 @@ def search_pexels(query: str, orientation: str = "portrait", max_retries: int = 
     return None
 
 
+def search_pexels_multiple(query: str, count: int = 3, orientation: str = "portrait") -> List[str]:
+    """从 Pexels 搜索多张图片，返回 base64 URL 列表"""
+    if not PEXELS_API_KEY:
+        return []
+
+    params = {
+        "query": query,
+        "orientation": orientation,
+        "per_page": min(count * 2, 10),
+        "size": "large",
+    }
+    headers = {"Authorization": PEXELS_API_KEY, "User-Agent": "VibePoster/1.0"}
+
+    try:
+        response = requests.get(PEXELS_API_URL, params=params, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        photos = data.get("photos", [])
+        if not photos:
+            return []
+
+        from ..tools.vision import image_to_base64
+
+        results = []
+        for photo in photos[:count]:
+            image_url = (
+                photo.get("src", {}).get("large")
+                or photo.get("src", {}).get("original")
+            )
+            if not image_url:
+                continue
+            try:
+                img_resp = requests.get(image_url, timeout=15, headers={"User-Agent": "VibePoster/1.0"})
+                img_resp.raise_for_status()
+                mime = "image/jpeg"
+                if ".png" in image_url.lower():
+                    mime = "image/png"
+                results.append(image_to_base64(img_resp.content, mime))
+            except Exception:
+                continue
+        return results
+    except Exception as e:
+        logger.warning(f"⚠️ Pexels 批量搜索失败: {e}")
+        return []
+
+
+def search_assets_multiple(
+    keywords: list,
+    design_brief: Optional[Dict] = None,
+    count: int = 3,
+) -> List[str]:
+    """
+    获取多张候选背景图（用于分步模式中的素材选择）
+
+    优先级: Flux(1张) + Pexels(补齐) → 纯 Pexels → 本地占位符
+    """
+    logger.info(f"📚 获取 {count} 张候选背景图，关键词: {keywords}")
+    results: List[str] = []
+
+    # Flux 生成 1 张（耗时较长，只生成 1 张）
+    if FLUX_API_KEY:
+        flux_prompt = build_flux_prompt(design_brief or {}, keywords)
+        img = generate_flux_image(prompt=flux_prompt, aspect_ratio="9:16")
+        if img:
+            results.append(img)
+
+    # Pexels 补齐
+    remaining = count - len(results)
+    if remaining > 0 and PEXELS_API_KEY:
+        query = combine_keywords(keywords)
+        pexels_results = search_pexels_multiple(query, count=remaining)
+        results.extend(pexels_results)
+
+    # 本地占位符兜底
+    if not results:
+        asset_library = get_asset_library()
+        defaults = asset_library.get("default", [])
+        results = defaults[:count] if defaults else ["https://placehold.co/1080x1920/333333/333333"]
+
+    logger.info(f"✅ 共获取 {len(results)} 张候选图")
+    return results
+
+
 def combine_keywords(keywords: list) -> str:
     """
     将关键词列表组合成搜索词
@@ -307,19 +390,15 @@ def build_flux_prompt(design_brief: Dict, keywords: List[str]) -> str:
         Flux 提示词
     """
     parts = []
-    
-    # 基础描述
-    title = design_brief.get("title", "")
-    subtitle = design_brief.get("subtitle", "")
+
     intent = design_brief.get("intent", "poster")
-    
+
     # 构建场景描述
     if keywords:
         parts.append(f"A {', '.join(keywords[:3])} style background")
     else:
         parts.append("A professional background")
-    
-    # 添加海报意图
+
     intent_descriptions = {
         "poster": "suitable for a promotional poster",
         "banner": "suitable for a web banner",
@@ -327,19 +406,21 @@ def build_flux_prompt(design_brief: Dict, keywords: List[str]) -> str:
         "event": "suitable for an event announcement",
     }
     parts.append(intent_descriptions.get(intent, "suitable for a poster"))
-    
+
+    # 参考图配色（Style Clone 模式注入）
+    ref_palette = design_brief.get("reference_palette", [])
+    if ref_palette:
+        palette_str = ", ".join(ref_palette[:4])
+        parts.append(f"color palette inspired by: {palette_str}")
+
     # 添加颜色提示
     main_color = design_brief.get("main_color")
-    bg_color = design_brief.get("background_color")
-    if main_color:
+    if main_color and not ref_palette:
         parts.append(f"with {main_color} as the main color tone")
-    
-    # 添加风格要求
+
     parts.append("high quality, professional, clean composition")
-    
-    # 避免文字
     parts.append("no text, no letters, no words")
-    
+
     return ", ".join(parts)
 
 

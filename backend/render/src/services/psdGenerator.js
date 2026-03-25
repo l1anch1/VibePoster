@@ -7,11 +7,22 @@ const archiver = require('archiver');
 const { hexToRgb, createImageData } = require('../utils/helpers');
 
 // 字体显示名称到 PostScript 名称的映射
+// 与 backend font_registry.py 的 FONT_REGISTRY 保持同步
 const FONT_NAME_MAP = {
-  'Yuanti TC': 'STYuanti-TC-Regular',
-  'Yuanti TC Light': 'STYuanti-TC-Light',
-  'Yuanti TC Bold': 'STYuanti-TC-Bold',
-  'Baoli SC': 'STBaoliSC-Regular',
+  // sans — 苹方
+  'PingFang SC':       'PingFangSC-Regular',
+  // serif — 宋体
+  'Songti SC':         'STSongti-SC-Regular',
+  // rounded — 圆体
+  'Yuanti TC':         'STYuanti-TC-Regular',
+  'Yuanti TC Light':   'STYuanti-TC-Light',
+  'Yuanti TC Bold':    'STYuanti-TC-Bold',
+  // handwriting — 楷体
+  'Kaiti SC':          'STKaitiSC-Regular',
+  // display — 报隶
+  'Baoli SC':          'STBaoliSC-Regular',
+  // legacy fallback
+  'Arial':             'ArialMT',
 };
 
 // 获取字体的 PostScript 名称
@@ -242,8 +253,11 @@ function createZipPackage(psdBuffer, usedFontFamilies, res) {
   // 添加 PSD 文件
   archive.append(psdBuffer, { name: 'poster.psd' });
 
-  // 过滤系统字体（如 Arial），只列出需要用户安装的字体
-  const customFonts = Array.from(usedFontFamilies).filter(font => font !== 'Arial');
+  // macOS 系统内置字体无需用户额外安装
+  const SYSTEM_FONTS = new Set([
+    'Arial', 'PingFang SC', 'Songti SC', 'Yuanti TC', 'Kaiti SC', 'Baoli SC',
+  ]);
+  const customFonts = Array.from(usedFontFamilies).filter(font => !SYSTEM_FONTS.has(font));
 
   // 添加说明文件
   const readmeContent = `字体安装提醒

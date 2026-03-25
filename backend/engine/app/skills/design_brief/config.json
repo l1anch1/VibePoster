@@ -1,0 +1,23 @@
+{
+  "name": "design_brief",
+  "description": "综合意图解析、设计规则、品牌上下文，通过 LLM 生成结构化设计简报",
+  "version": "1.0",
+  "tags": ["llm", "synthesis", "design-brief"],
+  "input_schema": "DesignBriefInput",
+  "output_schema": "DesignBriefOutput",
+  "input_variables": [
+    {
+      "name": "knowledge_context",
+      "description": "由上游 Skill 输出拼接的知识上下文（意图 + KG 规则 + 品牌知识）"
+    },
+    {
+      "name": "user_prompt",
+      "description": "用户原始输入"
+    },
+    {
+      "name": "key_elements",
+      "description": "从意图解析中提取的关键元素（逗号分隔）",
+      "default": ""
+    }
+  ]
+}

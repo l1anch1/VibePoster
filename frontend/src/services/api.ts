@@ -15,43 +15,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const RENDER_BASE_URL = import.meta.env.VITE_RENDER_URL || 'http://localhost:3000';
 
 // ============================================================================
-// 海报生成 API
-// ============================================================================
-
-export interface GeneratePosterParams {
-  prompt: string;
-  canvasWidth: number;
-  canvasHeight: number;
-  imageFile?: File | null;
-}
-
-export interface GeneratePosterResponse {
-  data: PosterData;
-  message?: string;
-}
-
-/**
- * 生成海报
- */
-export async function generatePoster(params: GeneratePosterParams): Promise<PosterData> {
-  const formData = new FormData();
-  formData.append('prompt', params.prompt);
-  formData.append('canvas_width', params.canvasWidth.toString());
-  formData.append('canvas_height', params.canvasHeight.toString());
-  
-  if (params.imageFile) {
-    formData.append('image', params.imageFile);
-  }
-
-  const response = await axios.post<GeneratePosterResponse>(
-    `${API_BASE_URL}/api/generate_multimodal`,
-    formData
-  );
-
-  return response.data.data;
-}
-
-// ============================================================================
 // 渲染导出 API
 // ============================================================================
 
@@ -100,15 +63,96 @@ export async function exportAndDownloadPoster(
 }
 
 // ============================================================================
+// 分步生成 API（Step-by-Step Wizard）
+// ============================================================================
+
+export interface DesignBrief {
+  title?: string;
+  subtitle?: string;
+  main_color?: string;
+  background_color?: string;
+  style_keywords?: string[];
+  intent?: string;
+  industry?: string;
+  vibe?: string;
+  [key: string]: unknown;
+}
+
+export async function stepPlan(params: {
+  prompt: string;
+  canvasWidth: number;
+  canvasHeight: number;
+  brandName?: string;
+}): Promise<{ design_brief: DesignBrief }> {
+  const res = await axios.post(`${API_BASE_URL}/api/step/plan`, {
+    prompt: params.prompt,
+    canvas_width: params.canvasWidth,
+    canvas_height: params.canvasHeight,
+    brand_name: params.brandName || null,
+  });
+  return res.data;
+}
+
+export async function stepAssets(params: {
+  designBrief: DesignBrief;
+  canvasWidth: number;
+  canvasHeight: number;
+  count?: number;
+  imageBg?: File | null;
+  imageSubject?: File | null;
+}): Promise<{ candidates: string[]; keywords_used: string[]; design_brief?: DesignBrief; subject_url?: string; subject_width?: number; subject_height?: number }> {
+  const formData = new FormData();
+  formData.append('design_brief_json', JSON.stringify(params.designBrief));
+  formData.append('canvas_width', params.canvasWidth.toString());
+  formData.append('canvas_height', params.canvasHeight.toString());
+  formData.append('count', (params.count ?? 3).toString());
+  if (params.imageBg) formData.append('image_bg', params.imageBg);
+  if (params.imageSubject) formData.append('image_subject', params.imageSubject);
+
+  const res = await axios.post(`${API_BASE_URL}/api/step/assets`, formData);
+  return res.data;
+}
+
+export async function stepLayouts(params: {
+  designBrief: DesignBrief;
+  selectedAssetUrl: string;
+  subjectAssetUrl?: string | null;
+  subjectWidth?: number | null;
+  subjectHeight?: number | null;
+  canvasWidth: number;
+  canvasHeight: number;
+  count?: number;
+}): Promise<{ layouts: PosterData[] }> {
+  const res = await axios.post(`${API_BASE_URL}/api/step/layouts`, {
+    design_brief: params.designBrief,
+    selected_asset_url: params.selectedAssetUrl,
+    subject_asset_url: params.subjectAssetUrl || null,
+    subject_width: params.subjectWidth || null,
+    subject_height: params.subjectHeight || null,
+    canvas_width: params.canvasWidth,
+    canvas_height: params.canvasHeight,
+    count: params.count ?? 6,
+  }, {
+    timeout: 180_000,
+  });
+  return res.data;
+}
+
+export async function stepFinalize(params: {
+  posterData: PosterData;
+}): Promise<{ poster: PosterData; review: { status: string; feedback: string } }> {
+  const res = await axios.post(`${API_BASE_URL}/api/step/finalize`, {
+    poster_data: params.posterData,
+  });
+  return res.data;
+}
+
+// ============================================================================
 // 品牌知识库 API
 // ============================================================================
 
 /**
  * 上传品牌文档到 RAG 知识库
- * 
- * @param text 品牌文档内容
- * @param brandName 品牌名称
- * @param category 文档类别（可选，默认"通用"）
  */
 export async function uploadBrandDocument(
   text: string,
@@ -127,36 +171,4 @@ export async function uploadBrandDocument(
   });
 }
 
-/**
- * 搜索品牌知识
- */
-export async function searchBrandKnowledge(
-  query: string,
-  topK: number = 3
-): Promise<string[]> {
-  const response = await axios.get(`${API_BASE_URL}/api/brand/search`, {
-    params: { query, top_k: topK },
-  });
-  return response.data.results;
-}
-
-// ============================================================================
-// 知识图谱 API
-// ============================================================================
-
-/**
- * 推理设计规则
- */
-export async function inferDesignRules(
-  keywords: string[]
-): Promise<{
-  recommended_colors: string[];
-  recommended_fonts: string[];
-  recommended_layouts: string[];
-}> {
-  const response = await axios.get(`${API_BASE_URL}/api/kg/infer`, {
-    params: { keywords: keywords.join(',') },
-  });
-  return response.data;
-}
 

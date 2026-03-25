@@ -1,194 +1,187 @@
 """
-DSL 解析器 - 解析 Layout Agent 的 DSL 指令
+DSL 解析器 - 解析 Layout Agent 的 DSL 指令（绝对坐标模式）
 
-职责：
-1. 解析 DSL 指令列表
-2. 实例化 layout 组件
-3. 构建布局容器
-
-Author: VibePoster Team
-Date: 2025-01
+LLM 直接输出每个元素的 x, y, width, height，
+解析器负责类型校验、越界修正、字体映射，然后输出扁平的元素列表。
 """
 
 from typing import Dict, Any, List, Optional
 
-from ...core.layout import (
-    VerticalContainer,
-    TextBlock,
-    ImageBlock,
-    Style,
-    Element
-)
 from ...core.logger import get_logger
+from .font_registry import resolve_font, resolve_font_style_from_kg, DEFAULT_FONT_STYLE
 
 logger = get_logger(__name__)
+
+# command → layer role（用于字体注册表查询 title / body）
+_CMD_ROLE_MAP: Dict[str, str] = {
+    "add_title": "title", "add_heading": "title", "add_main_title": "title",
+    "add_subtitle": "body",  "add_subheading": "body",
+    "add_text": "body", "add_body_text": "body", "add_description": "body",
+    "add_cta": "title", "add_button_text": "title",
+}
 
 
 class DSLParser:
     """
-    DSL 解析器
-    
-    负责将 Layout Agent 输出的 DSL 指令转换为 OOP 布局组件
+    DSL 解析器（绝对坐标模式）
+
+    每条 DSL 指令必须包含 x, y, width, height，
+    解析器将其转换为渲染层可直接消费的元素字典列表。
     """
-    
+
     def __init__(self):
-        self.container: Optional[VerticalContainer] = None
-    
+        self.canvas_width: int = 1080
+        self.canvas_height: int = 1920
+
     def parse(
         self,
         dsl_instructions: List[Dict[str, Any]],
         canvas_width: int = 1080,
         canvas_height: int = 1920,
-        design_brief: Optional[Dict[str, Any]] = None
-    ) -> VerticalContainer:
+        design_brief: Optional[Dict[str, Any]] = None,
+        font_style: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        解析 DSL 指令并构建 OOP 布局
-        
+        解析 DSL 指令列表，返回扁平的元素字典列表。
+
         Args:
-            dsl_instructions: Layout Agent 输出的 DSL 指令列表
-            canvas_width: 画布宽度
-            canvas_height: 画布高度
-            design_brief: Planner 的设计简报
-        
+            font_style: LLM 输出的字体风格枚举（sans/serif/rounded/handwriting/display），
+                        缺省时从 design_brief 中的 KG typography_styles 推断。
+
         Returns:
-            布局容器
+            [{"type": "image"|"text", "x": ..., "y": ..., "fontFamily": ..., ...}, ...]
         """
-        logger.info(f"🎨 开始解析 {len(dsl_instructions)} 条 DSL 指令...")
-        
-        # 创建主容器
-        self.container = VerticalContainer(
-            x=0,
-            y=0,
-            width=canvas_width,
-            padding=40,
-            gap=20
-        )
-        
-        # 解析每条指令
-        for i, instruction in enumerate(dsl_instructions):
-            try:
-                command = instruction.get("command")
-                element = self._parse_instruction(instruction, design_brief)
-                
-                if element:
-                    self.container.add(element)
-                    logger.debug(f"  ✅ [{i+1}] {command} - 添加成功")
-                else:
-                    logger.warning(f"  ⚠️  [{i+1}] {command} - 无法解析，跳过")
-            
-            except Exception as e:
-                logger.error(f"  ❌ [{i+1}] 解析指令失败: {e}")
-                continue
-        
-        # 执行布局计算
-        self.container.arrange()
-        logger.info(f"✅ 布局计算完成，容器尺寸: {self.container.width} x {self.container.height:.1f}")
-        
-        return self.container
-    
-    def _parse_instruction(
-        self,
-        instruction: Dict[str, Any],
-        design_brief: Optional[Dict[str, Any]] = None
-    ) -> Optional[Element]:
-        """解析单条 DSL 指令"""
-        command = instruction.get("command")
-        
-        # 获取设计规范
-        main_color = design_brief.get("main_color", "#000000") if design_brief else "#000000"
-        
-        # 解析不同的指令类型
-        if command in ["add_title", "add_heading", "add_main_title"]:
-            return self._create_text_block(
-                content=instruction.get("content", "标题"),
-                font_size=instruction.get("font_size", 48),
-                color=instruction.get("color", main_color),
-                font_weight="bold",
-                text_align=instruction.get("text_align", "center")
-            )
-        
-        elif command in ["add_subtitle", "add_subheading"]:
-            return self._create_text_block(
-                content=instruction.get("content", "副标题"),
-                font_size=instruction.get("font_size", 32),
-                color=instruction.get("color", "#666666"),
-                font_weight="normal",
-                text_align=instruction.get("text_align", "center")
-            )
-        
-        elif command in ["add_text", "add_body_text", "add_description"]:
-            return self._create_text_block(
-                content=instruction.get("content", "正文"),
-                font_size=instruction.get("font_size", 24),
-                color=instruction.get("color", "#333333"),
-                font_weight="normal",
-                text_align=instruction.get("text_align", "left"),
-                line_height=instruction.get("line_height", 1.6)
-            )
-        
-        elif command in ["add_image", "add_hero_image", "add_background_image"]:
-            return self._create_image_block(
-                src=instruction.get("src", ""),
-                width=instruction.get("width", 800),
-                height=instruction.get("height", 600)
-            )
-        
-        elif command in ["add_cta", "add_button_text"]:
-            return self._create_text_block(
-                content=instruction.get("content", "立即行动 →"),
-                font_size=instruction.get("font_size", 28),
-                color=instruction.get("color", "#0066FF"),
-                font_weight="bold",
-                text_align="center"
-            )
-        
-        else:
-            logger.warning(f"未知指令: {command}")
-            return None
-    
-    def _create_text_block(
-        self,
-        content: str,
-        font_size: int = 24,
-        color: str = "#000000",
-        font_weight: str = "normal",
-        text_align: str = "left",
-        line_height: float = 1.5
-    ) -> TextBlock:
-        """创建文本块"""
-        max_width = self.container.width - 2 * self.container.padding if self.container else 800
-        
-        return TextBlock(
-            content=content,
-            font_size=font_size,
-            max_width=max_width,
-            line_height=line_height,
-            style=Style(
-                font_size=font_size,
-                color=color,
-                font_weight=font_weight,
-                text_align=text_align
-            )
-        )
-    
-    def _create_image_block(
-        self,
-        src: str,
-        width: int,
-        height: int
-    ) -> ImageBlock:
-        """创建图片块"""
-        max_width = self.container.width - 2 * self.container.padding if self.container else 800
-        
-        if width > max_width:
-            scale = max_width / width
-            width = int(max_width)
-            height = int(height * scale)
-        
-        return ImageBlock(
-            src=src,
-            width=width,
-            height=height,
-            maintain_aspect_ratio=True
+        self.canvas_width = canvas_width
+        self.canvas_height = canvas_height
+        main_color = (design_brief or {}).get("main_color", "#000000")
+
+        resolved_font_style = self._resolve_font_style(font_style, design_brief)
+        logger.info(
+            f"🎨 解析 {len(dsl_instructions)} 条 DSL 指令"
+            f"（绝对坐标模式，font_style={resolved_font_style}）"
         )
 
+        elements: List[Dict[str, Any]] = []
+
+        for i, instr in enumerate(dsl_instructions):
+            try:
+                elem = self._parse_instruction(instr, main_color, resolved_font_style)
+                if elem:
+                    elem = self._clamp_bounds(elem)
+                    elements.append(elem)
+                    logger.debug(f"  ✅ [{i+1}] {instr.get('command')} → ({elem['x']},{elem['y']}) {elem['width']}×{elem['height']}")
+            except Exception as e:
+                logger.error(f"  ❌ [{i+1}] 解析失败: {e}")
+
+        logger.info(f"✅ 解析完成，共 {len(elements)} 个元素")
+        return elements
+
+    @staticmethod
+    def _resolve_font_style(
+        font_style: Optional[str],
+        design_brief: Optional[Dict[str, Any]],
+    ) -> str:
+        """确定最终 font_style：LLM 显式指定 > KG 推断 > 默认值"""
+        if font_style and font_style.lower().strip() != "":
+            return font_style.lower().strip()
+
+        kg_rules = (design_brief or {}).get("kg_rules")
+        if kg_rules:
+            ts = kg_rules.get("typography_styles", [])
+            if ts:
+                return resolve_font_style_from_kg(ts)
+
+        return DEFAULT_FONT_STYLE
+
+    # ------------------------------------------------------------------
+    # 指令 → 元素字典
+    # ------------------------------------------------------------------
+
+    def _parse_instruction(
+        self, instr: Dict[str, Any], main_color: str, font_style: str
+    ) -> Optional[Dict[str, Any]]:
+        cmd = instr.get("command", "")
+
+        x = int(instr.get("x", 0))
+        y = int(instr.get("y", 0))
+        w = int(instr.get("width", 0))
+        h = int(instr.get("height", 0))
+
+        if cmd == "add_image":
+            return {
+                "type": "image",
+                "x": x, "y": y, "width": w, "height": h,
+                "src": instr.get("src", ""),
+                "layer_type": instr.get("layer_type", "background"),
+            }
+
+        if cmd in ("add_title", "add_heading", "add_main_title"):
+            return self._text_elem(instr, x, y, w, h,
+                                   font_style=font_style, role="title",
+                                   default_size=48, default_color=main_color,
+                                   default_weight="bold", default_align="center")
+
+        if cmd in ("add_subtitle", "add_subheading"):
+            return self._text_elem(instr, x, y, w, h,
+                                   font_style=font_style, role="body",
+                                   default_size=32, default_color="#666666",
+                                   default_weight="normal", default_align="center")
+
+        if cmd in ("add_text", "add_body_text", "add_description"):
+            return self._text_elem(instr, x, y, w, h,
+                                   font_style=font_style, role="body",
+                                   default_size=24, default_color="#333333",
+                                   default_weight="normal", default_align="left")
+
+        if cmd in ("add_cta", "add_button_text"):
+            return self._text_elem(instr, x, y, w, h,
+                                   font_style=font_style, role="title",
+                                   default_size=28, default_color="#0066FF",
+                                   default_weight="bold", default_align="center")
+
+        logger.warning(f"未知指令: {cmd}")
+        return None
+
+    @staticmethod
+    def _text_elem(
+        instr: Dict[str, Any],
+        x: int, y: int, w: int, h: int,
+        font_style: str,
+        role: str,
+        default_size: int,
+        default_color: str,
+        default_weight: str,
+        default_align: str,
+    ) -> Dict[str, Any]:
+        fs = int(instr.get("font_size", default_size))
+        font = resolve_font(font_style, role=role)
+        return {
+            "type": "text",
+            "x": x, "y": y, "width": w, "height": max(h, int(fs * 1.4)),
+            "content": instr.get("content", ""),
+            "fontSize": fs,
+            "color": instr.get("color", default_color),
+            "fontFamily": font["family"],
+            "fontWeight": instr.get("font_weight", default_weight),
+            "textAlign": instr.get("text_align", default_align),
+        }
+
+    # ------------------------------------------------------------------
+    # 越界修正
+    # ------------------------------------------------------------------
+
+    def _clamp_bounds(self, elem: Dict[str, Any]) -> Dict[str, Any]:
+        """确保元素不超出画布范围（背景图例外）"""
+        if elem.get("layer_type") == "background":
+            return elem
+
+        margin = 20
+        cw, ch = self.canvas_width, self.canvas_height
+
+        x = max(margin, min(elem["x"], cw - margin))
+        y = max(margin, min(elem["y"], ch - margin))
+        w = min(elem["width"], cw - x - margin)
+        h = min(elem["height"], ch - y - margin)
+
+        elem.update({"x": x, "y": y, "width": max(w, 40), "height": max(h, 20)})
+        return elem

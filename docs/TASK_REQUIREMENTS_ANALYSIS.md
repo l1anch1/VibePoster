@@ -32,7 +32,7 @@
 - **4-Agent架构**: Planner、Visual、Layout、Critic 已实现
 - **海报数据模型**: JSON Schema 已定义 (`frontend/src/types/PosterSchema.ts`)
 - **AI指令集**: Prompt 模板已实现 (`backend/engine/app/prompts/`)
-- **图片处理**: 抠图（rembg）、图像分析、图像合成已实现
+- **图片处理**: 图像分析、图像合成已实现（用户直接上传透明 PNG 主体素材）
 - **素材搜索**: Pexels API 集成已实现
 - **PSD生成**: 支持生成可编辑的 PSD 文件
 - **错误处理**: 全局异常处理机制已实现
@@ -87,7 +87,7 @@
   - `orchestrator.py` - LangGraph 工作流编排
   - `state.py` - 状态定义
 - **API 路由拆分**: 
-  - `api/routes/poster.py` - 海报生成 API
+  - `api/routes/steps.py` - 分步生成 API（/api/step/*）
   - `api/routes/knowledge.py` - 知识库 API
 - **响应模型合并**: `models/response.py` 统一管理
 - **依赖注入**: `core/dependencies.py` + `ServiceContainer`

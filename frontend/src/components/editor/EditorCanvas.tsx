@@ -18,11 +18,8 @@ import {
 interface EditorCanvasProps {
   data: PosterData;
   scale: number;
-  onDataChange?: (data: PosterData) => void;  // Optional: used for batch updates
   isEditMode?: boolean;
-  // 编辑状态（从外部传入）
   selectedLayerId?: string | null;
-  lockedLayerIds?: Set<string>;
   hiddenLayerIds?: Set<string>;
   onSelectLayer?: (layerId: string) => void;
   isLayerLocked?: (layerId: string) => boolean;
@@ -246,7 +243,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       {editingLayer && isTextLayer(editingLayer) && (
         <TextEditor
           layer={editingLayer}
-          scale={scale}
           onUpdate={(content) => handleUpdateText(editingLayer.id, content)}
           onClose={onStopEditing}
         />

@@ -17,7 +17,6 @@ from .poster import (
 from .response import (
     APIResponse,
     ErrorResponse,
-    PosterGenerateResponse,
     HealthCheckResponse,
     KGInferResult,
     BrandSearchResult,
@@ -36,7 +35,6 @@ __all__ = [
     # Response models
     "APIResponse",
     "ErrorResponse",
-    "PosterGenerateResponse",
     "HealthCheckResponse",
     "KGInferResult",
     "BrandSearchResult",

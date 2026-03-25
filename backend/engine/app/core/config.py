@@ -80,7 +80,21 @@ class VisualAgentConfig(BaseSettings):
 
     # Visual 专用参数
     DEFAULT_POSITION: str = Field(default="center_bottom", description="前景图层默认位置")
-    
+
+    # 图像理解 Vision LLM（需支持 image_url，为空则复用 VISUAL 主配置）
+    VISION_PROVIDER: Optional[LLMProvider] = Field(
+        default=None, description="图像理解 LLM 提供商（为空则复用 VISUAL_PROVIDER）"
+    )
+    VISION_API_KEY: Optional[str] = Field(
+        default=None, description="图像理解 API Key（为空则复用 VISUAL_API_KEY）"
+    )
+    VISION_BASE_URL: Optional[str] = Field(
+        default=None, description="图像理解 API Base URL（为空则复用 VISUAL_BASE_URL）"
+    )
+    VISION_MODEL: str = Field(
+        default="gemini-2.0-flash", description="图像理解使用的模型（需支持 Vision）"
+    )
+
     # 素材搜索配置
     PEXELS_API_KEY: str = Field(default="", description="Pexels 素材库 API Key（备选）")
     
@@ -137,6 +151,30 @@ class CriticAgentConfig(BaseSettings):
     MAX_RETRY_COUNT: int = Field(default=2, ge=0, le=5, description="最大重试次数")
     DEFAULT_STATUS: str = Field(default="PASS", description="默认审核状态")
 
+    # 双路审核：视觉审核配置
+    ENABLE_VISUAL_REVIEW: bool = Field(
+        default=True, description="是否启用视觉审核（Path 2）"
+    )
+    RENDER_SERVICE_URL: str = Field(
+        default="http://localhost:3000", description="Node.js 渲染服务地址"
+    )
+    VISION_PROVIDER: Optional[LLMProvider] = Field(
+        default=None,
+        description="视觉审核 LLM 提供商（为空则复用 CRITIC_PROVIDER）",
+    )
+    VISION_API_KEY: Optional[str] = Field(
+        default=None,
+        description="视觉审核 API Key（为空则复用 CRITIC_API_KEY）",
+    )
+    VISION_BASE_URL: Optional[str] = Field(
+        default=None,
+        description="视觉审核 API Base URL（为空则复用 CRITIC_BASE_URL）",
+    )
+    VISION_MODEL: str = Field(
+        default="gpt-4o-mini",
+        description="视觉审核使用的模型（需支持 Vision，如 gpt-4o-mini / gemini-2.0-flash）",
+    )
+
 
 # =============================================================================
 # 应用配置类
@@ -150,7 +188,6 @@ class CanvasConfig(BaseSettings):
 
     WIDTH: int = Field(default=1080, ge=100, le=10000, description="默认画布宽度")
     HEIGHT: int = Field(default=1920, ge=100, le=10000, description="默认画布高度")
-    BG_COLOR: str = Field(default="#FFFFFF", description="默认背景颜色")
 
 
 class KGConfig(BaseSettings):
@@ -176,10 +213,6 @@ class RAGConfig(BaseSettings):
     LOAD_DEFAULT_DATA: bool = Field(
         default=True, 
         description="是否加载默认品牌数据"
-    )
-    DEFAULT_DATA_PATH: str = Field(
-        default=str(BASE_DIR / "knowledge" / "rag" / "data" / "default_brand_knowledge.json"),
-        description="默认品牌数据文件路径"
     )
     EMBEDDING_MODEL: str = Field(
         default="paraphrase-multilingual-MiniLM-L12-v2",
@@ -259,12 +292,6 @@ ERROR_FALLBACKS: Final[Dict[str, Any]] = {
     }
 
 WORKFLOW_CONFIG: Final[Dict[str, Any]] = {
-        "nodes": [
-            {"name": "planner", "description": "Planning Agent", "agent": "planner"},
-            {"name": "visual", "description": "Visual Agent", "agent": "visual"},
-            {"name": "layout", "description": "Layout Agent", "agent": "layout"},
-            {"name": "critic", "description": "Critic Agent", "agent": "critic"},
-        ],
         "edges": [
             {"from": "planner", "to": "visual"},
             {"from": "visual", "to": "layout"},

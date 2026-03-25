@@ -123,9 +123,10 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 
 ```
 prompts/
-├── templates.py       # 基础 Prompt 模板
-├── dsl_templates.py   # DSL 模式 Prompt 模板 (NEW)
-└── manager.py         # Prompt 组装
+├── layout.py          # Layout Agent Prompt
+├── planner.py         # Planner Agent Prompt
+├── critic.py          # Critic Agent Prompt（双路审核）
+└── visual.py          # Visual Agent Prompt
 ```
 
 ### 获取 Prompt

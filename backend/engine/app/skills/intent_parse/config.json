@@ -1,0 +1,19 @@
+{
+  "name": "intent_parse",
+  "description": "从用户自然语言输入中提取结构化意图（行业、风格、类型、品牌、关键元素）",
+  "version": "1.0",
+  "tags": ["nlp", "intent", "rule-based"],
+  "input_schema": "IntentParseInput",
+  "output_schema": "IntentParseOutput",
+  "input_variables": [
+    {
+      "name": "user_prompt",
+      "description": "用户输入的原始提示词"
+    },
+    {
+      "name": "chat_history",
+      "description": "对话历史（可选）",
+      "default": ""
+    }
+  ]
+}

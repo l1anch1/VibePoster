@@ -10,7 +10,6 @@ import { isTextLayer } from '../../utils/editorUtils';
 
 interface TextEditorProps {
   layer: Layer;
-  scale: number;
   onUpdate: (content: string) => void;
   onClose: () => void;
 }

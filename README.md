@@ -100,9 +100,6 @@ source venv/bin/activate
 # 安装 Python 依赖
 pip install fastapi uvicorn langgraph openai google-genai python-dotenv pydantic pillow numpy
 
-# 安装图像处理库（可选，用于抠图功能）
-pip install rembg[new]
-
 # 复制 env.template 为 .env 并填写你的 API Key
 cp env.template .env
 # 然后编辑 .env 文件，填入你的 API Key
@@ -246,8 +243,10 @@ VibePoster/
 
 ### 修改 Prompt
 
-- Prompt 模板：`backend/engine/app/prompts/templates.py`
-- Prompt 管理：`backend/engine/app/prompts/manager.py`
+- Layout Prompt：`backend/engine/app/prompts/layout.py`
+- Planner Prompt：`backend/engine/app/prompts/planner.py`
+- Critic Prompt：`backend/engine/app/prompts/critic.py`
+- Visual Prompt：`backend/engine/app/prompts/visual.py`
 
 ### 修改配置
 
@@ -274,10 +273,10 @@ VibePoster/
 - 检查浏览器控制台的错误信息
 - 确认 API 地址配置正确
 
-### 抠图功能不工作
+### 主体素材上传
 
-- 确认已安装 `rembg`：`pip install rembg[new]`
-- 如果未安装，系统会使用占位实现（返回原图）
+- With Material 模式要求用户直接上传透明背景的 PNG 素材图
+- 系统不再内置自动抠图功能
 
 ## 📄 许可证
 

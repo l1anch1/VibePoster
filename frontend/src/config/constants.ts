@@ -3,6 +3,13 @@
  */
 
 // ============================================================================
+// 功能开关
+// ============================================================================
+
+/** 是否显示 Landing Page（false 则直接进入编辑器） */
+export const ENABLE_LANDING_PAGE = true;
+
+// ============================================================================
 // 画布预设
 // ============================================================================
 
@@ -36,12 +43,26 @@ export const DEFAULT_POSTER_DATA: PosterData = {
 // 示例提示词
 // ============================================================================
 
-export const EXAMPLE_PROMPTS = [
-  'Tech startup poster',
-  'Music festival',
-  'Product launch',
-  'Event invitation',
-];
+export const EXAMPLE_PROMPTS = {
+  text: [
+    'Tech startup poster with blue gradient',
+    'Music festival, neon style',
+    'Summer sale promotional banner',
+    'Event invitation, elegant gold',
+  ],
+  'style-ref': [
+    'Coffee shop new menu launch',
+    'Yoga studio spring course',
+    'New smartphone release announcement',
+    'Art exhibition opening night',
+  ],
+  material: [
+    'Product centered, clean background, minimal layout',
+    'Subject on the left, slogan on the right, bold colors',
+    'Subject at bottom, large title on top, gradient bg',
+    'Full-body portrait, magazine cover layout',
+  ],
+} as const;
 
 // ============================================================================
 // 导出格式
@@ -60,47 +81,4 @@ export const EXPORT_FORMATS: ExportFormat[] = [
   { format: 'psd', icon: '📐', label: 'PSD', desc: 'Editable layers' },
 ];
 
-// ============================================================================
-// 测试数据
-// ============================================================================
-
-export const TEST_POSTER_DATA: PosterData = {
-  canvas: { width: 1080, height: 1920, backgroundColor: '#1a1a2e' },
-  layers: [
-    {
-      id: 'test-1',
-      type: 'text',
-      name: 'Title',
-      content: 'Tech Startup Launch',
-      x: 100,
-      y: 200,
-      width: 880,
-      height: 120,
-      rotation: 0,
-      opacity: 1,
-      fontSize: 72,
-      color: '#ffffff',
-      fontFamily: 'Inter',
-      textAlign: 'center',
-      fontWeight: 'bold',
-    },
-    {
-      id: 'test-2',
-      type: 'text',
-      name: 'Subtitle',
-      content: 'The Future is Now',
-      x: 200,
-      y: 350,
-      width: 680,
-      height: 60,
-      rotation: 0,
-      opacity: 1,
-      fontSize: 32,
-      color: '#a855f7',
-      fontFamily: 'Inter',
-      textAlign: 'center',
-      fontWeight: 'normal',
-    },
-  ],
-};
 

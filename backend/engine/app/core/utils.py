@@ -22,7 +22,7 @@ def parse_llm_json_response(
     context: str = ""
 ) -> Dict[str, Any]:
     """
-    解析 LLM 返回的 JSON（自动处理 markdown 代码块）
+    解析 LLM 返回的 JSON（自动处理 markdown 代码块、单引号等常见问题）
     
     Args:
         content: LLM 返回的原始内容
@@ -35,59 +35,65 @@ def parse_llm_json_response(
     Raises:
         json.JSONDecodeError: 如果解析失败且没有提供 fallback
     """
-    # 移除可能的 markdown 代码块标记
+    original = content
+
+    if not content or not content.strip():
+        logger.warning(f"⚠️ {context} 返回内容为空")
+        if fallback is not None:
+            return fallback
+        raise json.JSONDecodeError("Empty content", "", 0)
+
     content = re.sub(r'```json\s*', '', content)
     content = re.sub(r'```\s*', '', content)
     content = content.strip()
     
+    # 1) 直接解析
     try:
-        result = json.loads(content)
-        return result
-    except json.JSONDecodeError as e:
-        logger.warning(f"⚠️ {context} JSON 解析失败: {e}")
-        logger.debug(f"原始内容: {content[:200]}...")
-        
-        if fallback is not None:
-            logger.info(f"使用回退值")
-            return fallback
-        
-        # 尝试提取部分内容
-        try:
-            # 尝试提取 JSON 对象（查找 { ... }）
-            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
-            if json_match:
-                extracted = json_match.group(0)
-                return json.loads(extracted)
-        except:
-            pass
-        
-        # 如果没有 fallback 且提取失败，抛出异常
-        raise
-
-
-def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
-    """
-    从文本中提取 JSON 对象（尽力尝试）
-    
-    Args:
-        text: 包含 JSON 的文本
-        
-    Returns:
-        提取到的 JSON 字典，失败返回 None
-    """
-    try:
-        # 尝试直接解析
-        return json.loads(text)
-    except:
+        return json.loads(content)
+    except json.JSONDecodeError:
         pass
-    
-    # 尝试查找 JSON 对象
+
+    # 2) 用正则提取最外层 { ... }
+    json_match = None
     try:
-        json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text, re.DOTALL)
+        json_match = re.search(r'\{[\s\S]*\}', content)
         if json_match:
-            return json.loads(json_match.group(0))
-    except:
+            extracted = json_match.group(0)
+            return json.loads(extracted)
+    except json.JSONDecodeError:
         pass
-    
-    return None
+
+    # 3) 尝试把单引号替换成双引号
+    try:
+        fixed = content.replace("'", '"')
+        return json.loads(fixed)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # 4) 对提取的片段也做单引号修复
+    try:
+        if json_match:
+            fixed = json_match.group(0).replace("'", '"')
+            return json.loads(fixed)
+    except (json.JSONDecodeError, ValueError, UnboundLocalError):
+        pass
+
+    # 5) 尝试移除尾部逗号（LLM 常见错误）
+    try:
+        if json_match:
+            cleaned = re.sub(r',\s*([}\]])', r'\1', json_match.group(0))
+            return json.loads(cleaned)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    logger.warning(f"⚠️ {context} JSON 解析失败（所有策略均失败）")
+    logger.warning(f"原始内容 (前500字): {original[:500]}")
+
+    if fallback is not None:
+        logger.info(f"使用回退值")
+        return fallback
+
+    raise json.JSONDecodeError("All parsing strategies failed", content, 0)
+
+
 

@@ -1,6 +1,6 @@
 """
 Renderer Service 测试
-测试 OOP 布局到 Schema 的序列化适配器
+测试 DSL 解析（绝对坐标模式）、Schema 转换
 """
 import pytest
 from app.services.renderer import RendererService, create_simple_poster_from_text
@@ -9,230 +9,144 @@ from app.models.poster import PosterData, TextLayer, ImageLayer
 
 class TestRendererService:
     """渲染服务测试类"""
-    
+
     @pytest.fixture
     def renderer(self):
-        """创建渲染服务实例"""
         return RendererService()
-    
+
     def test_initialization(self, renderer):
-        """测试初始化"""
         assert renderer is not None
-    
-    def test_parse_text_dsl(self, renderer):
-        """测试解析文本 DSL 指令"""
-        dsl_command = {
-            "type": "text",
-            "content": "测试标题",
-            "fontSize": 48,
-            "color": "#FF0000",
-            "width": 1000
-        }
-        
-        element = renderer._parse_dsl_command(dsl_command)
-        
-        assert element is not None
-        assert element.content == "测试标题"
-        assert element.font_size == 48
-    
-    def test_parse_image_dsl(self, renderer):
-        """测试解析图片 DSL 指令"""
-        dsl_command = {
-            "type": "image",
-            "src": "https://example.com/image.jpg",
-            "width": 800,
-            "height": 600
-        }
-        
-        element = renderer._parse_dsl_command(dsl_command)
-        
-        assert element is not None
-        assert element.src == "https://example.com/image.jpg"
-        assert element.width == 800
-        assert element.height == 600
-    
-    def test_parse_vertical_container_dsl(self, renderer):
-        """测试解析垂直容器 DSL 指令"""
-        dsl_command = {
-            "type": "vertical_container",
-            "width": 1080,
-            "padding": 40,
-            "gap": 20,
-            "elements": [
-                {"type": "text", "content": "Title", "fontSize": 48, "width": 1000},
-                {"type": "text", "content": "Subtitle", "fontSize": 24, "width": 1000}
-            ]
-        }
-        
-        element = renderer._parse_dsl_command(dsl_command)
-        
-        assert element is not None
-        assert len(element.elements) == 2
-    
-    def test_parse_invalid_dsl(self, renderer):
-        """测试解析无效 DSL 指令"""
-        dsl_command = {
-            "type": "invalid_type"
-        }
-        
-        with pytest.raises(ValueError):
-            renderer._parse_dsl_command(dsl_command)
-    
-    def test_to_pydantic_text_layer(self, renderer):
-        """测试转换为 Pydantic 文本图层"""
-        element_data = {
-            "type": "text",
-            "content": "测试",
-            "x": 100,
-            "y": 200,
-            "width": 500,
-            "height": 50,
-            "fontSize": 24,
-            "color": "#000000"
-        }
-        
-        layer = renderer._to_pydantic_layer(element_data)
-        
-        assert isinstance(layer, TextLayer)
-        assert layer.content == "测试"
-        assert layer.x == 100
-        assert layer.y == 200
-    
-    def test_to_pydantic_image_layer(self, renderer):
-        """测试转换为 Pydantic 图片图层"""
-        element_data = {
-            "type": "image",
-            "src": "https://example.com/image.jpg",
-            "x": 0,
-            "y": 0,
-            "width": 1080,
-            "height": 1920
-        }
-        
-        layer = renderer._to_pydantic_layer(element_data)
-        
-        assert isinstance(layer, ImageLayer)
-        assert layer.src == "https://example.com/image.jpg"
-    
-    def test_render_poster_basic(self, renderer):
-        """测试基本海报渲染"""
-        design_brief = {
-            "title": "测试海报",
-            "padding": 40,
-            "gap": 20
-        }
-        
-        layout_dsl = [
-            {
-                "type": "text",
-                "content": "标题",
-                "fontSize": 48,
-                "color": "#FF0000",
-                "width": 1000
-            },
-            {
-                "type": "image",
-                "src": "https://example.com/image.jpg",
-                "width": 1000,
-                "height": 600
-            }
+        assert renderer.dsl_parser is not None
+        assert renderer.schema_converter is not None
+
+    def test_parse_dsl_text(self, renderer):
+        """解析文本指令 → 返回元素列表"""
+        dsl = [{
+            "command": "add_title", "content": "测试标题", "font_size": 48,
+            "x": 100, "y": 200, "width": 880, "height": 80,
+        }]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+
+        assert isinstance(elements, list)
+        assert len(elements) == 1
+        assert elements[0]["type"] == "text"
+        assert elements[0]["content"] == "测试标题"
+
+    def test_parse_dsl_image(self, renderer):
+        dsl = [{
+            "command": "add_image", "src": "https://example.com/img.jpg",
+            "x": 0, "y": 0, "width": 1080, "height": 1920,
+            "layer_type": "background",
+        }]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+
+        assert isinstance(elements, list)
+        assert len(elements) == 1
+        assert elements[0]["type"] == "image"
+
+    def test_convert_to_pydantic_text_layer(self, renderer):
+        dsl = [{
+            "command": "add_title", "content": "测试", "font_size": 24,
+            "x": 40, "y": 300, "width": 1000, "height": 60,
+        }]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        poster = renderer.convert_to_pydantic_schema(elements)
+
+        assert isinstance(poster, PosterData)
+        text_layers = [l for l in poster.layers if isinstance(l, TextLayer)]
+        assert len(text_layers) == 1
+        assert text_layers[0].content == "测试"
+
+    def test_convert_to_pydantic_image_layer(self, renderer):
+        dsl = [{
+            "command": "add_image", "src": "https://example.com/img.jpg",
+            "x": 0, "y": 0, "width": 1080, "height": 1920,
+            "layer_type": "background",
+        }]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        poster = renderer.convert_to_pydantic_schema(elements)
+
+        assert isinstance(poster, PosterData)
+        img_layers = [l for l in poster.layers if isinstance(l, ImageLayer)]
+        assert len(img_layers) == 1
+
+    def test_full_render_flow(self, renderer):
+        dsl = [
+            {"command": "add_image", "src": "bg.jpg", "x": 0, "y": 0, "width": 1080, "height": 1920, "layer_type": "background"},
+            {"command": "add_title", "content": "标题", "font_size": 48, "x": 100, "y": 200, "width": 880, "height": 80},
+            {"command": "add_subtitle", "content": "副标题", "font_size": 24, "x": 100, "y": 300, "width": 880, "height": 50},
         ]
-        
-        poster_data = renderer.render_poster(
-            design_brief=design_brief,
-            layout_dsl=layout_dsl,
-            canvas_width=1080,
-            canvas_height=1920
-        )
-        
-        assert isinstance(poster_data, PosterData)
-        assert poster_data.canvas.width == 1080
-        assert len(poster_data.layers) == 2
-    
-    def test_render_poster_has_type_field(self, renderer):
-        """测试渲染的海报图层包含 type 字段"""
-        design_brief = {}
-        layout_dsl = [
-            {"type": "text", "content": "Test", "fontSize": 24, "width": 500}
-        ]
-        
-        poster_data = renderer.render_poster(
-            design_brief=design_brief,
-            layout_dsl=layout_dsl,
-            canvas_width=1080,
-            canvas_height=1920
-        )
-        
-        for layer in poster_data.layers:
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        poster = renderer.convert_to_pydantic_schema(elements)
+
+        assert isinstance(poster, PosterData)
+        assert poster.canvas.width == 1080
+        assert len(poster.layers) == 3
+
+    def test_layers_have_type_field(self, renderer):
+        dsl = [{"command": "add_title", "content": "Test", "font_size": 24, "x": 40, "y": 100, "width": 1000, "height": 50}]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        poster = renderer.convert_to_pydantic_schema(elements)
+
+        for layer in poster.layers:
             layer_dict = layer.model_dump()
             assert "type" in layer_dict
-    
-    def test_render_poster_auto_layout(self, renderer):
-        """测试自动布局计算"""
-        design_brief = {"padding": 40, "gap": 20}
-        layout_dsl = [
-            {"type": "text", "content": "Title", "fontSize": 48, "width": 1000},
-            {"type": "text", "content": "Subtitle", "fontSize": 24, "width": 1000},
-            {"type": "image", "src": "img.jpg", "width": 1000, "height": 600}
+
+    def test_absolute_coordinates_preserved(self, renderer):
+        """绝对坐标模式：指定的 x, y 应保持（除越界修正外）"""
+        dsl = [
+            {"command": "add_title", "content": "Top",    "font_size": 48, "x": 100, "y": 100, "width": 880, "height": 80},
+            {"command": "add_subtitle", "content": "Mid",  "font_size": 32, "x": 100, "y": 500, "width": 880, "height": 50},
+            {"command": "add_text", "content": "Bottom",   "font_size": 24, "x": 100, "y": 900, "width": 880, "height": 40},
         ]
-        
-        poster_data = renderer.render_poster(
-            design_brief=design_brief,
-            layout_dsl=layout_dsl,
-            canvas_width=1080,
-            canvas_height=1920
-        )
-        
-        # 验证 y 坐标递增
-        prev_y = -1
-        for layer in poster_data.layers:
-            layer_dict = layer.model_dump()
-            assert layer_dict["y"] > prev_y
-            prev_y = layer_dict["y"]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        poster = renderer.convert_to_pydantic_schema(elements)
+
+        ys = [l.y for l in poster.layers]
+        assert ys[0] == 100
+        assert ys[1] == 500
+        assert ys[2] == 900
+
+    def test_clamp_bounds(self, renderer):
+        """越界元素应被修正到画布内"""
+        dsl = [{
+            "command": "add_title", "content": "Out", "font_size": 24,
+            "x": -100, "y": -50, "width": 2000, "height": 40,
+        }]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+
+        assert elements[0]["x"] >= 20
+        assert elements[0]["y"] >= 20
+        assert elements[0]["width"] <= 1080
+
+    def test_unknown_command_ignored(self, renderer):
+        dsl = [{"command": "unknown_cmd", "x": 0, "y": 0, "width": 100, "height": 100}]
+        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        assert len(elements) == 0
 
 
 class TestCreateSimplePosterFromText:
     """简单海报生成函数测试"""
-    
+
     def test_basic_creation(self):
-        """测试基本创建"""
         poster = create_simple_poster_from_text(
-            title="测试标题",
-            subtitle="测试副标题",
-            canvas_width=1080,
-            canvas_height=1920
+            title="测试标题", subtitle="测试副标题",
+            canvas_width=1080, canvas_height=1920,
         )
-        
         assert isinstance(poster, PosterData)
         assert poster.canvas.width == 1080
-        assert poster.canvas.height == 1920
-    
-    def test_with_custom_colors(self):
-        """测试自定义颜色"""
-        poster = create_simple_poster_from_text(
-            title="Test",
-            canvas_width=1080,
-            canvas_height=1920,
-            primary_color="#FF6700",
-            background_color="#FFF8F0"
-        )
-        
-        assert poster.canvas.backgroundColor == "#FFF8F0"
-    
-    def test_has_text_layers(self):
-        """测试包含文本图层"""
-        poster = create_simple_poster_from_text(
-            title="Title",
-            subtitle="Subtitle",
-            canvas_width=1080,
-            canvas_height=1920
-        )
-        
-        # 至少应该有标题和副标题两个文本图层
-        text_layers = [
-            l for l in poster.layers 
-            if l.model_dump().get("type") == "text"
-        ]
-        
-        assert len(text_layers) >= 2
 
+    def test_title_only(self):
+        poster = create_simple_poster_from_text(
+            title="Title", canvas_width=1080, canvas_height=1920,
+        )
+        assert isinstance(poster, PosterData)
+        assert len(poster.layers) >= 1
+
+    def test_has_text_layers(self):
+        poster = create_simple_poster_from_text(
+            title="Title", subtitle="Subtitle",
+            canvas_width=1080, canvas_height=1920,
+        )
+        text_layers = [l for l in poster.layers if l.model_dump().get("type") == "text"]
+        assert len(text_layers) >= 2

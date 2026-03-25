@@ -32,7 +32,6 @@ Element (抽象基类)
 **属性：**
 - `x, y` - 位置
 - `width, height` - 尺寸
-- `z_index` - 层级
 - `style` - 样式配置
 
 **方法：**

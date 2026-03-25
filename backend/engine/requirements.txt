@@ -26,7 +26,6 @@ langsmith>=0.1.0
 # Image Processing
 Pillow>=10.4.0
 opencv-python-headless>=4.10.0
-rembg>=2.0.60
 numpy>=2.0.0
 scipy>=1.14.0
 scikit-image>=0.24.0
@@ -41,6 +40,9 @@ typing-extensions>=4.12.0
 
 # Knowledge Graph & RAG
 networkx>=3.1
+
+# MCP Server
+mcp>=1.0.0
 
 # Optional: RAG Vector Search (轻量级推荐方案)
 # sentence-transformers>=2.2.0

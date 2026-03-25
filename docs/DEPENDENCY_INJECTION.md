@@ -79,17 +79,14 @@ def get_poster_service():
 
 ```python
 from fastapi import Depends
-from ...core.dependencies import get_knowledge_service, get_poster_service
-from ...services.knowledge_service import KnowledgeService
-from ...services import PosterService
+from ...agents.planner import run_planner_agent
+from ...agents.layout import run_layout_agent
 
-@router.post("/api/generate_multimodal")
-async def generate_multimodal(
-    ...,
-    poster_service: PosterService = Depends(get_poster_service),
-):
-    """FastAPI 自动调用 get_poster_service() 并注入"""
-    return poster_service.generate_poster(...)
+@router.post("/api/step/plan")
+async def step_plan(req: PlanRequest):
+    """Step 1: 意图理解，返回设计简报"""
+    design_brief = run_planner_agent(user_prompt=req.prompt)
+    return {"step": "plan", "design_brief": design_brief}
 
 @router.get("/api/kg/infer")
 async def infer_design_rules(
@@ -180,7 +177,7 @@ def test_generate_poster():
     
     # 测试
     client = TestClient(app)
-    response = client.post("/api/generate_multimodal", ...)
+    response = client.post("/api/step/plan", ...)
     
     # 清理
     app.dependency_overrides.clear()

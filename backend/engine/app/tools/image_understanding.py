@@ -29,25 +29,26 @@ def analyze_image_with_llm(
         完整的分析结果字典，包含所有图像理解信息（OCR + 风格 + 配色等）
     """
     try:
-        # 获取 DeepSeek 客户端
+        vision_provider = (settings.visual.VISION_PROVIDER or settings.visual.PROVIDER).value
+        vision_api_key = settings.visual.VISION_API_KEY or settings.visual.API_KEY
+        vision_base_url = settings.visual.VISION_BASE_URL or settings.visual.BASE_URL
+        vision_model = settings.visual.VISION_MODEL
+
         client = LLMClientFactory.get_client(
-            provider="deepseek",
-            api_key=settings.visual.API_KEY or settings.planner.API_KEY,
-            base_url=settings.visual.BASE_URL or settings.planner.BASE_URL,
+            provider=vision_provider,
+            api_key=vision_api_key,
+            base_url=vision_base_url,
         )
         
-        # 将图片转换为 base64
         image_base64 = base64.b64encode(image_data).decode('utf-8')
         
-        # 使用统一的 Prompt 模板（OCR + 图像理解）
         prompts = visual_prompt.get_prompt(user_prompt if user_prompt else "无")
         prompt = f"{prompts['system']}\n\n{prompts['user']}"
         
-        logger.info("🔍 开始图像分析（OCR + 图像理解，一次调用）...")
+        logger.info(f"🔍 开始图像分析（{vision_model} @ {vision_provider}）...")
         
-        # 调用 Vision API（一次调用同时完成 OCR 和图像理解）
         response = client.chat.completions.create(
-            model="deepseek-chat",  # 使用支持 Vision 的模型
+            model=vision_model,
             messages=[
                 {
                     "role": "user",

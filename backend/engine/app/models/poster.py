@@ -23,7 +23,6 @@ class BaseLayer(BaseModel):
     height: int = 0
     rotation: int = 0
     opacity: float = 1.0
-    z_index: int = 0
 
 
 class TextLayer(BaseLayer):
@@ -33,7 +32,7 @@ class TextLayer(BaseLayer):
     content: str
     fontSize: int = 24
     color: str = "#000000"
-    fontFamily: str = "Yuanti TC"
+    fontFamily: str = "PingFang SC"
     textAlign: str = "left"
     fontWeight: str = "normal"
 

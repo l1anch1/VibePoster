@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # 引入路由和配置
-from .api.routes import poster_router, knowledge_router
+from .api.routes import knowledge_router, steps_router
 from .core.config import settings
 from .core.exceptions import VibePosterException
 from .api.middleware import (
@@ -48,8 +48,8 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, exception_handler)
 
 # 注册路由
-app.include_router(poster_router)
 app.include_router(knowledge_router)
+app.include_router(steps_router)
 
 
 # 健康检查端点（供 Docker 使用，不记录日志）

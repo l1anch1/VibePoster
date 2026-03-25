@@ -32,7 +32,6 @@ class Container(Element):
         height: float = 600,
         padding: float = 0,
         gap: float = 0,
-        z_index: int = 0,
         style: Optional[Style] = None
     ):
         """
@@ -43,10 +42,9 @@ class Container(Element):
             width, height: 容器尺寸
             padding: 内边距
             gap: 子元素间距
-            z_index: 层级
             style: 样式配置
         """
-        super().__init__(x, y, width, height, z_index, style)
+        super().__init__(x, y, width, height, style)
         self.elements: List[Element] = []
         self.padding = padding
         self.gap = gap
@@ -124,7 +122,6 @@ class VerticalContainer(Container):
         width: float = 400,
         padding: float = 20,
         gap: float = 10,
-        z_index: int = 0,
         style: Optional[Style] = None
     ):
         """
@@ -135,11 +132,10 @@ class VerticalContainer(Container):
             width: 容器宽度
             padding: 内边距
             gap: 子元素垂直间距
-            z_index: 层级
             style: 样式配置
         """
         # 初始高度为 0，将在 arrange() 中自动计算
-        super().__init__(x, y, width, 0, padding, gap, z_index, style)
+        super().__init__(x, y, width, 0, padding, gap, style)
     
     def arrange(self):
         """

@@ -89,14 +89,6 @@ class DesignKnowledgeGraph(IKnowledgeGraph):
     # 扩展方法
     # ========================================================================
     
-    def infer_with_explanation(self, keywords: List[str]) -> Dict[str, Any]:
-        """
-        带推理过程解释的推理
-        
-        用于调试和展示推理链。
-        """
-        return self._engine.explain_inference(keywords)
-    
     def get_emotions_for_keyword(self, keyword: str) -> List[str]:
         """获取关键词对应的情绪列表"""
         return self._graph.get_embodied_emotions(keyword)

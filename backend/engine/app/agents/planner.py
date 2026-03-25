@@ -1,31 +1,28 @@
 """
 Planner Agent - 规划与意图理解
 
-职责：
-1. 解析用户意图
-2. 生成设计简报
-
-知识模块通过 KnowledgeService 注入，实现解耦。
+通过 SkillOrchestrator 调度 4 个 Skill 完成规划流程：
+  IntentParseSkill  → 意图解析
+  DesignRuleSkill   → KG 设计规则推理
+  BrandContextSkill → RAG 品牌知识检索
+  DesignBriefSkill  → LLM 设计简报生成
 
 Author: VibePoster Team
 Date: 2025-01
 """
 
-import json
 from typing import Dict, Any, Optional, List
 
-from ..core.config import settings, ERROR_FALLBACKS
+from ..core.config import ERROR_FALLBACKS
 from ..core.llm import LLMClientFactory
 from ..core.logger import get_logger
-from ..core.dependencies import get_knowledge_service
-from ..prompts import planner as planner_prompt
 from .base import BaseAgent
 
 logger = get_logger(__name__)
 
 
 class PlannerAgent(BaseAgent):
-    """Planner Agent 实现类"""
+    """Planner Agent 实现类（LLM 调用层，供 DesignBriefSkill 使用）"""
 
     def _create_client(self):
         return LLMClientFactory.get_client(
@@ -35,7 +32,7 @@ class PlannerAgent(BaseAgent):
         )
 
     def invoke(self, messages: list, **kwargs) -> Dict[str, Any]:
-        """调用 Planner Agent"""
+        """调用 LLM"""
         response = self.client.chat.completions.create(
             model=self.config["model"],
             messages=messages,
@@ -50,85 +47,41 @@ def run_planner_agent(
     user_prompt: str,
     chat_history: Optional[List[Dict[str, str]]] = None,
     brand_name: Optional[str] = None,
-    knowledge_service=None
 ) -> Dict[str, Any]:
     """
-    运行 Planner Agent
+    运行 Planner Agent（通过 SkillOrchestrator 调度）
+
+    执行流程：
+    1. IntentParseSkill  - 解析用户意图
+    2. DesignRuleSkill   - KG 推理设计规则
+    3. BrandContextSkill - RAG 检索品牌知识
+    4. DesignBriefSkill  - LLM 生成设计简报
 
     Args:
         user_prompt: 用户输入的提示词
         chat_history: 对话历史（可选）
         brand_name: 企业品牌名称（可选，用于 RAG 检索）
-        knowledge_service: 知识服务实例（可选，用于依赖注入）
 
     Returns:
         设计简报字典
     """
-    logger.info(f"🕵️ Planner Agent 正在思考: {user_prompt}...")
+    logger.info(f"🕵️ Planner Agent（Skills 模式）正在思考: {user_prompt}...")
 
     try:
-        # 获取知识服务（支持依赖注入）
-        ks = knowledge_service or get_knowledge_service()
-        
-        # 使用 KnowledgeService 获取设计上下文
-        design_context = ks.get_design_context(user_prompt, brand_name)
-        
-        kg_keywords = design_context["kg_keywords"]
-        kg_rules = design_context["kg_rules"]
-        brand_knowledge = design_context["brand_knowledge"]
-        
-        if kg_keywords:
-            logger.info(f"🔮 KG 检测到关键词: {kg_keywords}")
-        
-        # 构建 Prompt 上下文
-        template_context = ks.build_prompt_context(kg_rules, brand_knowledge)
-        
-        # 获取 Prompt
-        prompts = planner_prompt.get_prompt(user_prompt, chat_history, template_context)
-
-        # 调用 Agent
-        from .base import AgentFactory
-        agent = AgentFactory.get_planner_agent()
-
-        response = agent.invoke(
-            messages=[
-                {"role": "system", "content": prompts["system"]},
-                {"role": "user", "content": prompts["user"]},
-            ]
+        orchestrator = _get_orchestrator()
+        context = orchestrator.run(
+            user_prompt=user_prompt,
+            chat_history=chat_history,
+            brand_name=brand_name,
         )
 
-        content = response.choices[0].message.content
-        brief = json.loads(content)
+        if context.design_brief:
+            brief = context.design_brief.to_dict()
+            logger.info(f"✅ Planner 思考完毕: {brief.get('title', 'Untitled')}")
+            return brief
 
-        # 确保包含 intent 字段
-        if "intent" not in brief:
-            brief["intent"] = settings.planner.DEFAULT_INTENT
-
-        # 添加知识模块结果
-        if kg_rules:
-            brief["kg_rules"] = kg_rules
-            # 从 color_palettes.primary 获取主色调
-            palettes = kg_rules.get("color_palettes", {})
-            if not brief.get("main_color") and palettes.get("primary"):
-                brief["main_color"] = palettes["primary"][0]
-                logger.info(f"🔮 使用 KG 推荐的主色调: {brief['main_color']}")
-        
-        if brand_knowledge:
-            brief["brand_knowledge"] = [
-                {"text": doc["text"], "category": doc.get("metadata", {}).get("category", "")}
-                for doc in brand_knowledge
-            ]
-        
-        # 添加来源标记
-        brief["design_source"] = {
-            "kg_keywords": kg_keywords,
-            "kg_active": bool(kg_rules),
-            "rag_active": bool(brand_knowledge),
-            "brand_name": brand_name
-        }
-
-        logger.info(f"✅ Planner 思考完毕: {brief.get('title', 'Untitled')}")
-        return brief
+        logger.warning("DesignBriefSkill 未返回结果，使用 fallback")
+        return ERROR_FALLBACKS["planner"]
 
     except Exception as e:
         logger.error(f"❌ Planner 出错: {e}")
@@ -145,7 +98,7 @@ def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         更新后的状态
     """
-    logger.info("🕵️ Planner (KG + RAG) 正在规划海报内容...")
+    logger.info("🕵️ Planner (Skills: Intent→KG→RAG→Brief) 正在规划海报内容...")
 
     user_prompt = state.get("user_prompt", "")
     chat_history = state.get("chat_history")
@@ -153,8 +106,8 @@ def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:
     existing_brief = state.get("design_brief", {})
 
     brief_from_llm = run_planner_agent(
-        user_prompt, 
-        chat_history, 
+        user_prompt,
+        chat_history,
         brand_name=brand_name
     )
 
@@ -163,3 +116,30 @@ def planner_node(state: Dict[str, Any]) -> Dict[str, Any]:
     logger.info(f"✅ Planner 最终设计简报: {final_brief.get('title', 'Untitled')}")
 
     return {"design_brief": final_brief}
+
+
+# ============================================================================
+# 模块级单例
+# ============================================================================
+
+_orchestrator = None
+
+
+def _get_orchestrator():
+    """获取 SkillOrchestrator 单例"""
+    global _orchestrator
+    if _orchestrator is None:
+        from ..skills import SkillOrchestrator
+        from ..core.dependencies import (
+            get_intent_parse_skill,
+            get_design_rule_skill,
+            get_brand_context_skill,
+            get_design_brief_skill,
+        )
+        _orchestrator = SkillOrchestrator(
+            intent_skill=get_intent_parse_skill(),
+            rule_skill=get_design_rule_skill(),
+            brand_skill=get_brand_context_skill(),
+            brief_skill=get_design_brief_skill(),
+        )
+    return _orchestrator

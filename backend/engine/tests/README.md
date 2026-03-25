@@ -62,13 +62,13 @@ pytest tests/test_api_routes.py
 ### 运行特定测试类
 
 ```bash
-pytest tests/test_api_routes.py::TestPosterRoutes
+pytest tests/test_api_routes.py::TestStepRoutes
 ```
 
 ### 运行特定测试方法
 
 ```bash
-pytest tests/test_api_routes.py::TestPosterRoutes::test_generate_simple_success
+pytest tests/test_api_routes.py::TestStepRoutes::test_plan_success
 ```
 
 ### 运行带标记的测试

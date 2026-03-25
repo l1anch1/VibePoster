@@ -174,7 +174,7 @@ def analyze_image_with_llm(
 使用统一的 `IMAGE_ANALYSIS_PROMPT_TEMPLATE`：
 
 ```python
-# prompts/templates.py
+# prompts/visual.py
 
 IMAGE_ANALYSIS_PROMPT_TEMPLATE = """
 请分析这张图片，提取以下信息：

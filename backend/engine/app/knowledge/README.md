@@ -129,26 +129,21 @@ results = kb.search("华为的配色", top_k=2)
 
 ## 🎯 集成方式
 
-使用 `KnowledgeService` 统一访问：
+通过 Skills 模块访问知识：
 
 ```python
-from app.services import KnowledgeService
+from app.skills import DesignRuleSkill, DesignRuleInput
+from app.skills import BrandContextSkill, BrandContextInput
 
-service = KnowledgeService()
+# KG 语义化推理（通过 DesignRuleSkill）
+skill = DesignRuleSkill()
+result = skill(DesignRuleInput(industry="Tech", vibe="Minimalist"))
+print(result.output.emotions)        # ["Trust", "Innovation", "Premium"]
+print(result.output.color_palettes)  # {"primary": [...], "accent": [...]}
 
-# KG 语义化推理
-rules = service.infer_design_rules(["Tech", "Minimalist"])
-print(rules["emotions"])        # ["Trust", "Innovation", "Premium"]
-print(rules["color_palettes"])  # {"primary": [...], "accent": [...]}
-
-# RAG 检索
-results = service.search_brand_knowledge("华为配色", brand_name="华为")
-
-# 获取完整设计上下文
-context = service.get_design_context(
-    user_prompt="科技产品发布会海报",
-    brand_name="华为"
-)
+# RAG 检索（通过 BrandContextSkill）
+brand_skill = BrandContextSkill()
+brand_result = brand_skill(BrandContextInput(brand_name="华为", query="配色"))
 ```
 
 ---

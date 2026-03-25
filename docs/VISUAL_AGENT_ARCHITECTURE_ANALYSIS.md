@@ -117,7 +117,7 @@ class RendererService:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        API Layer                             │
-│  /api/generate_multimodal  /api/kg/infer  /api/brand/upload │
+│  /api/step/*  /api/kg/infer  /api/brand/upload              │
 └───────────────────────────┬─────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
@@ -190,7 +190,7 @@ Critic Agent
 
 | 层级 | 职责 | 示例 |
 |------|------|------|
-| **API 层** | 接收请求，参数验证 | `routes/poster.py` |
+| **API 层** | 接收请求，参数验证 | `routes/steps.py` |
 | **服务层** | 业务逻辑，流程控制 | `KnowledgeService`, `RendererService` |
 | **Agent 层** | AI 决策，调用 LLM | `planner.py`, `visual.py`, `layout.py` |
 | **知识层** | 规则存储，语义检索 | `DesignKnowledgeGraph`, `BrandKnowledgeBase` |
