@@ -8,10 +8,10 @@
  * 风格：iOS 液态玻璃
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { CanvasPreset, ExportFormat } from '../../../config/constants';
 import { CANVAS_PRESETS, EXPORT_FORMATS } from '../../../config/constants';
-import { uploadBrandDocument } from '../../../services/api';
+import { uploadBrandDocument, getBrandStats } from '../../../services/api';
 
 interface EditorTopBarProps {
   onBack?: () => void;
@@ -43,7 +43,17 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [docCount, setDocCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchBrandStats = useCallback(async () => {
+    try {
+      const stats = await getBrandStats();
+      setDocCount(stats.document_count ?? 0);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchBrandStats(); }, [fetchBrandStats]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +78,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       await uploadBrandDocument(text, brandName);
 
       setUploadStatus('success');
+      fetchBrandStats();
       setTimeout(() => {
         setUploadStatus('idle');
         setSelectedFile(null);
@@ -219,6 +230,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
             <span className="font-medium">Brand Kit:</span>
+            {docCount !== null && docCount > 0 && (
+              <span className="text-xs bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full border border-violet-200">
+                {docCount} doc{docCount > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
           {/* 文件上传区 */}

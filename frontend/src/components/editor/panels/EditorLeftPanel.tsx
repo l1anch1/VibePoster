@@ -22,10 +22,7 @@ interface ImageSlot {
   file: File | null;
 }
 
-interface ExtractedData {
-  palette: string[];
-  styles: string[];
-}
+import type { ExtractedData } from '../../../types/EditorTypes';
 
 export interface UploadedImages {
   imageBg: File | null;
@@ -38,16 +35,8 @@ interface EditorLeftPanelProps {
   isGenerating: boolean;
   onGenerate: () => void;
   onImagesChange?: (images: UploadedImages) => void;
+  analysisData?: ExtractedData | null;
 }
-
-// ============================================================================
-// Mock 数据
-// ============================================================================
-
-const MOCK_EXTRACTED_DATA: ExtractedData = {
-  palette: ['#6C5CE7', '#00B894', '#FDCB6E', '#E17055'],
-  styles: ['Minimalist', 'Bold Typography', 'Geometric'],
-};
 
 // ============================================================================
 // 模式推断
@@ -215,6 +204,7 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
   isGenerating,
   onGenerate,
   onImagesChange,
+  analysisData,
 }) => {
   const [refSlot, setRefSlot] = useState<ImageSlot>({ preview: null, file: null });
   const [fgSlot, setFgSlot] = useState<ImageSlot>({ preview: null, file: null });
@@ -297,8 +287,8 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
           />
         </div>
 
-        {/* AI 风格分析面板 */}
-        {showStyleAnalysis && <AnalysisDashboard data={MOCK_EXTRACTED_DATA} />}
+        {/* AI 风格分析面板（展示真实分析数据，或在有参考图时提示等待生成） */}
+        {analysisData && analysisData.palette.length > 0 && <AnalysisDashboard data={analysisData} />}
 
         {/* 快速示例：仅在输入框和上传框都空白时显示 */}
         {!prompt.trim() && !refSlot.file && !fgSlot.file && (

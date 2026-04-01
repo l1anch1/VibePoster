@@ -15,3 +15,9 @@ export interface Transform {
     rotation: number;
 }
 
+/** AI 分析结果（用于 AnalysisDashboard 展示） */
+export interface ExtractedData {
+    palette: string[];
+    styles: string[];
+}
+

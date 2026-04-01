@@ -1,11 +1,13 @@
 /**
- * useEditorState — 海报数据 + 图层 CRUD + 画布预设 + 重置
+ * useEditorState — 海报数据 + 图层 CRUD + 画布预设 + Undo/Redo + 图层排序
  *
- * 使用 useReducer 集中管理状态，保持对外接口不变。
+ * 使用 useReducer + 历史栈包装实现撤销/重做。
+ * 拖拽/缩放操作通过 BEGIN_BATCH / END_BATCH 合并为单次 undo 步骤。
  */
 
 import { useReducer, useCallback, useMemo } from 'react';
 import type { PosterData, Layer } from '../types/PosterSchema';
+import type { ExtractedData } from '../types/EditorTypes';
 import type { UploadedImages } from '../components/editor/panels/EditorLeftPanel';
 import type { WizardConfig } from '../components/editor/StepWizard';
 import {
@@ -16,7 +18,7 @@ import {
 import { rescaleLayers } from '../utils/editorUtils';
 
 // ============================================================================
-// 公开接口（保持不变）
+// 公开接口
 // ============================================================================
 
 export interface EditorState {
@@ -28,7 +30,10 @@ export interface EditorState {
   selectedPreset: CanvasPreset;
   showExport: boolean;
   wizardConfig: WizardConfig | null;
+  analysisData: ExtractedData | null;
   hasLayers: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export interface EditorActions {
@@ -42,15 +47,21 @@ export interface EditorActions {
   handleSelectLayer: (id: string | null) => void;
   handleUpdateLayer: (layerId: string, updates: Partial<Layer>) => void;
   handleDeleteLayer: (layerId: string) => void;
+  handleReorderLayer: (layerId: string, direction: 'up' | 'down') => void;
   handleReset: () => void;
 
   handleGenerate: () => void;
-  handleWizardComplete: (posterData: PosterData) => void;
+  handleWizardComplete: (posterData: PosterData, analysisData?: ExtractedData | null) => void;
   handleWizardCancel: () => void;
+
+  handleUndo: () => void;
+  handleRedo: () => void;
+  handleBeginBatch: () => void;
+  handleEndBatch: () => void;
 }
 
 // ============================================================================
-// Reducer 实现
+// 内部状态
 // ============================================================================
 
 interface StateData {
@@ -62,6 +73,7 @@ interface StateData {
   selectedPreset: CanvasPreset;
   showExport: boolean;
   wizardConfig: WizardConfig | null;
+  analysisData: ExtractedData | null;
 }
 
 type Action =
@@ -74,10 +86,15 @@ type Action =
   | { type: 'SELECT_LAYER'; payload: string | null }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
   | { type: 'DELETE_LAYER'; layerId: string }
+  | { type: 'REORDER_LAYER'; layerId: string; direction: 'up' | 'down' }
   | { type: 'START_WIZARD'; config: WizardConfig }
-  | { type: 'WIZARD_COMPLETE'; posterData: PosterData }
+  | { type: 'WIZARD_COMPLETE'; posterData: PosterData; analysisData?: ExtractedData | null }
   | { type: 'WIZARD_CANCEL' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
+  | { type: 'BEGIN_BATCH' }
+  | { type: 'END_BATCH' };
 
 const initialState: StateData = {
   data: DEFAULT_POSTER_DATA,
@@ -88,7 +105,12 @@ const initialState: StateData = {
   selectedPreset: CANVAS_PRESETS[0],
   showExport: false,
   wizardConfig: null,
+  analysisData: null,
 };
+
+// ============================================================================
+// 内部 reducer（纯状态转换，无历史逻辑）
+// ============================================================================
 
 function resolve<T>(payload: T | ((prev: T) => T), prev: T): T {
   return typeof payload === 'function' ? (payload as (p: T) => T)(prev) : payload;
@@ -151,11 +173,22 @@ function editorReducer(state: StateData, action: Action): StateData {
         editingLayerId: null,
       };
 
+    case 'REORDER_LAYER': {
+      const layers = [...state.data.layers];
+      const idx = layers.findIndex((l) => l.id === action.layerId);
+      if (idx === -1) return state;
+      // up = toward top = increase index; down = toward bottom = decrease index
+      const targetIdx = action.direction === 'up' ? idx + 1 : idx - 1;
+      if (targetIdx < 0 || targetIdx >= layers.length) return state;
+      [layers[idx], layers[targetIdx]] = [layers[targetIdx], layers[idx]];
+      return { ...state, data: { ...state.data, layers } };
+    }
+
     case 'START_WIZARD':
       return { ...state, wizardConfig: action.config };
 
     case 'WIZARD_COMPLETE':
-      return { ...state, data: action.posterData, prompt: '', selectedLayerId: null, wizardConfig: null };
+      return { ...state, data: action.posterData, prompt: '', selectedLayerId: null, wizardConfig: null, analysisData: action.analysisData || null };
 
     case 'WIZARD_CANCEL':
       return { ...state, wizardConfig: null };
@@ -169,14 +202,121 @@ function editorReducer(state: StateData, action: Action): StateData {
 }
 
 // ============================================================================
+// 历史栈包装
+// ============================================================================
+
+const MAX_HISTORY = 50;
+
+// 会记入 undo 历史的 action 类型
+const DATA_MUTATING_ACTIONS = new Set([
+  'SET_DATA', 'CHANGE_PRESET', 'UPDATE_LAYER', 'DELETE_LAYER',
+  'REORDER_LAYER', 'WIZARD_COMPLETE', 'RESET',
+]);
+
+interface HistoryState {
+  past: StateData[];
+  present: StateData;
+  future: StateData[];
+  batching: boolean; // BEGIN_BATCH 已调用但尚未 END_BATCH
+  batchSnapshot: StateData | null; // batch 开始时的快照
+}
+
+const initialHistoryState: HistoryState = {
+  past: [],
+  present: initialState,
+  future: [],
+  batching: false,
+  batchSnapshot: null,
+};
+
+function historyReducer(history: HistoryState, action: Action): HistoryState {
+  const { past, present, future, batching, batchSnapshot } = history;
+
+  switch (action.type) {
+    case 'UNDO': {
+      if (past.length === 0) return history;
+      const prev = past[past.length - 1];
+      return {
+        past: past.slice(0, -1),
+        present: prev,
+        future: [present, ...future],
+        batching: false,
+        batchSnapshot: null,
+      };
+    }
+
+    case 'REDO': {
+      if (future.length === 0) return history;
+      const next = future[0];
+      return {
+        past: [...past, present],
+        present: next,
+        future: future.slice(1),
+        batching: false,
+        batchSnapshot: null,
+      };
+    }
+
+    case 'BEGIN_BATCH':
+      return {
+        ...history,
+        batching: true,
+        batchSnapshot: batchSnapshot ?? present, // 只在没有现有快照时保存
+      };
+
+    case 'END_BATCH': {
+      if (!batching) return history;
+      // 如果 batch 期间有实际改动，将快照推入 past
+      if (batchSnapshot && batchSnapshot !== present) {
+        return {
+          past: [...past, batchSnapshot].slice(-MAX_HISTORY),
+          present,
+          future: [],
+          batching: false,
+          batchSnapshot: null,
+        };
+      }
+      return { ...history, batching: false, batchSnapshot: null };
+    }
+
+    default: {
+      const newPresent = editorReducer(present, action);
+      if (newPresent === present) return history;
+
+      // 非数据变更 action：不影响历史
+      if (!DATA_MUTATING_ACTIONS.has(action.type)) {
+        return { ...history, present: newPresent };
+      }
+
+      // 在 batch 中：只更新 present，不推入 past（快照已保存）
+      if (batching) {
+        return { ...history, present: newPresent };
+      }
+
+      // 正常数据变更：推入历史
+      return {
+        past: [...past, present].slice(-MAX_HISTORY),
+        present: newPresent,
+        future: [],
+        batching: false,
+        batchSnapshot: null,
+      };
+    }
+  }
+}
+
+// ============================================================================
 // Hook
 // ============================================================================
 
 export function useEditorState(): EditorState & EditorActions {
-  const [state, dispatch] = useReducer(editorReducer, initialState);
+  const [history, dispatch] = useReducer(historyReducer, initialHistoryState);
+  const state = history.present;
   const hasLayers = state.data.layers.length > 0;
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
 
-  // setState-compatible dispatchers（保持与旧接口兼容）
+  // setState-compatible dispatchers
   const setData: React.Dispatch<React.SetStateAction<PosterData>> = useCallback(
     (v) => dispatch({ type: 'SET_DATA', payload: v }), []
   );
@@ -205,6 +345,9 @@ export function useEditorState(): EditorState & EditorActions {
   const handleDeleteLayer = useCallback(
     (layerId: string) => dispatch({ type: 'DELETE_LAYER', layerId }), []
   );
+  const handleReorderLayer = useCallback(
+    (layerId: string, direction: 'up' | 'down') => dispatch({ type: 'REORDER_LAYER', layerId, direction }), []
+  );
   const handleReset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
   const handleGenerate = useCallback(() => {
@@ -222,11 +365,16 @@ export function useEditorState(): EditorState & EditorActions {
   }, [state.prompt, state.wizardConfig, state.data.canvas.width, state.data.canvas.height, state.uploadedImages]);
 
   const handleWizardComplete = useCallback(
-    (posterData: PosterData) => dispatch({ type: 'WIZARD_COMPLETE', posterData }), []
+    (posterData: PosterData, analysisData?: ExtractedData | null) => dispatch({ type: 'WIZARD_COMPLETE', posterData, analysisData }), []
   );
   const handleWizardCancel = useCallback(
     () => dispatch({ type: 'WIZARD_CANCEL' }), []
   );
+
+  const handleUndo = useCallback(() => dispatch({ type: 'UNDO' }), []);
+  const handleRedo = useCallback(() => dispatch({ type: 'REDO' }), []);
+  const handleBeginBatch = useCallback(() => dispatch({ type: 'BEGIN_BATCH' }), []);
+  const handleEndBatch = useCallback(() => dispatch({ type: 'END_BATCH' }), []);
 
   return useMemo(() => ({
     // State
@@ -238,16 +386,23 @@ export function useEditorState(): EditorState & EditorActions {
     selectedPreset: state.selectedPreset,
     showExport: state.showExport,
     wizardConfig: state.wizardConfig,
+    analysisData: state.analysisData,
     hasLayers,
+    canUndo,
+    canRedo,
     // Setters
     setData, setPrompt, setUploadedImages, setShowExport, setEditingLayerId,
     // Handlers
     handlePresetChange, handleSelectLayer, handleUpdateLayer, handleDeleteLayer,
+    handleReorderLayer,
     handleReset, handleGenerate, handleWizardComplete, handleWizardCancel,
+    handleUndo, handleRedo, handleBeginBatch, handleEndBatch,
   }), [
-    state, hasLayers,
+    state, hasLayers, canUndo, canRedo,
     setData, setPrompt, setUploadedImages, setShowExport, setEditingLayerId,
     handlePresetChange, handleSelectLayer, handleUpdateLayer, handleDeleteLayer,
+    handleReorderLayer,
     handleReset, handleGenerate, handleWizardComplete, handleWizardCancel,
+    handleUndo, handleRedo, handleBeginBatch, handleEndBatch,
   ]);
 }

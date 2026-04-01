@@ -81,4 +81,33 @@ export const EXPORT_FORMATS: ExportFormat[] = [
   { format: 'psd', icon: '📐', label: 'PSD', desc: 'Editable layers' },
 ];
 
+// ============================================================================
+// 字体列表
+// ============================================================================
+
+export interface FontFamilyOption {
+  value: string;
+  label: string;
+  group: string;
+}
+
+export const FONT_FAMILIES: FontFamilyOption[] = [
+  // Chinese
+  { value: 'PingFang SC', label: 'PingFang SC', group: 'Chinese' },
+  { value: 'Songti SC', label: 'Songti SC', group: 'Chinese' },
+  { value: 'Yuanti TC', label: 'Yuanti TC', group: 'Chinese' },
+  { value: 'Kaiti SC', label: 'Kaiti SC', group: 'Chinese' },
+  { value: 'Baoli SC', label: 'Baoli SC', group: 'Chinese' },
+  // Latin Sans
+  { value: 'Inter', label: 'Inter', group: 'Latin Sans' },
+  { value: 'Arial', label: 'Arial', group: 'Latin Sans' },
+  { value: 'Helvetica', label: 'Helvetica', group: 'Latin Sans' },
+  // Latin Serif
+  { value: 'Georgia', label: 'Georgia', group: 'Latin Serif' },
+  { value: 'Times New Roman', label: 'Times New Roman', group: 'Latin Serif' },
+  // Display
+  { value: 'Impact', label: 'Impact', group: 'Display' },
+  { value: 'Courier New', label: 'Courier New', group: 'Display' },
+];
+
 

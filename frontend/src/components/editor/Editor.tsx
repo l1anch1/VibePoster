@@ -4,7 +4,7 @@
  * 布局：
  * - 上：顶部参数栏（画布尺寸、导出）
  * - 左：输入面板（提示词、图片上传）
- * - 中：画布区域（白色海报）
+ * - 中：画布区域（白色海报）+ 缩放控制
  * - 右：属性面板（图层列表、属性编辑，类似 PS）
  *
  * 风格：iOS 液态玻璃
@@ -42,14 +42,19 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
   const {
     data, prompt, selectedLayerId, editingLayerId,
     selectedPreset, showExport, wizardConfig, hasLayers,
+    canUndo, canRedo,
     setPrompt, setUploadedImages, setShowExport, setEditingLayerId,
     handlePresetChange, handleSelectLayer, handleUpdateLayer, handleDeleteLayer,
+    handleReorderLayer,
     handleReset, handleGenerate, handleWizardComplete, handleWizardCancel,
+    handleUndo, handleRedo, handleBeginBatch, handleEndBatch,
   } = state;
 
   // ========== 画布缩放 ==========
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.4);
+  const [autoScale, setAutoScale] = useState(0.4);
+  const [manualZoom, setManualZoom] = useState<number | null>(null);
+  const effectiveScale = manualZoom ?? autoScale;
 
   useEffect(() => {
     const calculateScale = () => {
@@ -60,12 +65,41 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
       const scaleY = (container.height - padding) / data.canvas.height;
       const isLandscape = data.canvas.width > data.canvas.height;
       const maxScale = isLandscape ? 0.45 : 0.55;
-      setScale(Math.min(scaleX, scaleY, maxScale));
+      setAutoScale(Math.min(scaleX, scaleY, maxScale));
     };
     calculateScale();
     window.addEventListener('resize', calculateScale);
     return () => window.removeEventListener('resize', calculateScale);
   }, [data.canvas.width, data.canvas.height]);
+
+  // Ctrl/Cmd + 滚轮缩放
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const current = manualZoom ?? autoScale;
+        const delta = e.deltaY > 0 ? -0.05 : 0.05;
+        const next = Math.max(0.1, Math.min(2.0, Math.round((current + delta) * 100) / 100));
+        setManualZoom(next);
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [manualZoom, autoScale]);
+
+  const handleZoomIn = useCallback(() => {
+    const current = manualZoom ?? autoScale;
+    setManualZoom(Math.min(2.0, Math.round((current + 0.1) * 10) / 10));
+  }, [manualZoom, autoScale]);
+
+  const handleZoomOut = useCallback(() => {
+    const current = manualZoom ?? autoScale;
+    setManualZoom(Math.max(0.1, Math.round((current - 0.1) * 10) / 10));
+  }, [manualZoom, autoScale]);
+
+  const handleFitToScreen = useCallback(() => setManualZoom(null), []);
 
   // ========== 快捷键 ==========
   useKeyboardShortcuts({
@@ -75,6 +109,8 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
     onClearSelection: useCallback(() => handleSelectLayer(null), [handleSelectLayer]),
     onCloseExport: useCallback(() => setShowExport(false), [setShowExport]),
     onDeleteLayer: handleDeleteLayer,
+    onUndo: handleUndo,
+    onRedo: handleRedo,
   });
 
   // ========== 导出 ==========
@@ -133,6 +169,7 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
               isGenerating={false}
               onGenerate={handleGenerate}
               onImagesChange={setUploadedImages}
+              analysisData={state.analysisData}
             />
 
             <main
@@ -143,7 +180,7 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
               <div onClick={(e) => e.stopPropagation()}>
                 <EditorCanvas
                   data={data}
-                  scale={scale}
+                  scale={effectiveScale}
                   isEditMode={true}
                   selectedLayerId={selectedLayerId}
                   onSelectLayer={handleSelectLayer}
@@ -152,15 +189,32 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
                   editingLayerId={editingLayerId}
                   onStartEditing={setEditingLayerId}
                   onStopEditing={() => setEditingLayerId(null)}
+                  onBeginBatch={handleBeginBatch}
+                  onEndBatch={handleEndBatch}
                 />
               </div>
+              {/* 底部状态栏 + 缩放控制 */}
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full text-xs font-medium text-gray-600"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-600"
                 style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)' }}
               >
-                <span>{data.canvas.width} × {data.canvas.height}</span>
+                <span>{data.canvas.width} x {data.canvas.height}</span>
                 <span className="w-1 h-1 rounded-full bg-gray-400" />
-                <span>{Math.round(scale * 100)}%</span>
+                <button onClick={handleZoomOut} className="px-1.5 hover:text-gray-900 transition-colors" title="Zoom out">-</button>
+                <span className="w-10 text-center">{Math.round(effectiveScale * 100)}%</span>
+                <button onClick={handleZoomIn} className="px-1.5 hover:text-gray-900 transition-colors" title="Zoom in">+</button>
+                {manualZoom !== null && (
+                  <button onClick={handleFitToScreen} className="px-1.5 hover:text-gray-900 transition-colors text-violet-500" title="Fit to screen">Fit</button>
+                )}
+                {canUndo && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-gray-400" />
+                    <button onClick={handleUndo} className="px-1 hover:text-gray-900 transition-colors" title="Undo (Cmd+Z)">↩</button>
+                  </>
+                )}
+                {canRedo && (
+                  <button onClick={handleRedo} className="px-1 hover:text-gray-900 transition-colors" title="Redo (Cmd+Shift+Z)">↪</button>
+                )}
               </div>
             </main>
 
@@ -171,6 +225,7 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
                 onSelectLayer={handleSelectLayer}
                 onUpdateLayer={handleUpdateLayer}
                 onDeleteLayer={handleDeleteLayer}
+                onReorderLayer={handleReorderLayer}
               />
             )}
           </>

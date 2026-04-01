@@ -48,9 +48,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <a href="#how-it-works" className="hover:text-violet-600 transition-colors">
             How it Works
           </a>
-          <a href="#pricing" className="hover:text-violet-600 transition-colors">
+          <span className="text-gray-400 cursor-default" title="Coming Soon">
             Pricing
-          </a>
+          </span>
         </div>
         <button
           onClick={onEnter}
@@ -110,6 +110,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             </svg>
           </button>
           <button
+            onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
             className="flex items-center gap-2 px-6 py-4 text-base font-medium text-gray-800 rounded-2xl transition-all hover:bg-white/80"
             style={{
               background: 'rgba(255,255,255,0.7)',
@@ -120,7 +121,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <svg className="w-5 h-5 text-violet-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
-            <span>Watch Demo</span>
+            <span>See How It Works</span>
           </button>
         </div>
 
@@ -288,18 +289,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               <span className="text-white text-xs font-bold">V</span>
             </div>
             <span className="font-semibold">VibePoster</span>
-            <span className="text-gray-500">© 2025</span>
+            <span className="text-gray-500">© 2026</span>
           </div>
           <div className="flex items-center gap-6 text-sm font-medium text-gray-600">
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Terms
-            </a>
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Contact
-            </a>
+            <span className="opacity-50 cursor-default" title="Coming Soon">Privacy</span>
+            <span className="opacity-50 cursor-default" title="Coming Soon">Terms</span>
+            <span className="opacity-50 cursor-default" title="Coming Soon">Contact</span>
           </div>
         </div>
       </footer>

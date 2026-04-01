@@ -29,7 +29,7 @@ export interface WizardConfig {
 
 interface StepWizardProps {
   config: WizardConfig;
-  onComplete: (posterData: PosterData) => void;
+  onComplete: (posterData: PosterData, analysisData?: { palette: string[]; styles: string[] } | null) => void;
   onCancel: () => void;
 }
 
@@ -67,12 +67,30 @@ const StepIndicator: React.FC<{ current: number; labels: string[] }> = ({ curren
   </div>
 );
 
-const Spinner: React.FC<{ text: string }> = ({ text }) => (
-  <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
-    <div className="w-10 h-10 border-3 border-violet-200 border-t-violet-500 rounded-full animate-spin" />
-    <p className="text-sm text-gray-500">{text}</p>
-  </div>
-);
+const LOADING_MESSAGES: Record<string, string[]> = {
+  'plan-loading': ['Analyzing your intent...', 'Understanding design requirements...', 'Crafting your design brief...'],
+  'assets-loading': ['Searching for assets...', 'Finding the perfect images...', 'Matching your style...'],
+  'layouts-loading': ['Generating layout candidates...', 'Arranging text elements...', 'Optimizing composition...', 'Running quality review...'],
+  'finalizing': ['Finalizing poster...', 'Polishing details...', 'Almost there...'],
+};
+
+const Spinner: React.FC<{ text: string; step?: string }> = ({ text, step }) => {
+  const [msgIdx, setMsgIdx] = useState(0);
+  const messages = step ? LOADING_MESSAGES[step] || [text] : [text];
+
+  useEffect(() => {
+    setMsgIdx(0);
+    const timer = setInterval(() => setMsgIdx((i) => (i + 1) % messages.length), 3000);
+    return () => clearInterval(timer);
+  }, [step, messages.length]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+      <div className="w-10 h-10 border-3 border-violet-200 border-t-violet-500 rounded-full animate-spin" />
+      <p className="text-sm text-gray-500 transition-opacity duration-300">{messages[msgIdx]}</p>
+    </div>
+  );
+};
 
 const ErrorBanner: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <div className="mx-6 my-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-600">
@@ -580,12 +598,21 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       const res = await stepFinalize({
         posterData: layoutCandidates[selectedLayoutIdx],
       });
-      onComplete(res.poster);
+      // Extract analysis data for the dashboard
+      const extractedAnalysis = {
+        palette: [
+          ...(colorSuggestions?.palette as string[] || []),
+          designBrief?.main_color,
+          designBrief?.background_color,
+        ].filter((c): c is string => !!c && typeof c === 'string'),
+        styles: designBrief?.style_keywords as string[] || [],
+      };
+      onComplete(res.poster, extractedAnalysis);
     } catch (e: any) {
       setError(e?.message || 'Finalize failed');
       setStep('layouts-review');
     }
-  }, [layoutCandidates, selectedLayoutIdx, onComplete]);
+  }, [layoutCandidates, selectedLayoutIdx, onComplete, colorSuggestions, designBrief]);
 
   // ----- 当前步骤序号 -----
   const currentStepNum =
@@ -629,7 +656,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       } />}
 
       {/* Step 内容 */}
-      {step === 'plan-loading' && <Spinner text="Analyzing your intent..." />}
+      {step === 'plan-loading' && <Spinner text="Analyzing your intent..." step="plan-loading" />}
       {step === 'plan-review' && !error && (
         <BriefEditor
           brief={designBrief}
@@ -639,7 +666,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         />
       )}
 
-      {step === 'assets-loading' && <Spinner text="Searching for assets..." />}
+      {step === 'assets-loading' && <Spinner text="Searching for assets..." step="assets-loading" />}
       {step === 'assets-review' && !error && (
         <AssetPicker
           candidates={assetCandidates}
@@ -655,7 +682,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         />
       )}
 
-      {step === 'layouts-loading' && <Spinner text="Generating layouts..." />}
+      {step === 'layouts-loading' && <Spinner text="Generating layouts..." step="layouts-loading" />}
       {step === 'layouts-review' && !error && (
         <LayoutPicker
           layouts={layoutCandidates}
@@ -668,7 +695,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         />
       )}
 
-      {step === 'finalizing' && <Spinner text="Finalizing poster..." />}
+      {step === 'finalizing' && <Spinner text="Finalizing poster..." step="finalizing" />}
     </div>
   );
 };

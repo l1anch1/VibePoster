@@ -190,3 +190,8 @@ export async function uploadBrandDocument(
 
   await apiClient.post('/api/brand/upload', formData);
 }
+
+export async function getBrandStats(): Promise<{ document_count: number; [key: string]: unknown }> {
+  const res = await apiClient.get('/api/brand/stats');
+  return res.data?.data || { document_count: 0 };
+}
