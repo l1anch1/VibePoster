@@ -201,7 +201,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="p-6 rounded-3xl transition-all hover:scale-[1.02]"
+                className="p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
                 style={{
                   background: 'rgba(255,255,255,0.6)',
                   backdropFilter: 'blur(20px) saturate(180%)',

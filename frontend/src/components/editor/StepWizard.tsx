@@ -86,8 +86,8 @@ const Spinner: React.FC<{ text: string; step?: string }> = ({ text, step }) => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
-      <div className="w-10 h-10 border-3 border-violet-200 border-t-violet-500 rounded-full animate-spin" />
-      <p className="text-sm text-gray-500 transition-opacity duration-300">{messages[msgIdx]}</p>
+      <div className="w-10 h-10 border-[3px] border-violet-200 border-t-violet-500 rounded-full animate-spin" />
+      <p className="text-sm text-gray-500 animate-fade-in" key={msgIdx}>{messages[msgIdx]}</p>
     </div>
   );
 };

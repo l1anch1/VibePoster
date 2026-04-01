@@ -95,12 +95,12 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           color: layer.color || '#000000',
           textAlign: (layer.textAlign || 'left') as 'left' | 'center' | 'right',
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          border: '2px solid #3B82F6',
-          borderRadius: '4px',
+          border: '2px solid #8b5cf6',
+          borderRadius: '12px',
           resize: 'none',
           outline: 'none',
-          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-          lineHeight: 1.4,
+          boxShadow: '0 4px 16px rgba(139, 92, 246, 0.25)',
+          lineHeight: 1.2,
           boxSizing: 'border-box',
         }}
       />

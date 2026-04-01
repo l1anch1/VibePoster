@@ -1,32 +1,34 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   VibePoster Design System - iOS 液态玻璃风格
-   
-   统一设计规范：
-   - 字体：Inter，主文字 14px (text-sm)，标签 12px (text-xs)
-   - 颜色：高对比度，标题 gray-900，正文 gray-700，辅助 gray-500
-   - 边框：统一 gray-300，focus 时 violet-500
-   - 圆角：按钮 xl (12px)，卡片 2xl-3xl (16-24px)
-   - 阴影：使用 shadow-sm 基础阴影，重要元素用 violet 阴影
+   VibePoster Design System - iOS Liquid Glass
+
+   Design tokens:
+   - Font: Inter, 14px body / 12px label
+   - Accent: violet-500 (#8b5cf6) throughout — selection, focus, guides
+   - Radius: buttons xl (12px), cards 2xl-3xl (16-24px)
+   - Shadows: sm base, violet-tinted for emphasis
+   - Transitions: 200ms ease for most, 300ms for layout shifts
 ============================================================================= */
 
 /* =============================================================================
-   Base Styles
+   Base
 ============================================================================= */
 
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #fef3c7 100%);
   min-height: 100vh;
-  color: #374151; /* gray-700 默认文字颜色 */
+  color: #374151;
   line-height: 1.6;
+  overscroll-behavior: none;
 }
 
 /* =============================================================================
@@ -38,41 +40,66 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes slideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes subtlePulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.2; transform: scale(1.03); }
+}
+
+/* Utility classes for animations */
+.animate-fade-in  { animation: fadeIn 0.25s ease-out both; }
+.animate-scale-in { animation: scaleIn 0.2s ease-out both; }
+.animate-fade-out { animation: fadeOut 0.2s ease-in both; }
+
 /* =============================================================================
-   Typography - 统一字体规范
+   Typography
 ============================================================================= */
 
-/* 大标题 */
 h1 {
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: #111827; /* gray-900 */
+  color: #111827;
 }
 
-/* 中标题 */
 h2, h3 {
   font-weight: 600;
-  color: #1f2937; /* gray-800 */
+  color: #1f2937;
 }
 
-/* 小标题/标签 */
 h4, h5, h6 {
   font-weight: 600;
-  color: #4b5563; /* gray-600 */
+  color: #4b5563;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-/* 正文 */
 p {
-  color: #4b5563; /* gray-600 */
+  color: #4b5563;
 }
 
 /* =============================================================================
    Interactive Elements
 ============================================================================= */
 
-/* 所有可点击元素显示指针 */
 button,
 [role="button"],
 a,
@@ -90,10 +117,11 @@ input:disabled,
 select:disabled,
 .disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
 }
 
-/* Focus 状态统一 */
+/* Focus ring with smooth transition */
 input:focus,
 textarea:focus,
 select:focus,
@@ -101,10 +129,16 @@ button:focus-visible {
   outline: none;
   border-color: #8b5cf6;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Active press feedback */
+button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 /* =============================================================================
-   Scrollbar - 浅色主题
+   Scrollbar
 ============================================================================= */
 
 ::-webkit-scrollbar {
@@ -117,12 +151,19 @@ button:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.25);
   border-radius: 3px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.45);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
 }
 
 /* =============================================================================
@@ -134,3 +175,51 @@ button:focus-visible {
   color: #1f2937;
 }
 
+/* =============================================================================
+   Range slider — custom thumb (cross-browser)
+============================================================================= */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  margin-top: -5px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}

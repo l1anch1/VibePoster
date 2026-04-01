@@ -135,7 +135,7 @@ const ImageUploadBox: React.FC<{
 
 const AnalysisDashboard: React.FC<{ data: ExtractedData }> = ({ data }) => (
   <div
-    className="rounded-2xl p-4 space-y-3.5 animate-in fade-in"
+    className="rounded-2xl p-4 space-y-3.5 animate-fade-in"
     style={{
       background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,184,148,0.06) 100%)',
       backdropFilter: 'blur(8px)',
@@ -322,7 +322,7 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
         >
           {isGenerating ? (
             <>
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Generating...
             </>
           ) : (

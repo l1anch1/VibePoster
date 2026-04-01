@@ -289,10 +289,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           backgroundColor: data.canvas.backgroundColor,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
           boxSizing: 'border-box',
           overflow: 'hidden',
-          borderRadius: '4px',
+          borderRadius: '8px',
+          transition: 'transform 0.2s ease',
         }}
         ref={canvasRef}
         onClick={(e) => {
@@ -329,10 +330,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               [g.orientation === 'v' ? 'top' : 'left']: 0,
               [g.orientation === 'v' ? 'width' : 'height']: '1px',
               [g.orientation === 'v' ? 'height' : 'width']: '100%',
-              backgroundColor: g.orientation === 'v' ? '#FF00FF' : '#00BFFF',
+              backgroundColor: '#8b5cf6',
               pointerEvents: 'none',
               zIndex: 9999,
-              opacity: 0.7,
+              opacity: 0.6,
             }}
           />
         ))}

@@ -157,13 +157,15 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
     cursor: isDragging ? 'grabbing' : isLocked ? 'not-allowed' : 'grab',
     userSelect: 'none',
     pointerEvents: isLocked ? 'none' : 'auto',
+    transition: isDragging ? 'none' : 'outline 0.15s ease, box-shadow 0.15s ease',
   };
 
-  // 选中边框样式
+  // 选中/hover 边框样式 — 使用统一的 violet 主色
   const selectionStyle: CSSProperties = isSelected
     ? {
-        outline: '2px solid #3B82F6',
-        outlineOffset: '0px',
+        outline: '2px solid #8b5cf6',
+        outlineOffset: '1px',
+        boxShadow: '0 0 0 4px rgba(139, 92, 246, 0.1)',
       }
     : {};
 
@@ -228,15 +230,19 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
               className="resize-handle"
               style={{
                 position: 'absolute',
-                width: '8px',
-                height: '8px',
-                backgroundColor: '#3B82F6',
-                border: '1px solid #FFFFFF',
+                width: '10px',
+                height: '10px',
+                backgroundColor: '#8b5cf6',
+                border: '2px solid #FFFFFF',
                 borderRadius: '50%',
                 cursor: handle.cursor,
                 zIndex: 1000,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                transition: 'transform 0.15s ease',
                 ...handle.style,
               }}
+              onMouseEnter={(e) => { (e.target as HTMLElement).style.transform = 'scale(1.3)'; }}
+              onMouseLeave={(e) => { (e.target as HTMLElement).style.transform = 'scale(1)'; }}
               onMouseDown={(e) => handleResizeMouseDown(handle.direction, e)}
             />
           ))}

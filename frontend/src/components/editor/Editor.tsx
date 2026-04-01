@@ -138,8 +138,8 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
       style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #fef3c7 100%)' }}
     >
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-300/30 to-purple-300/30 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-pink-300/30 to-orange-200/30 blur-3xl" />
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-300/30 to-purple-300/30 blur-3xl" style={{ animation: 'subtlePulse 8s ease-in-out infinite' }} />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-pink-300/30 to-orange-200/30 blur-3xl" style={{ animation: 'subtlePulse 8s ease-in-out infinite 2s' }} />
       </div>
 
       <EditorTopBar
@@ -195,25 +195,23 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
               </div>
               {/* 底部状态栏 + 缩放控制 */}
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-gray-600"
-                style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)' }}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 rounded-2xl text-xs font-medium text-gray-500 select-none"
+                style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px) saturate(180%)', boxShadow: '0 2px 12px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.5)' }}
               >
-                <span>{data.canvas.width} x {data.canvas.height}</span>
-                <span className="w-1 h-1 rounded-full bg-gray-400" />
-                <button onClick={handleZoomOut} className="px-1.5 hover:text-gray-900 transition-colors" title="Zoom out">-</button>
-                <span className="w-10 text-center">{Math.round(effectiveScale * 100)}%</span>
-                <button onClick={handleZoomIn} className="px-1.5 hover:text-gray-900 transition-colors" title="Zoom in">+</button>
+                <span className="px-2 text-gray-400">{data.canvas.width} x {data.canvas.height}</span>
+                <span className="w-px h-3 bg-gray-300" />
+                <button onClick={handleZoomOut} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" title="Zoom out">−</button>
+                <span className="w-10 text-center tabular-nums">{Math.round(effectiveScale * 100)}%</span>
+                <button onClick={handleZoomIn} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" title="Zoom in">+</button>
                 {manualZoom !== null && (
-                  <button onClick={handleFitToScreen} className="px-1.5 hover:text-gray-900 transition-colors text-violet-500" title="Fit to screen">Fit</button>
+                  <button onClick={handleFitToScreen} className="px-2 h-7 flex items-center justify-center rounded-lg hover:bg-violet-50 text-violet-500 transition-colors text-xs" title="Fit to screen">Fit</button>
                 )}
+                {(canUndo || canRedo) && <span className="w-px h-3 bg-gray-300" />}
                 {canUndo && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-gray-400" />
-                    <button onClick={handleUndo} className="px-1 hover:text-gray-900 transition-colors" title="Undo (Cmd+Z)">↩</button>
-                  </>
+                  <button onClick={handleUndo} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" title="Undo (Cmd+Z)">↩</button>
                 )}
                 {canRedo && (
-                  <button onClick={handleRedo} className="px-1 hover:text-gray-900 transition-colors" title="Redo (Cmd+Shift+Z)">↪</button>
+                  <button onClick={handleRedo} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" title="Redo (Cmd+Shift+Z)">↪</button>
                 )}
               </div>
             </main>
