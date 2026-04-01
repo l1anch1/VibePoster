@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibePoster · Pipeline Data Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --text: #e0e0e0;
+    --muted: #666;
+    --purple: #818cf8; --purple-dim: #4338ca; --purple-bg: #0f0e1f; --purple-border: #2e2a5e;
+    --blue: #60a5fa; --blue-dim: #2563eb; --blue-bg: #0c1420; --blue-border: #1e3a5f;
+    --green: #4ade80; --green-dim: #16a34a; --green-bg: #0c1a0e; --green-border: #1e4d2b;
+    --orange: #fb923c; --orange-dim: #ea580c; --orange-bg: #1a140a; --orange-border: #4d3318;
+    --pink: #f472b6; --pink-dim: #db2777; --pink-bg: #1a0c17; --pink-border: #4d1842;
+    --cyan: #22d3ee; --cyan-dim: #0891b2; --cyan-bg: #0a1a1e; --cyan-border: #164e63;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .container { max-width: 1300px; margin: 0 auto; padding: 40px 30px 60px; }
+  h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px; font-weight: 700; color: #fff;
+    margin-bottom: 4px; letter-spacing: -0.5px;
+  }
+  .subtitle {
+    font-size: 13px; color: var(--muted); margin-bottom: 44px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* step wrapper */
+  .step { margin-bottom: 0; position: relative; }
+  .step-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; cursor: pointer; user-select: none;
+  }
+  .step-num {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
+    flex-shrink: 0; border: 2px solid;
+  }
+  .step-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 600;
+  }
+  .step-desc {
+    font-size: 12px; color: var(--muted); margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* connector line between steps */
+  .connector {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 20px 8px 56px;
+  }
+  .conn-line {
+    flex: 1; height: 0; border-top: 2px dashed #333;
+  }
+  .conn-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: #888; background: #13131a; padding: 3px 10px;
+    border-radius: 4px; border: 1px solid #222; white-space: nowrap;
+  }
+  .conn-arrow { color: #555; font-size: 18px; line-height: 1; }
+
+  /* modules inside a step */
+  .step-body { padding: 0 0 16px 56px; }
+  .modules-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .module {
+    flex: 1; min-width: 280px;
+    border-radius: 12px; padding: 16px 20px;
+    border: 1px solid; background: var(--surface);
+  }
+  .module-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .module-icon { font-size: 15px; }
+  .module-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+  }
+  .module-file {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    opacity: 0.4; margin-left: auto;
+  }
+
+  .data-flow { display: flex; gap: 20px; flex-wrap: wrap; }
+  .data-col { flex: 1; min-width: 180px; }
+  .data-col-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; opacity: 0.5;
+  }
+  .data-item {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 2px 0; display: flex; align-items: baseline; gap: 6px;
+  }
+  .data-item::before { content: '→'; opacity: 0.25; font-size: 10px; }
+  .data-key { font-weight: 500; }
+  .data-type { font-size: 9px; opacity: 0.35; }
+
+  .new-tag, .fix-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700;
+    border-radius: 3px; padding: 1px 5px; vertical-align: middle; white-space: nowrap;
+  }
+  .new-tag { color: #22c55e; background: #052e16; border: 1px solid #166534; }
+  .fix-tag { color: #f59e0b; background: #1c1508; border: 1px solid #78350f; }
+
+  /* color themes */
+  .s-fe .step-num { background: #1e1b4b; color: var(--purple); border-color: var(--purple-dim); }
+  .s-fe .step-title { color: var(--purple); }
+  .s-fe .module { background: var(--purple-bg); border-color: var(--purple-border); }
+  .s-fe .data-key { color: #a5b4fc; }
+
+  .s1 .step-num { background: #1a2332; color: var(--blue); border-color: var(--blue-dim); }
+  .s1 .step-title { color: var(--blue); }
+  .s1 .module { background: var(--blue-bg); border-color: var(--blue-border); }
+  .s1 .data-key { color: #93c5fd; }
+
+  .s2 .step-num { background: #1a2e1a; color: var(--green); border-color: var(--green-dim); }
+  .s2 .step-title { color: var(--green); }
+  .s2 .module { background: var(--green-bg); border-color: var(--green-border); }
+  .s2 .data-key { color: #86efac; }
+
+  .s3 .step-num { background: #2d1f0f; color: var(--orange); border-color: var(--orange-dim); }
+  .s3 .step-title { color: var(--orange); }
+  .s3 .module { background: var(--orange-bg); border-color: var(--orange-border); }
+  .s3 .data-key { color: #fdba74; }
+
+  .s4 .step-num { background: #2d1528; color: var(--pink); border-color: var(--pink-dim); }
+  .s4 .step-title { color: var(--pink); }
+  .s4 .module { background: var(--pink-bg); border-color: var(--pink-border); }
+  .s4 .data-key { color: #f9a8d4; }
+
+  .s-render .step-num { background: #0a1a1e; color: var(--cyan); border-color: var(--cyan-dim); }
+  .s-render .step-title { color: var(--cyan); }
+  .s-render .module { background: var(--cyan-bg); border-color: var(--cyan-border); }
+  .s-render .data-key { color: #67e8f9; }
+
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    margin-top: 36px; padding: 14px 18px;
+    background: var(--surface); border-radius: 8px; border: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888;
+  }
+  .retry-loop {
+    margin: 8px 0 8px 56px; padding: 10px 16px;
+    border: 1px dashed #ea580c44; border-radius: 8px;
+    background: #1a100544;
+  }
+  .retry-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: #fb923c; margin-bottom: 6px; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>VibePoster · 模块间数据流图</h1>
+  <p class="subtitle">每一步传递的完整字段 &nbsp;|&nbsp; <span class="new-tag">NEW</span> = 本轮新增 &nbsp; <span class="fix-tag">FIX</span> = 本轮修复连通</p>
+
+  <!-- ==================== FRONTEND ==================== -->
+  <div class="step s-fe">
+    <div class="step-header">
+      <div class="step-num">FE</div>
+      <div class="step-title">Frontend · 用户输入</div>
+      <div class="step-desc">StepWizard.tsx / EditorLeftPanel.tsx</div>
+    </div>
+    <div class="step-body">
+      <div class="module">
+        <div class="module-header">
+          <span class="module-icon">🖥️</span>
+          <span class="module-title">用户在前端提供的原始数据</span>
+        </div>
+        <div class="data-flow">
+          <div class="data-col">
+            <div class="data-col-title">User Input</div>
+            <div class="data-item"><span class="data-key">prompt</span> <span class="data-type">string "音乐节，赛博风格"</span></div>
+            <div class="data-item"><span class="data-key">canvasWidth</span> <span class="data-type">int 1080</span></div>
+            <div class="data-item"><span class="data-key">canvasHeight</span> <span class="data-type">int 1920</span></div>
+            <div class="data-item"><span class="data-key">imageBg</span> <span class="data-type">File? (用户自选背景)</span></div>
+            <div class="data-item"><span class="data-key">imageSubject</span> <span class="data-type">File? (人物/产品抠图)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-arrow">▼</div>
+    <div class="conn-line"></div>
+    <div class="conn-label">POST /api/step/plan { prompt, canvasWidth, canvasHeight }</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+
+  <!-- ==================== STEP 1: PLAN ==================== -->
+  <div class="step s1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Step 1 · Plan (意图解析 + 知识检索 + 设计摘要)</div>
+      <div class="step-desc">api/routes/steps.py → step_plan</div>
+    </div>
+    <div class="step-body">
+
+      <div class="modules-row">
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">🔍</span>
+            <span class="module-title">IntentParseSkill</span>
+            <span class="module-file">skills/intent_parse/run.py</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">user_prompt</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT → IntentOutput</div>
+              <div class="data-item"><span class="data-key">industry</span> <span class="data-type">"Music"</span></div>
+              <div class="data-item"><span class="data-key">vibe</span> <span class="data-type">"Cyberpunk"</span></div>
+              <div class="data-item"><span class="data-key">poster_type</span> <span class="data-type">"活动海报"</span></div>
+              <div class="data-item"><span class="data-key">brand_name</span> <span class="data-type">str?</span></div>
+              <div class="data-item"><span class="data-key">key_elements[]</span></div>
+              <div class="data-item"><span class="data-key">extracted_keywords[]</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">🧠</span>
+            <span class="module-title">DesignRuleSkill (KG 推理)</span>
+            <span class="module-file">skills/design_rule/run.py → knowledge/kg/</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">industry</span></div>
+              <div class="data-item"><span class="data-key">vibe</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT → kg_rules{}</div>
+              <div class="data-item"><span class="data-key">emotions[]</span></div>
+              <div class="data-item"><span class="data-key">color_strategies[]</span> <span class="fix-tag">FIX#6</span></div>
+              <div class="data-item"><span class="data-key">color_palettes{}</span> <span class="fix-tag">FIX#6</span></div>
+              <div class="data-item"><span class="data-key">typography_styles[]</span></div>
+              <div class="data-item"><span class="data-key">typography_weights[]</span></div>
+              <div class="data-item"><span class="data-key">typography_characteristics[]</span> <span class="fix-tag">FIX#6</span></div>
+              <div class="data-item"><span class="data-key">layout_strategies[]</span></div>
+              <div class="data-item"><span class="data-key">layout_patterns[]</span></div>
+              <div class="data-item"><span class="data-key">design_principles[]</span> <span class="fix-tag">FIX#6</span></div>
+              <div class="data-item"><span class="data-key">avoid[]</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modules-row">
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">📚</span>
+            <span class="module-title">BrandContextSkill (RAG 向量检索)</span>
+            <span class="module-file">skills/brand_context/run.py → knowledge/rag/</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN (可选，需检测到品牌)</div>
+              <div class="data-item"><span class="data-key">brand_name</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT → brand_context{}</div>
+              <div class="data-item"><span class="data-key">brand_colors{}</span></div>
+              <div class="data-item"><span class="data-key">brand_style</span></div>
+              <div class="data-item"><span class="data-key">guidelines[]</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">📝</span>
+            <span class="module-title">DesignBriefSkill (LLM 综合)</span>
+            <span class="module-file">skills/design_brief/run.py</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">intent (全部字段)</span></div>
+              <div class="data-item"><span class="data-key">kg_rules{}</span></div>
+              <div class="data-item"><span class="data-key">brand_context{}</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT → design_brief{}</div>
+              <div class="data-item"><span class="data-key">title</span> <span class="data-type">"2026赛博音乐节"</span></div>
+              <div class="data-item"><span class="data-key">subtitle</span></div>
+              <div class="data-item"><span class="data-key">main_color</span></div>
+              <div class="data-item"><span class="data-key">background_color</span></div>
+              <div class="data-item"><span class="data-key">style_keywords[]</span></div>
+              <div class="data-item"><span class="data-key">industry</span> <span class="new-tag">NEW</span></div>
+              <div class="data-item"><span class="data-key">vibe</span> <span class="new-tag">NEW</span></div>
+              <div class="data-item"><span class="data-key">kg_rules{}</span> <span class="data-type">原样透传</span></div>
+              <div class="data-item"><span class="data-key">canvas_width</span> <span class="new-tag">NEW</span></div>
+              <div class="data-item"><span class="data-key">canvas_height</span> <span class="new-tag">NEW</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-arrow">▲</div>
+    <div class="conn-label">返回前端：design_brief{} → 用户可编辑标题/副标题/颜色</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+  <div class="connector">
+    <div class="conn-arrow">▼</div>
+    <div class="conn-line"></div>
+    <div class="conn-label">POST /api/step/assets { design_brief, imageBg?, imageSubject? }</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+
+  <!-- ==================== STEP 2: ASSETS ==================== -->
+  <div class="step s2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Step 2 · Assets (图片理解 + 素材搜索)</div>
+      <div class="step-desc">api/routes/steps.py → step_assets</div>
+    </div>
+    <div class="step-body">
+
+      <div class="modules-row">
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">👁️</span>
+            <span class="module-title">understand_image (Vision LLM)</span>
+            <span class="module-file">tools/image_understanding.py</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">image_bg bytes</span> <span class="data-type">用户上传背景</span></div>
+              <div class="data-item"><span class="data-key">image_subject bytes</span> <span class="new-tag">NEW</span></div>
+              <div class="data-item"><span class="data-key">user_prompt</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT → image_analyses[]</div>
+              <div class="data-item"><span class="data-key">description</span> <span class="data-type">"穿西装的女性人像"</span></div>
+              <div class="data-item"><span class="data-key">theme</span> <span class="data-type">"商务/专业"</span></div>
+              <div class="data-item"><span class="data-key">mood</span></div>
+              <div class="data-item"><span class="data-key">elements[]</span></div>
+              <div class="data-item"><span class="data-key">layout_hints.text_position</span></div>
+              <div class="data-item"><span class="data-key">layout_hints.text_color</span></div>
+              <div class="data-item"><span class="data-key">color_palette[]</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">🔎</span>
+            <span class="module-title">search_assets_multiple (Pexels / Flux)</span>
+            <span class="module-file">tools/asset_db.py</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">style_keywords[]</span></div>
+              <div class="data-item"><span class="data-key">design_brief.main_color</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT</div>
+              <div class="data-item"><span class="data-key">candidates[]</span> <span class="data-type">背景图 URL 列表</span></div>
+              <div class="data-item"><span class="data-key">keywords_used[]</span> <span class="fix-tag">FIX#8</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module">
+        <div class="module-header">
+          <span class="module-icon">📦</span>
+          <span class="module-title">Step 2 → 返回前端的完整数据</span>
+        </div>
+        <div class="data-flow">
+          <div class="data-col">
+            <div class="data-col-title">Response Fields</div>
+            <div class="data-item"><span class="data-key">candidates[]</span> <span class="data-type">背景图 URL 列表</span></div>
+            <div class="data-item"><span class="data-key">subject_url</span> <span class="data-type">base64 (去背后)</span></div>
+            <div class="data-item"><span class="data-key">subject_width / subject_height</span></div>
+            <div class="data-item"><span class="data-key">design_brief</span> <span class="data-type">可能更新</span></div>
+            <div class="data-item"><span class="data-key">image_analyses[]</span> <span class="new-tag">NEW</span></div>
+            <div class="data-item"><span class="data-key">color_suggestions{}</span> <span class="new-tag">NEW</span></div>
+            <div class="data-item"><span class="data-key">keywords_used[]</span> <span class="fix-tag">FIX#8</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-arrow">▲</div>
+    <div class="conn-label">返回前端：用户选择背景图 + 查看搜索关键词</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+  <div class="connector">
+    <div class="conn-arrow">▼</div>
+    <div class="conn-line"></div>
+    <div class="conn-label">POST /api/step/layouts { design_brief, bg_url, subject, imageAnalyses, colorSuggestions, ... }</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+
+  <!-- ==================== STEP 3: LAYOUTS ==================== -->
+  <div class="step s3">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Step 3 · Layouts (布局生成 + 审核)</div>
+      <div class="step-desc">api/routes/steps.py → step_layouts</div>
+    </div>
+    <div class="step-body">
+
+      <div class="module">
+        <div class="module-header">
+          <span class="module-icon">📐</span>
+          <span class="module-title">Layout Agent (LLM → DSL → PosterData)</span>
+          <span class="module-file">agents/layout.py + prompts/layout.py</span>
+        </div>
+        <div class="data-flow">
+          <div class="data-col">
+            <div class="data-col-title">IN (注入 Prompt)</div>
+            <div class="data-item"><span class="data-key">design_brief{title, subtitle, colors...}</span></div>
+            <div class="data-item"><span class="data-key">canvas_width / height</span></div>
+            <div class="data-item"><span class="data-key">asset_list.background_layer</span></div>
+            <div class="data-item"><span class="data-key">asset_list.subject_layer{url, w, h}</span></div>
+            <div class="data-item"><span class="data-key">asset_list.image_analyses[]</span> <span class="new-tag">NEW</span></div>
+            <div class="data-item"><span class="data-key">asset_list.color_suggestions</span> <span class="new-tag">NEW</span></div>
+            <div class="data-item"><span class="data-key">_summarize_knowledge(kg_rules)</span> <span class="fix-tag">FIX#6</span></div>
+            <div class="data-item"><span class="data-key">_summarize_assets(image_analyses)</span></div>
+            <div class="data-item"><span class="data-key">style_hint</span> <span class="data-type">多样性引导</span></div>
+            <div class="data-item"><span class="data-key">review_feedback</span> <span class="data-type">仅重试时</span></div>
+          </div>
+          <div class="data-col">
+            <div class="data-col-title">LLM 输出 → 解析</div>
+            <div class="data-item"><span class="data-key">DSL string</span> <span class="data-type">"CANVAS 1080 1920 #0a0a0a"</span></div>
+            <div class="data-item"><span class="data-key">layout_style</span> <span class="data-type">"居中对称" </span><span class="new-tag">NEW</span></div>
+          </div>
+          <div class="data-col">
+            <div class="data-col-title">DSL → PosterData</div>
+            <div class="data-item"><span class="data-key">canvas{width, height, backgroundColor}</span></div>
+            <div class="data-item"><span class="data-key">layers[]</span></div>
+            <div class="data-item"><span class="data-key">&nbsp; TextLayer{text, x, y, w, h, fontSize, fontWeight, color, fontFamily, textAlign}</span></div>
+            <div class="data-item"><span class="data-key">&nbsp; ImageLayer{src, x, y, w, h}</span></div>
+            <div class="data-item"><span class="data-key">layout_style</span> <span class="new-tag">NEW</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="retry-loop">
+        <div class="retry-label">🔄 Critic 审核循环 (最多重试 1 次)</div>
+        <div class="modules-row">
+          <div class="module">
+            <div class="module-header">
+              <span class="module-icon">📋</span>
+              <span class="module-title">Critic Path 1: JSON 结构审核</span>
+              <span class="module-file">agents/critic.py</span>
+            </div>
+            <div class="data-flow">
+              <div class="data-col">
+                <div class="data-col-title">IN</div>
+                <div class="data-item"><span class="data-key">poster_json (完整)</span></div>
+                <div class="data-item"><span class="data-key">design_brief.title / subtitle</span></div>
+              </div>
+              <div class="data-col">
+                <div class="data-col-title">检查项</div>
+                <div class="data-item"><span class="data-key">z-order</span> <span class="data-type">文字在图片之上?</span></div>
+                <div class="data-item"><span class="data-key">overflow</span> <span class="data-type">是否超出画布?</span></div>
+                <div class="data-item"><span class="data-key">dimensions</span> <span class="data-type">w/h > 0?</span></div>
+                <div class="data-item"><span class="data-key">color contrast</span> <span class="data-type">文字与背景色?</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="module">
+            <div class="module-header">
+              <span class="module-icon">👁️</span>
+              <span class="module-title">Critic Path 2: 视觉审核 (Vision LLM)</span>
+              <span class="module-file">agents/critic.py → tools/render_client.py</span>
+            </div>
+            <div class="data-flow">
+              <div class="data-col">
+                <div class="data-col-title">IN</div>
+                <div class="data-item"><span class="data-key">poster_json → 渲染 → PNG base64</span></div>
+              </div>
+              <div class="data-col">
+                <div class="data-col-title">检查项 (Vision LLM)</div>
+                <div class="data-item"><span class="data-key">readability</span> <span class="data-type">文字可读性</span></div>
+                <div class="data-item"><span class="data-key">occlusion</span> <span class="data-type">元素遮挡</span></div>
+                <div class="data-item"><span class="data-key">layout balance</span> <span class="data-type">布局均衡</span></div>
+                <div class="data-item"><span class="data-key">render integrity</span> <span class="data-type">渲染完整性</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="data-flow" style="margin-top:8px; padding-left: 16px;">
+          <div class="data-col">
+            <div class="data-col-title">PASS → 进入结果</div>
+            <div class="data-item"><span class="data-key">poster: PosterData (含 layout_style)</span></div>
+          </div>
+          <div class="data-col">
+            <div class="data-col-title">REJECT → 反馈给 Layout Agent 重试</div>
+            <div class="data-item"><span class="data-key">review_feedback.status</span> <span class="data-type">"REJECT"</span></div>
+            <div class="data-item"><span class="data-key">review_feedback.feedback</span> <span class="data-type">"文字溢出画布..."</span></div>
+            <div class="data-item"><span class="data-key">review_feedback.issues[]</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="module" style="margin-top:10px">
+        <div class="module-header">
+          <span class="module-icon">📦</span>
+          <span class="module-title">Step 3 → 返回前端</span>
+        </div>
+        <div class="data-flow">
+          <div class="data-col">
+            <div class="data-col-title">Response</div>
+            <div class="data-item"><span class="data-key">layouts[]</span> <span class="data-type">3 个候选 PosterData</span></div>
+            <div class="data-item"><span class="data-key">每个: canvas{} + layers[] + layout_style</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-arrow">▲</div>
+    <div class="conn-label">返回前端：用户选择布局方案 (标签 = layout_style)</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+  <div class="connector">
+    <div class="conn-arrow">▼</div>
+    <div class="conn-line"></div>
+    <div class="conn-label">POST /api/step/finalize { poster (选中的方案) }</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+
+  <!-- ==================== STEP 4: FINALIZE ==================== -->
+  <div class="step s4">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Step 4 · Finalize (确认 → 进入编辑器)</div>
+      <div class="step-desc">api/routes/steps.py → step_finalize</div>
+    </div>
+    <div class="step-body">
+      <div class="module">
+        <div class="module-header">
+          <span class="module-icon">🏁</span>
+          <span class="module-title">最终 PosterData 进入 Editor</span>
+        </div>
+        <div class="data-flow">
+          <div class="data-col">
+            <div class="data-col-title">Final PosterData</div>
+            <div class="data-item"><span class="data-key">canvas{width, height, backgroundColor}</span></div>
+            <div class="data-item"><span class="data-key">layers[]</span> <span class="data-type">所有文字 + 图片图层</span></div>
+            <div class="data-item"><span class="data-key">layout_style</span> <span class="new-tag">NEW</span></div>
+          </div>
+          <div class="data-col">
+            <div class="data-col-title">用户在 Editor 中可执行</div>
+            <div class="data-item"><span class="data-key">拖拽/缩放图层</span></div>
+            <div class="data-item"><span class="data-key">编辑文字内容/颜色/字号</span></div>
+            <div class="data-item"><span class="data-key">删除/新增图层</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-arrow">▼</div>
+    <div class="conn-line"></div>
+    <div class="conn-label">用户点击「导出」→ POST /api/render { poster, format }</div>
+    <div class="conn-line"></div>
+    <div class="conn-arrow">▼</div>
+  </div>
+
+  <!-- ==================== RENDER SERVICE ==================== -->
+  <div class="step s-render">
+    <div class="step-header">
+      <div class="step-num">R</div>
+      <div class="step-title">Render Service (Node.js)</div>
+      <div class="step-desc">backend/render/src/server.js</div>
+    </div>
+    <div class="step-body">
+      <div class="modules-row">
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">🖼️</span>
+            <span class="module-title">imageGenerator.js (PNG/JPG)</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">poster: PosterData</span></div>
+              <div class="data-item"><span class="data-key">format: "png" | "jpg"</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">处理</div>
+              <div class="data-item"><span class="data-key">SVG 合成 (sharp)</span></div>
+              <div class="data-item"><span class="data-key">text-shadow 滤镜</span> <span class="new-tag">NEW</span></div>
+              <div class="data-item"><span class="data-key">font_registry 映射</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT</div>
+              <div class="data-item"><span class="data-key">image buffer</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="module">
+          <div class="module-header">
+            <span class="module-icon">📄</span>
+            <span class="module-title">psdGenerator.js (PSD)</span>
+          </div>
+          <div class="data-flow">
+            <div class="data-col">
+              <div class="data-col-title">IN</div>
+              <div class="data-item"><span class="data-key">poster: PosterData</span></div>
+              <div class="data-item"><span class="data-key">format: "psd"</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">处理</div>
+              <div class="data-item"><span class="data-key">ag-psd 分层</span></div>
+              <div class="data-item"><span class="data-key">font_registry → 系统字体</span></div>
+            </div>
+            <div class="data-col">
+              <div class="data-col-title">OUT</div>
+              <div class="data-item"><span class="data-key">PSD buffer (可编辑图层)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LEGEND ==================== -->
+  <div class="legend">
+    <div class="legend-item"><span class="new-tag">NEW</span> 本轮新增的字段</div>
+    <div class="legend-item"><span class="fix-tag">FIX#N</span> 原有但断联，本轮修复连通</div>
+    <div class="legend-item"><span style="color:#555">→</span> 模块间传递的数据字段</div>
+    <div class="legend-item"><span style="color:#555">▼</span> HTTP 请求方向</div>
+    <div class="legend-item"><span style="color:#555">▲</span> 响应返回前端</div>
+  </div>
+
+</div>
+</body>
+</html>

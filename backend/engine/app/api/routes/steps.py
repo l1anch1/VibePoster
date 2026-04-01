@@ -84,6 +84,8 @@ async def step_plan(req: PlanRequest):
     )
 
     design_brief["user_prompt"] = req.prompt
+    design_brief["canvas_width"] = req.canvas_width
+    design_brief["canvas_height"] = req.canvas_height
 
     return {
         "step": "plan",
@@ -126,14 +128,25 @@ async def step_assets(
     subject_width: Optional[int] = None
     subject_height: Optional[int] = None
 
+    subject_analysis: Optional[Dict[str, Any]] = None
+
     if has_subject:
         from ...tools.vision import image_to_base64, analyze_image
+        from ...tools.image_understanding import understand_image as _understand
         subject_bytes = await image_subject.read()
         subject_url = image_to_base64(subject_bytes)
         dims = analyze_image(subject_bytes)
         subject_width = dims["width"]
         subject_height = dims["height"]
         logger.info(f"🧩 Material 模式：主体素材 {subject_width}×{subject_height}")
+
+        subject_analysis = _understand(
+            image_data=subject_bytes,
+            user_prompt=design_brief.get("user_prompt", ""),
+        )
+        logger.info(
+            f"🔍 主体素材分析: {subject_analysis.get('understanding', {}).get('description', '?')[:60]}"
+        )
 
     if has_bg:
         bg_bytes = await image_bg.read()
@@ -189,11 +202,45 @@ async def step_assets(
             count=count,
         )
 
+    # 构建图像分析结果（供 Step 3 使用）
+    image_analyses: List[Dict[str, Any]] = []
+    color_suggestions: Optional[Dict[str, Any]] = None
+
+    if subject_analysis:
+        image_analyses.append({"type": "subject", "analysis": subject_analysis})
+        understanding = subject_analysis.get("understanding", {})
+        if understanding:
+            color_suggestions = {
+                "primary": understanding.get("main_color"),
+                "palette": understanding.get("color_palette", []),
+                "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion"),
+            }
+
+    # Style Reference 模式的背景图分析也加入
+    if has_bg and not has_subject:
+        bg_analysis_entry: Dict[str, Any] = {"type": "background", "analysis": {}}
+        if "reference_description" in design_brief:
+            bg_analysis_entry["analysis"]["understanding"] = {
+                "description": design_brief.get("reference_description"),
+                "theme": design_brief.get("reference_theme"),
+                "mood": design_brief.get("reference_mood"),
+                "layout_hints": design_brief.get("reference_layout_hints", {}),
+            }
+            if not color_suggestions and design_brief.get("reference_palette"):
+                color_suggestions = {
+                    "primary": design_brief["reference_palette"][0] if design_brief["reference_palette"] else None,
+                    "palette": design_brief["reference_palette"],
+                    "text_color": design_brief.get("reference_layout_hints", {}).get("text_color_suggestion"),
+                }
+        image_analyses.append(bg_analysis_entry)
+
     result: Dict[str, Any] = {
         "step": "assets",
         "candidates": candidates,
         "keywords_used": keywords,
         "design_brief": design_brief,
+        "image_analyses": image_analyses,
+        "color_suggestions": color_suggestions,
     }
     if subject_url:
         result["subject_url"] = subject_url
@@ -216,6 +263,8 @@ class LayoutsRequest(BaseModel):
     canvas_width: int = Field(default=1080)
     canvas_height: int = Field(default=1920)
     count: int = Field(default=6, ge=1, le=10)
+    image_analyses: Optional[List[Dict[str, Any]]] = Field(None, description="图像分析结果")
+    color_suggestions: Optional[Dict[str, Any]] = Field(None, description="配色建议")
 
 
 _STYLE_HINTS = [
@@ -367,6 +416,10 @@ def _build_asset_list(req: LayoutsRequest) -> Dict[str, Any]:
             "width": req.subject_width,
             "height": req.subject_height,
         }
+    if req.image_analyses:
+        asset_list["image_analyses"] = req.image_analyses
+    if req.color_suggestions:
+        asset_list["color_suggestions"] = req.color_suggestions
     return asset_list
 
 

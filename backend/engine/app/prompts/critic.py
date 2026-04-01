@@ -35,11 +35,11 @@ layers 数组中：
 
 【输出格式】
 请输出 JSON：
-{{
+{
     "status": "PASS" | "REJECT",
     "feedback": "审核意见",
     "issues": []
-}}
+}
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -75,11 +75,11 @@ VISUAL_SYSTEM_PROMPT = """
 
 【输出格式】
 请输出 JSON：
-{{
+{
     "status": "PASS" | "REJECT",
     "feedback": "视觉审核意见",
     "issues": []
-}}
+}
 """
 
 VISUAL_USER_PROMPT = "请审核这张海报图片，按照检查项判断是否存在视觉问题，输出 JSON 结果。"

@@ -100,7 +100,7 @@ export async function stepAssets(params: {
   count?: number;
   imageBg?: File | null;
   imageSubject?: File | null;
-}): Promise<{ candidates: string[]; keywords_used: string[]; design_brief?: DesignBrief; subject_url?: string; subject_width?: number; subject_height?: number }> {
+}): Promise<{ candidates: string[]; keywords_used: string[]; design_brief?: DesignBrief; subject_url?: string; subject_width?: number; subject_height?: number; image_analyses?: Record<string, unknown>[]; color_suggestions?: Record<string, unknown> }> {
   const formData = new FormData();
   formData.append('design_brief_json', JSON.stringify(params.designBrief));
   formData.append('canvas_width', params.canvasWidth.toString());
@@ -122,6 +122,8 @@ export async function stepLayouts(params: {
   canvasWidth: number;
   canvasHeight: number;
   count?: number;
+  imageAnalyses?: Record<string, unknown>[] | null;
+  colorSuggestions?: Record<string, unknown> | null;
 }): Promise<{ layouts: PosterData[] }> {
   const res = await axios.post(`${API_BASE_URL}/api/step/layouts`, {
     design_brief: params.designBrief,
@@ -132,6 +134,8 @@ export async function stepLayouts(params: {
     canvas_width: params.canvasWidth,
     canvas_height: params.canvasHeight,
     count: params.count ?? 6,
+    image_analyses: params.imageAnalyses || null,
+    color_suggestions: params.colorSuggestions || null,
   }, {
     timeout: 180_000,
   });

@@ -61,14 +61,14 @@ USER_PROMPT_TEMPLATE = """
 
 请严格按照以下 JSON 格式输出，不要包含 Markdown 格式（如 ```json ... ```）：
 
-{{{{
+{{
     "texts": [
-        {{{{
+        {{
             "content": "文字内容",
             "position": "位置描述",
             "size": "大小描述",
             "confidence": "高/中/低"
-        }}}}
+        }}
     ],
     "has_text": true,
     "style": "business",
@@ -77,12 +77,12 @@ USER_PROMPT_TEMPLATE = """
     "elements": ["text", "background"],
     "theme": "招聘",
     "mood": "正式",
-    "layout_hints": {{{{
+    "layout_hints": {{
         "text_position": "top",
         "text_color_suggestion": "#FFFFFF"
-    }}}},
+    }},
     "description": "一张深蓝色商务风格的招聘海报"
-}}}}
+}}
 
 注意：如果图片中没有文字，请将 `has_text` 设为 false，`texts` 设为空数组。
 """

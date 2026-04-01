@@ -184,6 +184,8 @@ class DesignBriefSkill(BaseSkill[DesignBriefInput, DesignBriefOutput]):
                 background_color=brief_data.get("background_color", "#FFFFFF"),
                 style_keywords=brief_data.get("style_keywords", []),
                 intent=brief_data.get("intent", "promotion"),
+                industry=input.intent.industry,
+                vibe=input.intent.vibe,
                 decision_trace=decision_trace,
                 kg_rules=kg_rules_dict,
                 brand_knowledge=brand_knowledge,
@@ -233,6 +235,8 @@ class DesignBriefSkill(BaseSkill[DesignBriefInput, DesignBriefOutput]):
             background_color=fallback["background_color"],
             style_keywords=fallback["style_keywords"],
             intent=input.intent.poster_type or fallback["intent"],
+            industry=input.intent.industry,
+            vibe=input.intent.vibe,
             decision_trace={"source": "fallback", "error": error},
             design_source={
                 "kg_keywords": input.intent.extracted_keywords,

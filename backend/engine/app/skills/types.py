@@ -325,6 +325,8 @@ class DesignBriefOutput(BaseModel):
         description="背景图搜索关键词（英文）"
     )
     intent: str = Field(default="promotion", description="海报意图类型")
+    industry: Optional[str] = Field(default=None, description="行业（来自意图解析）")
+    vibe: Optional[str] = Field(default=None, description="风格（来自意图解析）")
     
     # 决策追溯
     decision_trace: Dict[str, Any] = Field(

@@ -85,14 +85,27 @@ async function renderTextLayer(layer, canvasWidth, canvasHeight) {
     const lines = textContent.split('\n');
     const yStart = layer.y + fontSize;
     
-    // 创建 SVG 文本
+    // 创建 SVG 文本（带阴影提升可读性）
     const textElements = lines.map((line, index) => {
       const yPos = yStart + (index * fontSize * lineHeight);
-      return `<text x="${xPos}" y="${yPos}" font-family="${fontFamily}" font-size="${fontSize}" fill="${color}" text-anchor="${textAnchor}">${escapeXml(line)}</text>`;
+      return `<text x="${xPos}" y="${yPos}" font-family="${fontFamily}" font-size="${fontSize}" fill="${color}" text-anchor="${textAnchor}" filter="url(#textShadow)">${escapeXml(line)}</text>`;
     }).join('\n');
 
     const svg = `
       <svg width="${canvasWidth}" height="${canvasHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="textShadow" x="-5%" y="-5%" width="110%" height="120%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+            <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+            <feComponentTransfer in="offsetBlur" result="shadow">
+              <feFuncA type="linear" slope="0.5"/>
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode in="shadow"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
         <g opacity="${layer.opacity !== undefined ? layer.opacity : 1.0}">
           ${textElements}
         </g>

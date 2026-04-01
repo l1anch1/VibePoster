@@ -220,16 +220,22 @@ const AssetPicker: React.FC<{
   selectedIndex: number | null;
   canvasWidth: number;
   canvasHeight: number;
+  keywordsUsed?: string[];
   onSelect: (i: number) => void;
   onConfirm: () => void;
   onBack: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
-}> = ({ candidates, selectedIndex, canvasWidth, canvasHeight, onSelect, onConfirm, onBack, onRefresh, isRefreshing }) => (
+}> = ({ candidates, selectedIndex, canvasWidth, canvasHeight, keywordsUsed, onSelect, onConfirm, onBack, onRefresh, isRefreshing }) => (
   <>
     <div className="flex-1 overflow-y-auto px-6 py-4">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-medium text-gray-600">Choose a background image</p>
+        <div>
+          <p className="text-sm font-medium text-gray-600">Choose a background image</p>
+          {keywordsUsed && keywordsUsed.length > 0 && (
+            <p className="text-xs text-gray-400 mt-0.5">Keywords: {keywordsUsed.join(', ')}</p>
+          )}
+        </div>
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
@@ -426,6 +432,9 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
   const [isRefreshingAssets, setIsRefreshingAssets] = useState(false);
   const [subjectUrl, setSubjectUrl] = useState<string | null>(null);
   const [subjectDims, setSubjectDims] = useState<{ w: number; h: number } | null>(null);
+  const [imageAnalyses, setImageAnalyses] = useState<Record<string, unknown>[] | null>(null);
+  const [colorSuggestions, setColorSuggestions] = useState<Record<string, unknown> | null>(null);
+  const [keywordsUsed, setKeywordsUsed] = useState<string[]>([]);
 
   // Step 3
   const [layoutCandidates, setLayoutCandidates] = useState<PosterData[]>([]);
@@ -475,6 +484,9 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       if (res.design_brief) setDesignBrief(prev => ({ ...prev, ...res.design_brief }));
       setSubjectUrl(res.subject_url || null);
       setSubjectDims(res.subject_width && res.subject_height ? { w: res.subject_width, h: res.subject_height } : null);
+      setImageAnalyses(res.image_analyses || null);
+      setColorSuggestions(res.color_suggestions || null);
+      setKeywordsUsed(res.keywords_used || []);
       setSelectedAssetIdx(null);
       setStep('assets-review');
     } catch (e: any) {
@@ -498,6 +510,9 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       if (res.design_brief) setDesignBrief(prev => ({ ...prev, ...res.design_brief }));
       setSubjectUrl(res.subject_url || null);
       setSubjectDims(res.subject_width && res.subject_height ? { w: res.subject_width, h: res.subject_height } : null);
+      setImageAnalyses(res.image_analyses || null);
+      setColorSuggestions(res.color_suggestions || null);
+      setKeywordsUsed(res.keywords_used || []);
       setSelectedAssetIdx(null);
     } catch (e: any) {
       setError(e?.message || 'Refresh failed');
@@ -520,6 +535,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         canvasWidth: config.canvasWidth,
         canvasHeight: config.canvasHeight,
         count: 3,
+        imageAnalyses: imageAnalyses,
+        colorSuggestions: colorSuggestions,
       });
       setLayoutCandidates(res.layouts);
       setSelectedLayoutIdx(null);
@@ -528,7 +545,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       setError(e?.message || 'Layout generation failed');
       setStep('layouts-review');
     }
-  }, [designBrief, assetCandidates, selectedAssetIdx, subjectUrl, subjectDims, config]);
+  }, [designBrief, assetCandidates, selectedAssetIdx, subjectUrl, subjectDims, config, imageAnalyses, colorSuggestions]);
 
   const refreshLayouts = useCallback(async () => {
     if (selectedAssetIdx === null) return;
@@ -543,6 +560,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         canvasWidth: config.canvasWidth,
         canvasHeight: config.canvasHeight,
         count: 3,
+        imageAnalyses: imageAnalyses,
+        colorSuggestions: colorSuggestions,
       });
       setLayoutCandidates(res.layouts);
       setSelectedLayoutIdx(null);
@@ -550,7 +569,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
       setError(e?.message || 'Refresh failed');
     }
     setIsRefreshingLayouts(false);
-  }, [designBrief, assetCandidates, selectedAssetIdx, subjectUrl, subjectDims, config]);
+  }, [designBrief, assetCandidates, selectedAssetIdx, subjectUrl, subjectDims, config, imageAnalyses, colorSuggestions]);
 
   // ----- Step 4: Finalize (layouts already reviewed in Step 3) -----
   const doFinalize = useCallback(async () => {
@@ -627,6 +646,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
           selectedIndex={selectedAssetIdx}
           canvasWidth={config.canvasWidth}
           canvasHeight={config.canvasHeight}
+          keywordsUsed={keywordsUsed}
           onSelect={setSelectedAssetIdx}
           onConfirm={doLayouts}
           onBack={() => setStep('plan-review')}

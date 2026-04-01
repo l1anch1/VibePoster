@@ -191,7 +191,11 @@ def run_layout_agent(
 
         # 9. 转换为字典格式返回
         poster_json = poster_data.model_dump()
-        
+
+        layout_style = dsl_response.get("layout_style")
+        if layout_style:
+            poster_json["layout_style"] = layout_style
+
         logger.info(f"✅ Layout 完成，生成了 {len(poster_json.get('layers', []))} 个图层")
         return poster_json
         
