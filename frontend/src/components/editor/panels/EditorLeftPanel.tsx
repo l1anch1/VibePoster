@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { EXAMPLE_PROMPTS } from '../../config/constants';
+import { EXAMPLE_PROMPTS } from '../../../config/constants';
 
 // ============================================================================
 // 类型定义

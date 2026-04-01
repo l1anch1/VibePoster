@@ -17,8 +17,12 @@ def get_poster_service_class():
     return PosterService
 
 
+from .asset_service import AssetService, AssetResult
+
 __all__ = [
     "get_poster_service_class",
     "RendererService",
     "create_simple_poster_from_text",
+    "AssetService",
+    "AssetResult",
 ]

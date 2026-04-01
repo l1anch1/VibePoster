@@ -15,11 +15,12 @@ import type { ExportFormat } from '../../config/constants';
 import { exportAndDownloadPoster } from '../../services/api';
 import { useEditorState } from '../../hooks/useEditorState';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useToast } from '../ui/Toast';
 
-import { EditorTopBar } from './EditorTopBar';
-import { EditorLeftPanel } from './EditorLeftPanel';
-import { EditorRightPanel } from './EditorRightPanel';
-import { EditorCanvas } from './EditorCanvas';
+import { EditorTopBar } from './toolbar';
+import { EditorLeftPanel } from './panels';
+import { EditorRightPanel } from './panels';
+import { EditorCanvas } from './canvas';
 import { StepWizard } from './StepWizard';
 
 // ============================================================================
@@ -35,6 +36,8 @@ interface EditorProps {
 // ============================================================================
 
 export const Editor: React.FC<EditorProps> = ({ onBack }) => {
+  const { addToast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
   const state = useEditorState();
   const {
     data, prompt, selectedLayerId, editingLayerId,
@@ -77,14 +80,19 @@ export const Editor: React.FC<EditorProps> = ({ onBack }) => {
   // ========== 导出 ==========
   const handleExport = useCallback(
     async (format: ExportFormat['format']) => {
+      setIsExporting(true);
       try {
         await exportAndDownloadPoster(data, format);
         setShowExport(false);
-      } catch (error) {
-        console.error('Export failed:', error);
+        addToast('Export successful', 'success');
+      } catch (error: unknown) {
+        const msg = (error as { userMessage?: string })?.userMessage || 'Export failed';
+        addToast(msg, 'error');
+      } finally {
+        setIsExporting(false);
       }
     },
-    [data, setShowExport]
+    [data, setShowExport, addToast]
   );
 
   // ========== Render ==========

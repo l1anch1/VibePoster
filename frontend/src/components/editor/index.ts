@@ -4,12 +4,9 @@
 
 // 主组件
 export { Editor } from './Editor';
-
-// 子组件
-export { EditorTopBar } from './EditorTopBar';
-export { EditorLeftPanel } from './EditorLeftPanel';
-export { EditorRightPanel } from './EditorRightPanel';
-export { EditorCanvas } from './EditorCanvas';
-export { EditableLayer } from './EditableLayer';
-export { TextEditor } from './TextEditor';
 export { StepWizard } from './StepWizard';
+
+// 子目录
+export * from './canvas';
+export * from './panels';
+export * from './toolbar';

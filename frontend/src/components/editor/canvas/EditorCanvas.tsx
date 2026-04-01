@@ -5,15 +5,15 @@
  */
 
 import React, { useRef, useCallback, useState } from 'react';
-import type { PosterData, Layer } from '../../types/PosterSchema';
-import type { ResizeDirection } from '../../types/EditorTypes';
+import type { PosterData, Layer } from '../../../types/PosterSchema';
+import type { ResizeDirection } from '../../../types/EditorTypes';
 import { EditableLayer } from './EditableLayer';
 import { TextEditor } from './TextEditor';
 import {
   constrainToCanvas,
   calculateResize,
   isTextLayer,
-} from '../../utils/editorUtils';
+} from '../../../utils/editorUtils';
 
 interface EditorCanvasProps {
   data: PosterData;

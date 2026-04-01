@@ -52,50 +52,18 @@ class AgentFactory:
         """获取 Planner Agent"""
         from .planner import PlannerAgent
         from ..core.config import settings
-
-        # 将 Pydantic Settings 对象转换为字典格式
-        config_dict = {
-            "provider": settings.planner.PROVIDER,
-            "model": settings.planner.MODEL,
-            "temperature": settings.planner.TEMPERATURE,
-            "api_key": settings.planner.API_KEY,
-            "base_url": settings.planner.BASE_URL,
-            "response_format": {"type": "json_object"},
-            "default_intent": settings.planner.DEFAULT_INTENT,
-        }
-        return cls._get_or_create_agent("planner", PlannerAgent, config_dict)
+        return cls._get_or_create_agent("planner", PlannerAgent, settings.planner.to_agent_config())
 
     @classmethod
     def get_layout_agent(cls):
         """获取 Layout Agent"""
         from .layout import LayoutAgent
         from ..core.config import settings
-
-        config_dict = {
-            "provider": settings.layout.PROVIDER,
-            "model": settings.layout.MODEL,
-            "api_key": settings.layout.API_KEY,
-            "base_url": settings.layout.BASE_URL,
-            "response_mime_type": "application/json",
-        }
-        return cls._get_or_create_agent("layout", LayoutAgent, config_dict)
+        return cls._get_or_create_agent("layout", LayoutAgent, settings.layout.to_agent_config())
 
     @classmethod
     def get_critic_agent(cls):
         """获取 Critic Agent"""
         from .critic import CriticAgent
         from ..core.config import settings
-
-        config_dict = {
-            "provider": settings.critic.PROVIDER,
-            "model": settings.critic.MODEL,
-            "temperature": settings.critic.TEMPERATURE,
-            "api_key": settings.critic.API_KEY,
-            "base_url": settings.critic.BASE_URL,
-            "response_format": {"type": "json_object"},
-            "system_prompt": "你是一个严格的海报质量审核员。请仔细检查海报数据，输出 JSON 格式的审核结果。",
-            "default_status": settings.critic.DEFAULT_STATUS,
-            "default_feedback": "审核通过",
-            "max_retry_count": settings.critic.MAX_RETRY_COUNT,
-        }
-        return cls._get_or_create_agent("critic", CriticAgent, config_dict)
+        return cls._get_or_create_agent("critic", CriticAgent, settings.critic.to_agent_config())

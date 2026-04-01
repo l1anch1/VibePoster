@@ -9,9 +9,9 @@
  */
 
 import React, { useState, useRef } from 'react';
-import type { CanvasPreset, ExportFormat } from '../../config/constants';
-import { CANVAS_PRESETS, EXPORT_FORMATS } from '../../config/constants';
-import { uploadBrandDocument } from '../../services/api';
+import type { CanvasPreset, ExportFormat } from '../../../config/constants';
+import { CANVAS_PRESETS, EXPORT_FORMATS } from '../../../config/constants';
+import { uploadBrandDocument } from '../../../services/api';
 
 interface EditorTopBarProps {
   onBack?: () => void;

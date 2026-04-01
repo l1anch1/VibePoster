@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { Layer } from '../../types/PosterSchema';
-import { isTextLayer } from '../../utils/editorUtils';
+import type { Layer } from '../../../types/PosterSchema';
+import { isTextLayer } from '../../../utils/editorUtils';
 
 interface TextEditorProps {
   layer: Layer;

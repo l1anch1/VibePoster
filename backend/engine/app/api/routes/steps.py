@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from ...agents.planner import run_planner_agent
 from ...agents.layout import run_layout_agent
 from ...agents.critic import run_critic_agent
-from ...tools import search_assets_multiple
+from ...models.design_brief import DesignBrief, AssetLayer, AssetList
 from ...core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -115,139 +115,39 @@ async def step_assets(
     - With Material:    image_subject（必选）+ image_bg（可选）→ 直接使用主体素材；
                         若有 image_bg 则直接作为背景，否则搜索/生成背景
     """
+    from ...services.asset_service import AssetService
+
     design_brief = json.loads(design_brief_json)
     logger.info(f"🎨 [Step 2] 素材搜索，候选数: {count}")
 
-    keywords = design_brief.get("style_keywords", [])
-    subject_url: Optional[str] = None
-    user_bg_url: Optional[str] = None
-
+    service = AssetService()
     has_subject = image_subject is not None
     has_bg = image_bg is not None
 
-    subject_width: Optional[int] = None
-    subject_height: Optional[int] = None
-
-    subject_analysis: Optional[Dict[str, Any]] = None
-
     if has_subject:
-        from ...tools.vision import image_to_base64, analyze_image
-        from ...tools.image_understanding import understand_image as _understand
         subject_bytes = await image_subject.read()
-        subject_url = image_to_base64(subject_bytes)
-        dims = analyze_image(subject_bytes)
-        subject_width = dims["width"]
-        subject_height = dims["height"]
-        logger.info(f"🧩 Material 模式：主体素材 {subject_width}×{subject_height}")
-
-        subject_analysis = _understand(
-            image_data=subject_bytes,
+        bg_bytes = (await image_bg.read()) if has_bg else None
+        result = service.process_with_material(
+            design_brief=design_brief,
+            subject_bytes=subject_bytes,
+            bg_bytes=bg_bytes,
+            count=count,
             user_prompt=design_brief.get("user_prompt", ""),
         )
-        logger.info(
-            f"🔍 主体素材分析: {subject_analysis.get('understanding', {}).get('description', '?')[:60]}"
-        )
-
-    if has_bg:
+    elif has_bg:
         bg_bytes = await image_bg.read()
-
-        if has_subject:
-            from ...tools.vision import image_to_base64 as _img_b64
-            user_bg_url = _img_b64(bg_bytes)
-            logger.info("🖼️ Material 模式：使用用户上传的背景图")
-        else:
-            from ...tools.image_understanding import understand_image
-            analysis = understand_image(
-                image_data=bg_bytes,
-                user_prompt=design_brief.get("user_prompt", ""),
-            )
-            understanding = analysis.get("understanding", {})
-            suggestions = analysis.get("suggestions", {})
-
-            ref_style = understanding.get("style")
-            ref_palette = understanding.get("color_palette", [])
-            ref_mood = understanding.get("mood")
-            ref_theme = understanding.get("theme")
-            ref_desc = understanding.get("description")
-            ref_layout = understanding.get("layout_hints", {})
-
-            if ref_style and ref_style not in keywords:
-                keywords = keywords + [ref_style]
-                design_brief["style_keywords"] = keywords
-            if ref_palette:
-                design_brief["reference_palette"] = ref_palette
-            if ref_mood and ref_mood != "其他":
-                design_brief["reference_mood"] = ref_mood
-            if ref_theme and ref_theme != "其他":
-                design_brief["reference_theme"] = ref_theme
-            if ref_desc:
-                design_brief["reference_description"] = ref_desc
-            if ref_layout:
-                design_brief["reference_layout_hints"] = ref_layout
-
-            if suggestions.get("color_scheme"):
-                design_brief["reference_color_scheme"] = suggestions["color_scheme"]
-
-            logger.info(
-                f"🎨 参考图分析: style={ref_style}, mood={ref_mood}, "
-                f"theme={ref_theme}, palette={ref_palette}"
-            )
-
-    if user_bg_url:
-        candidates = [user_bg_url]
+        result = service.process_style_reference(
+            design_brief=design_brief,
+            bg_bytes=bg_bytes,
+            count=count,
+        )
     else:
-        candidates = search_assets_multiple(
-            keywords=keywords,
+        result = service.process_text_only(
             design_brief=design_brief,
             count=count,
         )
 
-    # 构建图像分析结果（供 Step 3 使用）
-    image_analyses: List[Dict[str, Any]] = []
-    color_suggestions: Optional[Dict[str, Any]] = None
-
-    if subject_analysis:
-        image_analyses.append({"type": "subject", "analysis": subject_analysis})
-        understanding = subject_analysis.get("understanding", {})
-        if understanding:
-            color_suggestions = {
-                "primary": understanding.get("main_color"),
-                "palette": understanding.get("color_palette", []),
-                "text_color": understanding.get("layout_hints", {}).get("text_color_suggestion"),
-            }
-
-    # Style Reference 模式的背景图分析也加入
-    if has_bg and not has_subject:
-        bg_analysis_entry: Dict[str, Any] = {"type": "background", "analysis": {}}
-        if "reference_description" in design_brief:
-            bg_analysis_entry["analysis"]["understanding"] = {
-                "description": design_brief.get("reference_description"),
-                "theme": design_brief.get("reference_theme"),
-                "mood": design_brief.get("reference_mood"),
-                "layout_hints": design_brief.get("reference_layout_hints", {}),
-            }
-            if not color_suggestions and design_brief.get("reference_palette"):
-                color_suggestions = {
-                    "primary": design_brief["reference_palette"][0] if design_brief["reference_palette"] else None,
-                    "palette": design_brief["reference_palette"],
-                    "text_color": design_brief.get("reference_layout_hints", {}).get("text_color_suggestion"),
-                }
-        image_analyses.append(bg_analysis_entry)
-
-    result: Dict[str, Any] = {
-        "step": "assets",
-        "candidates": candidates,
-        "keywords_used": keywords,
-        "design_brief": design_brief,
-        "image_analyses": image_analyses,
-        "color_suggestions": color_suggestions,
-    }
-    if subject_url:
-        result["subject_url"] = subject_url
-        result["subject_width"] = subject_width
-        result["subject_height"] = subject_height
-
-    return result
+    return {"step": "assets", **result.model_dump(exclude_none=True)}
 
 
 # ============================================================================
@@ -255,7 +155,7 @@ async def step_assets(
 # ============================================================================
 
 class LayoutsRequest(BaseModel):
-    design_brief: Dict[str, Any]
+    design_brief: DesignBrief
     selected_asset_url: str = Field(..., description="用户选中的背景图 URL/base64")
     subject_asset_url: Optional[str] = Field(None, description="主体素材（透明 PNG）")
     subject_width: Optional[int] = Field(None, description="主体素材原始宽度")
@@ -296,6 +196,7 @@ async def step_layouts(req: LayoutsRequest):
     logger.info(f"📐 [Step 3] 版式生成 + 审核，方案数: {req.count}")
 
     asset_list = _build_asset_list(req)
+    brief_dict = req.design_brief.model_dump()
 
     # ---- Phase 1: 并行生成 ----
     async def _gen(idx: int) -> Dict[str, Any]:
@@ -303,7 +204,7 @@ async def step_layouts(req: LayoutsRequest):
         logger.info(f"  📐 生成版式 {idx + 1}/{req.count} ({hint[:15]}...)")
         return await asyncio.to_thread(
             run_layout_agent,
-            design_brief=req.design_brief,
+            design_brief=brief_dict,
             asset_list=asset_list,
             canvas_width=req.canvas_width,
             canvas_height=req.canvas_height,
@@ -332,7 +233,7 @@ async def step_layouts(req: LayoutsRequest):
     # ---- Phase 3: 并行双路 Critic 审核 ----
     async def _review(poster: Dict[str, Any]) -> Dict[str, Any]:
         review = await asyncio.to_thread(
-            run_critic_agent, poster, design_brief=req.design_brief
+            run_critic_agent, poster, design_brief=brief_dict
         )
         return {"poster": poster, "review": review}
 
@@ -364,7 +265,7 @@ async def step_layouts(req: LayoutsRequest):
             hint = _STYLE_HINTS[(req.count + idx) % len(_STYLE_HINTS)]
             poster = await asyncio.to_thread(
                 run_layout_agent,
-                design_brief=req.design_brief,
+                design_brief=brief_dict,
                 asset_list=asset_list,
                 canvas_width=req.canvas_width,
                 canvas_height=req.canvas_height,
@@ -375,7 +276,7 @@ async def step_layouts(req: LayoutsRequest):
             if issue:
                 return None
             review = await asyncio.to_thread(
-                run_critic_agent, poster, design_brief=req.design_brief
+                run_critic_agent, poster, design_brief=brief_dict
             )
             if review.get("status") == "PASS":
                 return poster
@@ -401,26 +302,23 @@ async def step_layouts(req: LayoutsRequest):
 
 def _build_asset_list(req: LayoutsRequest) -> Dict[str, Any]:
     """从 LayoutsRequest 构建 asset_list"""
-    asset_list: Dict[str, Any] = {
-        "background_layer": {
-            "type": "image",
-            "src": req.selected_asset_url,
-            "source_type": "selected",
-        }
-    }
-    if req.subject_asset_url:
-        asset_list["subject_layer"] = {
-            "type": "image",
-            "src": req.subject_asset_url,
-            "source_type": "user_upload",
-            "width": req.subject_width,
-            "height": req.subject_height,
-        }
-    if req.image_analyses:
-        asset_list["image_analyses"] = req.image_analyses
-    if req.color_suggestions:
-        asset_list["color_suggestions"] = req.color_suggestions
-    return asset_list
+    asset_list = AssetList(
+        background_layer=AssetLayer(
+            type="image",
+            src=req.selected_asset_url,
+            source_type="selected",
+        ),
+        subject_layer=AssetLayer(
+            type="image",
+            src=req.subject_asset_url,
+            source_type="user_upload",
+            width=req.subject_width,
+            height=req.subject_height,
+        ) if req.subject_asset_url else None,
+        image_analyses=req.image_analyses,
+        color_suggestions=req.color_suggestions,
+    )
+    return asset_list.model_dump(exclude_none=True)
 
 
 # ============================================================================

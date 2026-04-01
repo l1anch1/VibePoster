@@ -11,7 +11,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { PosterData } from '../../types/PosterSchema';
 import type { DesignBrief } from '../../services/api';
 import { stepPlan, stepAssets, stepLayouts, stepFinalize } from '../../services/api';
-import { EditorCanvas } from './EditorCanvas';
+import { EditorCanvas } from './canvas';
 
 // ============================================================================
 // 类型

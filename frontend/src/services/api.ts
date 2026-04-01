@@ -1,18 +1,49 @@
 /**
  * API 服务层
- * 
- * 统一管理所有 API 调用
+ *
+ * 统一管理所有 API 调用。
+ * - apiClient: 后端 AI 引擎（自动 snake_case 请求 + 统一错误格式）
+ * - renderClient: Node.js 渲染服务
  */
 
 import axios from 'axios';
+import type { AxiosError } from 'axios';
 import type { PosterData } from '../types/PosterSchema';
+import { toSnakeCase } from '../utils/caseConvert';
 
 // ============================================================================
-// 配置
+// Axios 实例
 // ============================================================================
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const RENDER_BASE_URL = import.meta.env.VITE_RENDER_URL || 'http://localhost:3000';
+
+const apiClient = axios.create({ baseURL: API_BASE_URL });
+const renderClient = axios.create({ baseURL: RENDER_BASE_URL });
+
+// 请求拦截器：JSON body 自动转 snake_case（跳过 FormData）
+apiClient.interceptors.request.use((config) => {
+  if (config.data && !(config.data instanceof FormData)) {
+    config.data = toSnakeCase(config.data);
+  }
+  return config;
+});
+
+// 错误拦截器：统一提取人类可读的错误信息
+function handleResponseError(error: AxiosError<Record<string, unknown>>) {
+  let message = '发生未知错误';
+  if (error.response?.data) {
+    const data = error.response.data;
+    message = (data.error || data.message || data.detail || message) as string;
+  } else if (error.message) {
+    message = error.message;
+  }
+  (error as AxiosError & { userMessage: string }).userMessage = message;
+  return Promise.reject(error);
+}
+
+apiClient.interceptors.response.use((r) => r, handleResponseError);
+renderClient.interceptors.response.use((r) => r, handleResponseError);
 
 // ============================================================================
 // 渲染导出 API
@@ -20,27 +51,21 @@ const RENDER_BASE_URL = import.meta.env.VITE_RENDER_URL || 'http://localhost:300
 
 export type ExportFormat = 'png' | 'jpg' | 'psd';
 
-/**
- * 导出海报为图片或 PSD
- */
 export async function exportPoster(
   data: PosterData,
   format: ExportFormat
 ): Promise<Blob> {
   const url = format === 'psd'
-    ? `${RENDER_BASE_URL}/api/render/psd`
-    : `${RENDER_BASE_URL}/api/render/image?format=${format}&quality=95`;
+    ? '/api/render/psd'
+    : `/api/render/image?format=${format}&quality=95`;
 
-  const response = await axios.post(url, data, {
+  const response = await renderClient.post(url, data, {
     responseType: 'blob',
   });
 
   return new Blob([response.data]);
 }
 
-/**
- * 下载文件
- */
 export function downloadFile(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -50,9 +75,6 @@ export function downloadFile(blob: Blob, filename: string): void {
   window.URL.revokeObjectURL(url);
 }
 
-/**
- * 导出并下载海报
- */
 export async function exportAndDownloadPoster(
   data: PosterData,
   format: ExportFormat
@@ -84,11 +106,11 @@ export async function stepPlan(params: {
   canvasHeight: number;
   brandName?: string;
 }): Promise<{ design_brief: DesignBrief }> {
-  const res = await axios.post(`${API_BASE_URL}/api/step/plan`, {
+  const res = await apiClient.post('/api/step/plan', {
     prompt: params.prompt,
-    canvas_width: params.canvasWidth,
-    canvas_height: params.canvasHeight,
-    brand_name: params.brandName || null,
+    canvasWidth: params.canvasWidth,
+    canvasHeight: params.canvasHeight,
+    brandName: params.brandName || null,
   });
   return res.data;
 }
@@ -101,6 +123,7 @@ export async function stepAssets(params: {
   imageBg?: File | null;
   imageSubject?: File | null;
 }): Promise<{ candidates: string[]; keywords_used: string[]; design_brief?: DesignBrief; subject_url?: string; subject_width?: number; subject_height?: number; image_analyses?: Record<string, unknown>[]; color_suggestions?: Record<string, unknown> }> {
+  // FormData 不走 snake_case 拦截器，手动构建
   const formData = new FormData();
   formData.append('design_brief_json', JSON.stringify(params.designBrief));
   formData.append('canvas_width', params.canvasWidth.toString());
@@ -109,7 +132,7 @@ export async function stepAssets(params: {
   if (params.imageBg) formData.append('image_bg', params.imageBg);
   if (params.imageSubject) formData.append('image_subject', params.imageSubject);
 
-  const res = await axios.post(`${API_BASE_URL}/api/step/assets`, formData);
+  const res = await apiClient.post('/api/step/assets', formData);
   return res.data;
 }
 
@@ -125,17 +148,17 @@ export async function stepLayouts(params: {
   imageAnalyses?: Record<string, unknown>[] | null;
   colorSuggestions?: Record<string, unknown> | null;
 }): Promise<{ layouts: PosterData[] }> {
-  const res = await axios.post(`${API_BASE_URL}/api/step/layouts`, {
-    design_brief: params.designBrief,
-    selected_asset_url: params.selectedAssetUrl,
-    subject_asset_url: params.subjectAssetUrl || null,
-    subject_width: params.subjectWidth || null,
-    subject_height: params.subjectHeight || null,
-    canvas_width: params.canvasWidth,
-    canvas_height: params.canvasHeight,
+  const res = await apiClient.post('/api/step/layouts', {
+    designBrief: params.designBrief,
+    selectedAssetUrl: params.selectedAssetUrl,
+    subjectAssetUrl: params.subjectAssetUrl || null,
+    subjectWidth: params.subjectWidth || null,
+    subjectHeight: params.subjectHeight || null,
+    canvasWidth: params.canvasWidth,
+    canvasHeight: params.canvasHeight,
     count: params.count ?? 6,
-    image_analyses: params.imageAnalyses || null,
-    color_suggestions: params.colorSuggestions || null,
+    imageAnalyses: params.imageAnalyses || null,
+    colorSuggestions: params.colorSuggestions || null,
   }, {
     timeout: 180_000,
   });
@@ -145,8 +168,8 @@ export async function stepLayouts(params: {
 export async function stepFinalize(params: {
   posterData: PosterData;
 }): Promise<{ poster: PosterData; review: { status: string; feedback: string } }> {
-  const res = await axios.post(`${API_BASE_URL}/api/step/finalize`, {
-    poster_data: params.posterData,
+  const res = await apiClient.post('/api/step/finalize', {
+    posterData: params.posterData,
   });
   return res.data;
 }
@@ -155,9 +178,6 @@ export async function stepFinalize(params: {
 // 品牌知识库 API
 // ============================================================================
 
-/**
- * 上传品牌文档到 RAG 知识库
- */
 export async function uploadBrandDocument(
   text: string,
   brandName: string,
@@ -167,12 +187,6 @@ export async function uploadBrandDocument(
   formData.append('text', text);
   formData.append('brand_name', brandName);
   formData.append('category', category);
-  
-  await axios.post(`${API_BASE_URL}/api/brand/upload`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+
+  await apiClient.post('/api/brand/upload', formData);
 }
-
-

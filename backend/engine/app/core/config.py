@@ -58,6 +58,18 @@ class PlannerAgentConfig(BaseSettings):
     # Planner 专用参数
     DEFAULT_INTENT: str = Field(default="poster", description="默认意图类型")
 
+    def to_agent_config(self) -> Dict[str, Any]:
+        """转换为 Agent 构造函数所需的配置字典"""
+        return {
+            "provider": self.PROVIDER,
+            "model": self.MODEL,
+            "temperature": self.TEMPERATURE,
+            "api_key": self.API_KEY,
+            "base_url": self.BASE_URL,
+            "response_format": {"type": "json_object"},
+            "default_intent": self.DEFAULT_INTENT,
+        }
+
 
 class VisualAgentConfig(BaseSettings):
     """Visual Agent 配置"""
@@ -126,6 +138,15 @@ class LayoutAgentConfig(BaseSettings):
         default=0.1, ge=0.0, le=2.0, description="Layout Agent 的温度参数（非常低以确保精确性）"
     )
 
+    def to_agent_config(self) -> Dict[str, Any]:
+        """转换为 Agent 构造函数所需的配置字典"""
+        return {
+            "provider": self.PROVIDER,
+            "model": self.MODEL,
+            "api_key": self.API_KEY,
+            "base_url": self.BASE_URL,
+            "response_mime_type": "application/json",
+        }
 
 
 class CriticAgentConfig(BaseSettings):
@@ -174,6 +195,21 @@ class CriticAgentConfig(BaseSettings):
         default="gpt-4o-mini",
         description="视觉审核使用的模型（需支持 Vision，如 gpt-4o-mini / gemini-2.0-flash）",
     )
+
+    def to_agent_config(self) -> Dict[str, Any]:
+        """转换为 Agent 构造函数所需的配置字典"""
+        return {
+            "provider": self.PROVIDER,
+            "model": self.MODEL,
+            "temperature": self.TEMPERATURE,
+            "api_key": self.API_KEY,
+            "base_url": self.BASE_URL,
+            "response_format": {"type": "json_object"},
+            "system_prompt": "你是一个严格的海报质量审核员。请仔细检查海报数据，输出 JSON 格式的审核结果。",
+            "default_status": self.DEFAULT_STATUS,
+            "default_feedback": "审核通过",
+            "max_retry_count": self.MAX_RETRY_COUNT,
+        }
 
 
 # =============================================================================
@@ -229,8 +265,10 @@ class CORSConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="CORS_", env_file=".env", extra="ignore")
 
+    # 生产环境请通过 CORS_ALLOW_ORIGINS 环境变量覆盖。
+    # 仅当确实需要无限制访问时才设为 "*"。
     ALLOW_ORIGINS: str = Field(
-        default="http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,*",
+        default="http://localhost,http://localhost:80,http://localhost:3000,http://localhost:5173,http://localhost:5174,http://127.0.0.1,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174",
         description="允许的来源列表（逗号分隔）",
     )
     ALLOW_METHODS: str = Field(
@@ -289,17 +327,6 @@ ERROR_FALLBACKS: Final[Dict[str, Any]] = {
         "feedback": "System Error", 
         "issues": []
     },
-    }
-
-WORKFLOW_CONFIG: Final[Dict[str, Any]] = {
-        "edges": [
-            {"from": "planner", "to": "visual"},
-            {"from": "visual", "to": "layout"},
-            {"from": "layout", "to": "critic"},
-            {"from": "critic", "to": "layout", "condition": "reject"},
-            {"from": "critic", "to": "END", "condition": "pass"},
-        ],
-        "entry_point": "planner",
     }
 
 

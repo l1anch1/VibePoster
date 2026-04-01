@@ -6,8 +6,8 @@
  */
 
 import React from 'react';
-import type { Layer, TextLayer, PosterData } from '../../types/PosterSchema';
-import { isTextLayer } from '../../utils/editorUtils';
+import type { Layer, TextLayer, PosterData } from '../../../types/PosterSchema';
+import { isTextLayer } from '../../../utils/editorUtils';
 
 interface EditorRightPanelProps {
   data: PosterData;

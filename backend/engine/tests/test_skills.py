@@ -264,36 +264,36 @@ class TestSkillDependencies:
     """Skill 依赖注入测试"""
     
     def test_get_intent_parse_skill(self):
-        from app.core.dependencies import get_intent_parse_skill, SkillContainer
-        SkillContainer.reset_all()
-        
+        from app.core.dependencies import get_intent_parse_skill, reset_skill_cache
+        reset_skill_cache()
+
         skill1 = get_intent_parse_skill()
         skill2 = get_intent_parse_skill()
         assert skill1 is skill2
         assert skill1.name == "intent_parse"
-    
+
     def test_get_design_rule_skill(self):
-        from app.core.dependencies import get_design_rule_skill, SkillContainer
-        SkillContainer.reset_all()
-        
+        from app.core.dependencies import get_design_rule_skill, reset_skill_cache
+        reset_skill_cache()
+
         skill1 = get_design_rule_skill()
         skill2 = get_design_rule_skill()
         assert skill1 is skill2
         assert skill1.name == "design_rule"
-    
+
     def test_get_brand_context_skill(self):
-        from app.core.dependencies import get_brand_context_skill, SkillContainer
-        SkillContainer.reset_all()
-        
+        from app.core.dependencies import get_brand_context_skill, reset_skill_cache
+        reset_skill_cache()
+
         skill1 = get_brand_context_skill()
         skill2 = get_brand_context_skill()
         assert skill1 is skill2
         assert skill1.name == "brand_context"
-    
+
     def test_get_design_brief_skill(self):
-        from app.core.dependencies import get_design_brief_skill, SkillContainer
-        SkillContainer.reset_all()
-        
+        from app.core.dependencies import get_design_brief_skill, reset_skill_cache
+        reset_skill_cache()
+
         skill1 = get_design_brief_skill()
         skill2 = get_design_brief_skill()
         assert skill1 is skill2

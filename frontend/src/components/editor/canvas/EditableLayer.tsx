@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useRef, useCallback, type CSSProperties } from 'react';
-import type { Layer } from '../../types/PosterSchema';
-import type { ResizeDirection } from '../../types/EditorTypes';
+import type { Layer } from '../../../types/PosterSchema';
+import type { ResizeDirection } from '../../../types/EditorTypes';
 
 interface EditableLayerProps {
   layer: Layer;
