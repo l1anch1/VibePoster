@@ -20,6 +20,11 @@
         "strategy": "Structured",
         "intent": "Stability",
         "patterns": ["Grid", "Symmetrical", "Centered"]
+      },
+      "decorations": {
+        "divider": { "style": "solid", "color_source": "accent", "thickness": 2, "opacity": 0.5 },
+        "overlay": { "type": "solid", "direction": "to-bottom", "color_source": "primary", "opacity": 0.4 },
+        "shape": { "border_radius": 0, "fill_source": "accent", "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
       }
     },
     "Innovation": {
@@ -39,6 +44,11 @@
         "strategy": "Dynamic",
         "intent": "Forward-thinking",
         "patterns": ["Diagonal", "Asymmetric", "Layered"]
+      },
+      "decorations": {
+        "divider": { "style": "gradient", "color_source": "gradient", "thickness": 3, "opacity": 0.7 },
+        "overlay": { "type": "linear-gradient", "direction": "diagonal", "color_source": "primary", "opacity": 0.5 },
+        "shape": { "border_radius": 0, "fill_source": "accent", "border_width": 0, "border_color_source": "primary", "opacity": 0.85 }
       }
     },
     "Excitement": {
@@ -57,6 +67,11 @@
         "strategy": "Energetic",
         "intent": "Dynamism",
         "patterns": ["Diagonal", "Overlapping", "Burst"]
+      },
+      "decorations": {
+        "divider": { "style": "dashed", "color_source": "accent", "thickness": 3, "opacity": 0.8 },
+        "overlay": { "type": "radial-gradient", "direction": "to-bottom", "color_source": "primary", "opacity": 0.45 },
+        "shape": { "border_radius": 0, "fill_source": "accent", "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
       }
     },
     "Premium": {
@@ -76,6 +91,11 @@
         "strategy": "Minimal",
         "intent": "Sophistication",
         "patterns": ["Centered", "Generous-whitespace", "Golden-ratio"]
+      },
+      "decorations": {
+        "divider": { "style": "solid", "color_source": "accent", "thickness": 1, "opacity": 0.3 },
+        "overlay": { "type": "linear-gradient", "direction": "to-bottom", "color_source": "primary", "opacity": 0.6 },
+        "shape": { "border_radius": 0, "fill_source": "primary", "border_width": 1, "border_color_source": "accent", "opacity": 0.9 }
       }
     },
     "Warmth": {
@@ -95,6 +115,11 @@
         "strategy": "Organic",
         "intent": "Comfort",
         "patterns": ["Curved", "Flowing", "Natural-hierarchy"]
+      },
+      "decorations": {
+        "divider": { "style": "dotted", "color_source": "accent", "thickness": 2, "opacity": 0.5 },
+        "overlay": { "type": "solid", "direction": "to-bottom", "color_source": "natural", "opacity": 0.4 },
+        "shape": { "border_radius": 20, "fill_source": "natural", "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
       }
     },
     "Freshness": {
@@ -114,6 +139,11 @@
         "strategy": "Clean",
         "intent": "Clarity",
         "patterns": ["Grid", "Whitespace-rich", "Balanced"]
+      },
+      "decorations": {
+        "divider": { "style": "solid", "color_source": "accent", "thickness": 2, "opacity": 0.5 },
+        "overlay": { "type": "linear-gradient", "direction": "to-top", "color_source": "fresh", "opacity": 0.4 },
+        "shape": { "border_radius": 12, "fill_source": "fresh", "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
       }
     },
     "Playfulness": {
@@ -133,6 +163,11 @@
         "strategy": "Playful",
         "intent": "Engagement",
         "patterns": ["Scattered", "Overlapping", "Irregular-grid"]
+      },
+      "decorations": {
+        "divider": { "style": "dashed", "color_source": "pop", "thickness": 3, "opacity": 0.7 },
+        "overlay": { "type": "radial-gradient", "direction": "to-bottom", "color_source": "pop", "opacity": 0.35 },
+        "shape": { "border_radius": 24, "fill_source": "pop", "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
       }
     }
   },

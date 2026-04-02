@@ -104,6 +104,7 @@ class InferenceEngine:
         layout_strategies: Set[str] = set()
         layout_intents: Set[str] = set()
         layout_patterns: Set[str] = set()
+        decoration_styles: Dict[str, Any] = {}
         
         for emotion in emotions:
             emotion_def = self.graph.get_emotion_definition(emotion)
@@ -136,6 +137,13 @@ class InferenceEngine:
                 if "intent" in layout:
                     layout_intents.add(layout["intent"])
                 layout_patterns.update(layout.get("patterns", []))
+
+            # 装饰（取第一个非空定义，因为装饰风格不宜叠加）
+            decorations = emotion_def.get("decorations", {})
+            if decorations:
+                for deco_type in ("divider", "overlay", "shape"):
+                    if deco_type not in decoration_styles and deco_type in decorations:
+                        decoration_styles[deco_type] = decorations[deco_type]
         
         # 去重配色
         for key in color_palettes:
@@ -150,7 +158,8 @@ class InferenceEngine:
             typography_characteristics=list(typography_characteristics),
             layout_strategies=list(layout_strategies),
             layout_intents=list(layout_intents),
-            layout_patterns=list(layout_patterns)
+            layout_patterns=list(layout_patterns),
+            decoration_styles=decoration_styles,
         )
     
     def infer_single(self, keyword: str) -> InferenceResult:

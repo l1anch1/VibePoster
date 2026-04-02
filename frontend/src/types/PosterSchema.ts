@@ -3,7 +3,7 @@
 // 1. 定义基础图层 (包含 PSD 和 CSS 共用的几何属性)
 export interface BaseLayer {
   id: string;          // 用于 React Key，可用 uuid 生成
-  type: 'text' | 'image'; 
+  type: 'text' | 'image' | 'rect';
   name: string;        // 对应 PSD 的图层名 (Layer Panel Name)
   
   // 几何属性 (单位均为 px)
@@ -35,10 +35,21 @@ export interface ImageLayer extends BaseLayer {
   src: string;         // URL 或 Base64 (后端需下载转 Buffer)
 }
 
-// 4. 联合类型
-export type Layer = TextLayer | ImageLayer;
+// 4. 形状图层（含分隔线、渐变遮罩、矩形色块）
+export interface ShapeLayer extends BaseLayer {
+  type: 'rect';
+  subtype: 'rect' | 'divider' | 'overlay';
+  backgroundColor: string;
+  borderRadius: number;
+  borderColor: string;
+  borderWidth: number;
+  gradient: string;    // 空 = 无渐变，非空 = CSS 渐变字符串
+}
 
-// 5. 整个画布数据
+// 5. 联合类型
+export type Layer = TextLayer | ImageLayer | ShapeLayer;
+
+// 6. 整个画布数据
 export interface PosterData {
   canvas: {
     width: number;     // 通常 1080

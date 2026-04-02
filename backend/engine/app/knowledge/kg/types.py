@@ -64,6 +64,38 @@ class LayoutStyle(BaseModel):
     patterns: List[str] = Field(default_factory=list, description="布局模式")
 
 
+class DividerStyle(BaseModel):
+    """分隔线装饰风格"""
+    style: str = Field(default="solid", description="线条样式: solid|dashed|dotted|gradient")
+    color_source: str = Field(default="accent", description="取色来源: primary|accent|gradient等")
+    thickness: int = Field(default=2, description="线条粗细(px)")
+    opacity: float = Field(default=0.6, description="透明度 0-1")
+
+
+class OverlayStyle(BaseModel):
+    """遮罩装饰风格"""
+    type: str = Field(default="linear-gradient", description="类型: linear-gradient|radial-gradient|solid")
+    direction: str = Field(default="to-bottom", description="方向: to-bottom|to-top|to-right|diagonal")
+    color_source: str = Field(default="primary", description="取色来源")
+    opacity: float = Field(default=0.5, description="透明度 0-1")
+
+
+class ShapeDecoStyle(BaseModel):
+    """形状装饰风格"""
+    border_radius: int = Field(default=0, description="圆角半径(px)")
+    fill_source: str = Field(default="accent", description="填充色来源")
+    border_width: int = Field(default=0, description="边框粗细(px)")
+    border_color_source: str = Field(default="primary", description="边框色来源")
+    opacity: float = Field(default=0.9, description="透明度 0-1")
+
+
+class DecorationStyles(BaseModel):
+    """装饰风格集合"""
+    divider: DividerStyle = Field(default_factory=DividerStyle, description="分隔线风格")
+    overlay: OverlayStyle = Field(default_factory=OverlayStyle, description="遮罩风格")
+    shape: ShapeDecoStyle = Field(default_factory=ShapeDecoStyle, description="形状风格")
+
+
 class EmotionDefinition(BaseModel):
     """情绪定义"""
     description: str = Field(..., description="情绪描述")
@@ -71,6 +103,7 @@ class EmotionDefinition(BaseModel):
     color_palettes: ColorPalette = Field(default_factory=ColorPalette, description="配色方案")
     typography: Typography = Field(default=None, description="排版风格")
     layout: LayoutStyle = Field(default=None, description="布局风格")
+    decorations: DecorationStyles = Field(default_factory=DecorationStyles, description="装饰风格")
 
 
 class IndustryDefinition(BaseModel):
@@ -110,7 +143,10 @@ class InferenceResult(BaseModel):
     layout_strategies: List[str] = Field(default_factory=list, description="布局策略")
     layout_intents: List[str] = Field(default_factory=list, description="布局意图")
     layout_patterns: List[str] = Field(default_factory=list, description="布局模式")
-    
+
+    # 装饰层
+    decoration_styles: Dict[str, Any] = Field(default_factory=dict, description="装饰风格推荐")
+
     # 设计原则
     design_principles: List[str] = Field(default_factory=list, description="设计原则")
     avoid: List[str] = Field(default_factory=list, description="应避免的元素")
@@ -128,6 +164,11 @@ class InferenceResult(BaseModel):
             else:
                 merged_palettes[key] = colors
         
+        merged_decorations = dict(self.decoration_styles)
+        for key, val in other.decoration_styles.items():
+            if key not in merged_decorations:
+                merged_decorations[key] = val
+
         return InferenceResult(
             emotions=list(set(self.emotions + other.emotions)),
             color_strategies=list(set(self.color_strategies + other.color_strategies)),
@@ -138,6 +179,7 @@ class InferenceResult(BaseModel):
             layout_strategies=list(set(self.layout_strategies + other.layout_strategies)),
             layout_intents=list(set(self.layout_intents + other.layout_intents)),
             layout_patterns=list(set(self.layout_patterns + other.layout_patterns)),
+            decoration_styles=merged_decorations,
             design_principles=list(set(self.design_principles + other.design_principles)),
             avoid=list(set(self.avoid + other.avoid))
         )

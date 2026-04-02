@@ -6,8 +6,8 @@
  */
 
 import React from 'react';
-import type { Layer, TextLayer, PosterData } from '../../../types/PosterSchema';
-import { isTextLayer } from '../../../utils/editorUtils';
+import type { Layer, TextLayer, ShapeLayer, PosterData } from '../../../types/PosterSchema';
+import { isTextLayer, isShapeLayer } from '../../../utils/editorUtils';
 import { FONT_FAMILIES } from '../../../config/constants';
 
 interface EditorRightPanelProps {
@@ -74,7 +74,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ layer, onUpdate, onDele
     {/* 图层信息 */}
     <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20">
-        <span className="text-sm">{layer.type === 'text' ? '📝' : '🖼️'}</span>
+        <span className="text-sm">{layer.type === 'text' ? '📝' : layer.type === 'rect' ? '◻️' : '🖼️'}</span>
       </div>
       <div className="flex-1 min-w-0">
         <input
@@ -147,6 +147,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ layer, onUpdate, onDele
 
     {/* Typography (text layers only) */}
     {isTextLayer(layer) && <TextProperties layer={layer} onUpdate={onUpdate} />}
+
+    {/* Shape (rect layers only) */}
+    {isShapeLayer(layer) && <ShapeProperties layer={layer} onUpdate={onUpdate} />}
 
     {/* Delete */}
     <div className="pt-4">
@@ -268,6 +271,95 @@ const TextProperties: React.FC<TextPropertiesProps> = ({ layer, onUpdate }) => {
 };
 
 // ============================================================================
+// 形状属性编辑
+// ============================================================================
+
+interface ShapePropertiesProps {
+  layer: ShapeLayer;
+  onUpdate: (id: string, updates: Partial<ShapeLayer>) => void;
+}
+
+const ShapeProperties: React.FC<ShapePropertiesProps> = ({ layer, onUpdate }) => (
+  <div className="py-4 border-b border-gray-200">
+    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Shape</h4>
+
+    {/* Background Color */}
+    <div className="mb-3">
+      <label className="text-xs text-gray-500 mb-1 block">Fill Color</label>
+      <div className="relative">
+        <input
+          type="color"
+          value={layer.backgroundColor === 'transparent' ? '#ffffff' : layer.backgroundColor}
+          onChange={(e) => onUpdate(layer.id, { backgroundColor: e.target.value })}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+        />
+        <div className="flex items-center gap-2 px-2.5 py-2 bg-white border border-gray-300 rounded-xl cursor-pointer shadow-sm hover:border-violet-400 transition-colors">
+          <div className="w-4 h-4 rounded-md border border-gray-300 shadow-inner" style={{ backgroundColor: layer.backgroundColor }} />
+          <span className="text-xs text-gray-600 font-mono truncate">{layer.backgroundColor}</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Border Radius */}
+    <div className="grid grid-cols-2 gap-2 mb-3">
+      <div className="relative">
+        <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">Radius</label>
+        <input
+          type="number"
+          min={0}
+          value={layer.borderRadius}
+          onChange={(e) => onUpdate(layer.id, { borderRadius: Number(e.target.value) })}
+          className="w-full pl-14 pr-2 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
+        />
+      </div>
+      <div className="relative">
+        <label className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">Border</label>
+        <input
+          type="number"
+          min={0}
+          value={layer.borderWidth}
+          onChange={(e) => onUpdate(layer.id, { borderWidth: Number(e.target.value) })}
+          className="w-full pl-14 pr-2 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm"
+        />
+      </div>
+    </div>
+
+    {/* Border Color (only when borderWidth > 0) */}
+    {layer.borderWidth > 0 && (
+      <div className="mb-3">
+        <label className="text-xs text-gray-500 mb-1 block">Border Color</label>
+        <div className="relative">
+          <input
+            type="color"
+            value={layer.borderColor === 'transparent' ? '#000000' : layer.borderColor}
+            onChange={(e) => onUpdate(layer.id, { borderColor: e.target.value })}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+          <div className="flex items-center gap-2 px-2.5 py-2 bg-white border border-gray-300 rounded-xl cursor-pointer shadow-sm hover:border-violet-400 transition-colors">
+            <div className="w-4 h-4 rounded-md border border-gray-300 shadow-inner" style={{ backgroundColor: layer.borderColor }} />
+            <span className="text-xs text-gray-600 font-mono truncate">{layer.borderColor}</span>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Gradient */}
+    {layer.gradient && (
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">Gradient</label>
+        <input
+          type="text"
+          value={layer.gradient}
+          onChange={(e) => onUpdate(layer.id, { gradient: e.target.value })}
+          className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-violet-500 outline-none transition-all text-gray-900 shadow-sm font-mono"
+          placeholder="linear-gradient(...)"
+        />
+      </div>
+    )}
+  </div>
+);
+
+// ============================================================================
 // 空状态
 // ============================================================================
 
@@ -326,7 +418,7 @@ const LayerList: React.FC<LayerListProps> = ({ layers, selectedLayerId, onSelect
                 onClick={() => onSelectLayer(layer.id)}
                 className="flex items-center gap-2 flex-1 min-w-0 text-left"
               >
-                <span className="text-sm shrink-0">{layer.type === 'text' ? '📝' : '🖼️'}</span>
+                <span className="text-sm shrink-0">{layer.type === 'text' ? '📝' : layer.type === 'rect' ? '◻️' : '🖼️'}</span>
                 <span className="text-sm font-medium truncate flex-1">{layer.name}</span>
               </button>
 

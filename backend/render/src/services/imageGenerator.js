@@ -141,6 +141,89 @@ function escapeXml(unsafe) {
     .replace(/'/g, '&apos;');
 }
 
+// 渲染形状图层（rect）为图片
+async function renderShapeLayer(layer, canvasWidth, canvasHeight) {
+  try {
+    const x = layer.x || 0;
+    const y = layer.y || 0;
+    const w = layer.width || 0;
+    const h = layer.height || 0;
+    const bgColor = layer.backgroundColor || 'transparent';
+    const borderRadius = layer.borderRadius || 0;
+    const borderWidth = layer.borderWidth || 0;
+    const borderColor = layer.borderColor || 'transparent';
+    const gradient = layer.gradient || '';
+    const opacity = layer.opacity !== undefined ? layer.opacity : 1.0;
+
+    let fillDef = '';
+    let fillAttr = '';
+
+    if (gradient) {
+      // 解析 CSS 渐变为 SVG 渐变
+      const linearMatch = gradient.match(/linear-gradient\((\d+)deg,\s*([^,]+),\s*([^)]+)\)/);
+      const radialMatch = gradient.match(/radial-gradient\(circle,\s*([^,]+),\s*([^)]+)\)/);
+
+      if (linearMatch) {
+        const angle = parseInt(linearMatch[1]);
+        const color1 = linearMatch[2].trim();
+        const color2 = linearMatch[3].trim();
+        // 将角度转为 SVG 坐标（简化）
+        const rad = (angle - 90) * Math.PI / 180;
+        const x1 = 50 - Math.cos(rad) * 50;
+        const y1 = 50 - Math.sin(rad) * 50;
+        const x2 = 50 + Math.cos(rad) * 50;
+        const y2 = 50 + Math.sin(rad) * 50;
+        fillDef = `<linearGradient id="grad" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%">
+          <stop offset="0%" stop-color="${color1}"/>
+          <stop offset="100%" stop-color="${color2}"/>
+        </linearGradient>`;
+        fillAttr = 'url(#grad)';
+      } else if (radialMatch) {
+        const color1 = radialMatch[1].trim();
+        const color2 = radialMatch[2].trim();
+        fillDef = `<radialGradient id="grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${color1}"/>
+          <stop offset="100%" stop-color="${color2}"/>
+        </radialGradient>`;
+        fillAttr = 'url(#grad)';
+      } else {
+        fillAttr = bgColor !== 'transparent' ? bgColor : 'none';
+      }
+    } else {
+      fillAttr = bgColor !== 'transparent' ? bgColor : 'none';
+    }
+
+    const strokeAttr = borderWidth > 0 && borderColor !== 'transparent'
+      ? `stroke="${borderColor}" stroke-width="${borderWidth}"`
+      : '';
+
+    const svg = `
+      <svg width="${canvasWidth}" height="${canvasHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>${fillDef}</defs>
+        <g opacity="${opacity}">
+          <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${borderRadius}" ry="${borderRadius}" fill="${fillAttr}" ${strokeAttr}/>
+        </g>
+      </svg>
+    `;
+
+    const buffer = await sharp(Buffer.from(svg))
+      .png()
+      .toBuffer();
+
+    return {
+      buffer,
+      x: 0,
+      y: 0,
+      width: canvasWidth,
+      height: canvasHeight,
+      opacity: 1.0, // opacity 已在 SVG 中处理
+    };
+  } catch (error) {
+    console.error(`❌ 渲染形状图层 ${layer.id} 失败:`, error.message);
+    return null;
+  }
+}
+
 // 生成最终图片（PNG 或 JPG）
 async function generateImage(canvas, layers, format = 'png', quality = 95) {
   console.log(`🎨 开始生成 ${format.toUpperCase()} 图片...`);
@@ -182,6 +265,17 @@ async function generateImage(canvas, layers, format = 'png', quality = 95) {
       if (textLayer) {
         compositeInputs.push({
           input: textLayer.buffer,
+          top: 0,
+          left: 0,
+          blend: 'over',
+        });
+      }
+    } else if (layer.type === 'rect') {
+      console.log(`◻️ 处理形状图层: ${layer.id}`);
+      const shapeLayer = await renderShapeLayer(layer, width, height);
+      if (shapeLayer) {
+        compositeInputs.push({
+          input: shapeLayer.buffer,
           top: 0,
           left: 0,
           blend: 'over',

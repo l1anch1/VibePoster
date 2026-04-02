@@ -45,10 +45,15 @@ class ImageLayer(BaseLayer):
 
 
 class ShapeLayer(BaseLayer):
-    """形状图层"""
+    """形状图层（含分隔线、渐变遮罩、矩形等）"""
 
     type: Literal["rect"]
+    subtype: str = "rect"  # rect | divider | overlay
     backgroundColor: str = "transparent"
+    borderRadius: int = 0
+    borderColor: str = "transparent"
+    borderWidth: int = 0
+    gradient: str = ""  # 空 = 无渐变，非空 = CSS 渐变字符串
 
 
 class Canvas(BaseModel):

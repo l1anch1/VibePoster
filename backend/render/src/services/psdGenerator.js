@@ -168,28 +168,107 @@ async function processImageLayer(layer) {
   };
 }
 
+// 处理形状图层（渲染为像素层）
+async function processShapeLayer(layer) {
+  const layerName = layer.name || layer.id || 'Shape Layer';
+  const w = layer.width || 100;
+  const h = layer.height || 100;
+  const bgColor = layer.backgroundColor || 'transparent';
+  const borderRadius = layer.borderRadius || 0;
+  const borderWidth = layer.borderWidth || 0;
+  const borderColor = layer.borderColor || 'transparent';
+  const gradient = layer.gradient || '';
+
+  console.log(`◻️ 处理形状图层: "${layerName}" (${layer.subtype || 'rect'})`);
+
+  try {
+    // 用 SVG 渲染形状，再转为像素数据
+    let fillDef = '';
+    let fillAttr = bgColor !== 'transparent' ? bgColor : 'none';
+
+    if (gradient) {
+      const linearMatch = gradient.match(/linear-gradient\((\d+)deg,\s*([^,]+),\s*([^)]+)\)/);
+      const radialMatch = gradient.match(/radial-gradient\(circle,\s*([^,]+),\s*([^)]+)\)/);
+
+      if (linearMatch) {
+        const angle = parseInt(linearMatch[1]);
+        const color1 = linearMatch[2].trim();
+        const color2 = linearMatch[3].trim();
+        const rad = (angle - 90) * Math.PI / 180;
+        const x1 = 50 - Math.cos(rad) * 50;
+        const y1 = 50 - Math.sin(rad) * 50;
+        const x2 = 50 + Math.cos(rad) * 50;
+        const y2 = 50 + Math.sin(rad) * 50;
+        fillDef = `<linearGradient id="g" x1="${x1}%" y1="${y1}%" x2="${x2}%" y2="${y2}%"><stop offset="0%" stop-color="${color1}"/><stop offset="100%" stop-color="${color2}"/></linearGradient>`;
+        fillAttr = 'url(#g)';
+      } else if (radialMatch) {
+        const color1 = radialMatch[1].trim();
+        const color2 = radialMatch[2].trim();
+        fillDef = `<radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${color1}"/><stop offset="100%" stop-color="${color2}"/></radialGradient>`;
+        fillAttr = 'url(#g)';
+      }
+    }
+
+    const strokeAttr = borderWidth > 0 && borderColor !== 'transparent'
+      ? `stroke="${borderColor}" stroke-width="${borderWidth}"`
+      : '';
+
+    const svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg"><defs>${fillDef}</defs><rect x="0" y="0" width="${w}" height="${h}" rx="${borderRadius}" ry="${borderRadius}" fill="${fillAttr}" ${strokeAttr}/></svg>`;
+
+    const processedImage = await sharp(Buffer.from(svg))
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const pixelData = new Uint8ClampedArray(processedImage.data);
+
+    return {
+      name: layerName,
+      left: layer.x || 0,
+      top: layer.y || 0,
+      right: (layer.x || 0) + w,
+      bottom: (layer.y || 0) + h,
+      opacity: layer.opacity !== undefined ? layer.opacity : 1.0,
+      imageData: { data: pixelData, width: processedImage.info.width, height: processedImage.info.height },
+    };
+  } catch (error) {
+    console.error(`❌ 形状图层处理失败: ${error.message}`);
+    const imageData = createImageData(w, h, { r: 200, g: 200, b: 200 });
+    return {
+      name: layerName,
+      left: layer.x || 0, top: layer.y || 0,
+      right: (layer.x || 0) + w, bottom: (layer.y || 0) + h,
+      opacity: layer.opacity !== undefined ? layer.opacity : 1.0,
+      imageData,
+    };
+  }
+}
+
 // 生成 PSD
 async function generatePSD(canvas, layers) {
-  const textLayers = [];
-  const imageLayers = [];
+  const processedLayers = [];
   const usedFontFamilies = new Set();
 
-  // 处理所有图层
+  // 按原始 z-order 顺序处理所有图层
   for (const layer of layers) {
     if (layer.type === 'text') {
       const textLayer = processTextLayer(layer, usedFontFamilies);
       if (textLayer) {
-        textLayers.push(textLayer);
+        processedLayers.push(textLayer);
         console.log(`✅ 文本图层已添加: "${textLayer.text.text}"`);
       }
     } else if (layer.type === 'image') {
       const imageLayer = await processImageLayer(layer);
-      imageLayers.push(imageLayer);
+      processedLayers.push(imageLayer);
       console.log(`✅ 图片图层已添加: "${imageLayer.name}"`);
+    } else if (layer.type === 'rect') {
+      const shapeLayer = await processShapeLayer(layer);
+      processedLayers.push(shapeLayer);
+      console.log(`✅ 形状图层已添加: "${shapeLayer.name}"`);
     }
   }
 
-  // 组装图层顺序
+  // 组装图层顺序（保持原始 z-order）
   const bgColor = hexToRgb(canvas.backgroundColor);
   const psd = {
     width: canvas.width,
@@ -200,24 +279,13 @@ async function generatePSD(canvas, layers) {
         left: 0, top: 0, right: canvas.width, bottom: canvas.height,
         imageData: createImageData(canvas.width, canvas.height, bgColor),
       },
-      ...imageLayers,
-      ...textLayers,
+      ...processedLayers,
     ],
   };
 
   // 生成 Buffer
   console.log('🔨 正在构建 PSD 二进制流...');
-  console.log('📊 图层统计:');
-  console.log(`   - 背景色图层: 1 (自动生成的背景色)`);
-  console.log(`   - 图片图层: ${imageLayers.length}`);
-  imageLayers.forEach((layer, index) => {
-    console.log(`     ${index + 1}. ${layer.name}`);
-  });
-  console.log(`   - 文本图层: ${textLayers.length}`);
-  textLayers.forEach((layer, index) => {
-    console.log(`     ${index + 1}. ${layer.name} - "${layer.text.text}"`);
-  });
-  console.log(`   - 总图层数量: ${psd.children.length} (1个背景色 + ${imageLayers.length}个图片 + ${textLayers.length}个文本)`);
+  console.log(`📊 总图层数量: ${psd.children.length} (1个背景色 + ${processedLayers.length}个内容图层)`);
 
   const psdBuffer = agPsd.writePsdBuffer(psd, {
     invalidateTextLayers: true,

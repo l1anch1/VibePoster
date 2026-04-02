@@ -65,7 +65,7 @@ class DSLParser:
 
         for i, instr in enumerate(dsl_instructions):
             try:
-                elem = self._parse_instruction(instr, main_color, resolved_font_style)
+                elem = self._parse_instruction(instr, main_color, resolved_font_style, design_brief)
                 if elem:
                     elem = self._clamp_bounds(elem)
                     elements.append(elem)
@@ -98,7 +98,8 @@ class DSLParser:
     # ------------------------------------------------------------------
 
     def _parse_instruction(
-        self, instr: Dict[str, Any], main_color: str, font_style: str
+        self, instr: Dict[str, Any], main_color: str, font_style: str,
+        design_brief: Optional[Dict[str, Any]] = None,
     ) -> Optional[Dict[str, Any]]:
         cmd = instr.get("command", "")
 
@@ -139,8 +140,116 @@ class DSLParser:
                                    default_size=28, default_color="#0066FF",
                                    default_weight="bold", default_align="center")
 
+        # ---- 装饰类指令（KG 驱动样式） ----
+
+        if cmd in ("add_divider", "add_line"):
+            return self._divider_elem(instr, x, y, w, h, design_brief)
+
+        if cmd in ("add_overlay", "add_gradient"):
+            return self._overlay_elem(instr, x, y, w, h, design_brief)
+
+        if cmd in ("add_shape", "add_rect"):
+            return self._shape_elem(instr, x, y, w, h, design_brief)
+
         logger.warning(f"未知指令: {cmd}")
         return None
+
+    # ------------------------------------------------------------------
+    # 装饰元素构建（KG 知识感知）
+    # ------------------------------------------------------------------
+
+    def _get_decoration_style(
+        self, design_brief: Optional[Dict[str, Any]], decoration_type: str
+    ) -> Dict[str, Any]:
+        """从 KG 装饰推荐中读取指定类型的样式"""
+        kg = (design_brief or {}).get("kg_rules", {})
+        deco = kg.get("decoration_styles", {})
+        return deco.get(decoration_type, {})
+
+    def _resolve_color_from_source(
+        self, design_brief: Optional[Dict[str, Any]], source_key: str
+    ) -> str:
+        """从 KG 调色板中根据 source_key 取色"""
+        kg = (design_brief or {}).get("kg_rules", {})
+        palettes = kg.get("color_palettes", {})
+        colors = palettes.get(source_key, [])
+        return colors[0] if colors else "#666666"
+
+    def _divider_elem(
+        self, instr: Dict[str, Any],
+        x: int, y: int, w: int, h: int,
+        design_brief: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        deco = self._get_decoration_style(design_brief, "divider")
+        color = self._resolve_color_from_source(
+            design_brief, deco.get("color_source", "accent")
+        )
+        return {
+            "type": "rect", "subtype": "divider",
+            "x": x, "y": y, "width": w,
+            "height": max(h, deco.get("thickness", 2)),
+            "backgroundColor": instr.get("color", color),
+            "opacity": deco.get("opacity", 0.6),
+            "borderRadius": 0,
+            "borderColor": "transparent", "borderWidth": 0, "gradient": "",
+        }
+
+    def _overlay_elem(
+        self, instr: Dict[str, Any],
+        x: int, y: int, w: int, h: int,
+        design_brief: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        deco = self._get_decoration_style(design_brief, "overlay")
+        color = self._resolve_color_from_source(
+            design_brief, deco.get("color_source", "primary")
+        )
+        gradient = ""
+        overlay_type = deco.get("type", "linear-gradient")
+        if overlay_type.startswith("linear"):
+            direction_map = {
+                "to-bottom": "180deg", "to-top": "0deg",
+                "to-right": "90deg", "diagonal": "135deg",
+            }
+            deg = direction_map.get(deco.get("direction", "to-bottom"), "180deg")
+            gradient = f"linear-gradient({deg}, {color}cc, {color}00)"
+        elif overlay_type.startswith("radial"):
+            gradient = f"radial-gradient(circle, {color}cc, {color}00)"
+        return {
+            "type": "rect", "subtype": "overlay",
+            "x": x, "y": y, "width": w, "height": h,
+            "backgroundColor": color if not gradient else "transparent",
+            "gradient": gradient,
+            "opacity": deco.get("opacity", 0.5),
+            "borderRadius": 0,
+            "borderColor": "transparent", "borderWidth": 0,
+        }
+
+    def _shape_elem(
+        self, instr: Dict[str, Any],
+        x: int, y: int, w: int, h: int,
+        design_brief: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        deco = self._get_decoration_style(design_brief, "shape")
+        fill_color = self._resolve_color_from_source(
+            design_brief, deco.get("fill_source", "accent")
+        )
+        border_w = deco.get("border_width", 0)
+        border_color = (
+            self._resolve_color_from_source(
+                design_brief, deco.get("border_color_source", "primary")
+            )
+            if border_w > 0 else "transparent"
+        )
+        return {
+            "type": "rect", "subtype": instr.get("subtype", "rect"),
+            "x": x, "y": y, "width": w, "height": h,
+            "backgroundColor": instr.get("color", fill_color),
+            "borderRadius": instr.get("border_radius", deco.get("border_radius", 0)),
+            "borderColor": border_color,
+            "borderWidth": border_w,
+            "opacity": instr.get("opacity", deco.get("opacity", 0.9)),
+            "gradient": "",
+        }
 
     @staticmethod
     def _text_elem(

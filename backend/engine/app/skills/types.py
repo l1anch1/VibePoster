@@ -206,10 +206,16 @@ class DesignRuleOutput(BaseModel):
         description="布局意图"
     )
     layout_patterns: List[str] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="布局模式"
     )
-    
+
+    # 装饰层
+    decoration_styles: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="装饰风格推荐 {divider: {...}, overlay: {...}, shape: {...}}"
+    )
+
     # 设计原则
     design_principles: List[str] = Field(
         default_factory=list, 

@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef, useCallback, type CSSProperties } from 'react';
-import type { Layer } from '../../../types/PosterSchema';
+import type { Layer, ShapeLayer } from '../../../types/PosterSchema';
 import type { ResizeDirection } from '../../../types/EditorTypes';
 
 interface EditableLayerProps {
@@ -206,6 +206,22 @@ export const EditableLayer: React.FC<EditableLayerProps> = ({
           draggable={false}
         />
       );
+    }
+
+    if (layer.type === 'rect') {
+      const shape = layer as ShapeLayer;
+      const shapeStyle: CSSProperties = {
+        width: '100%',
+        height: '100%',
+        backgroundColor: shape.gradient ? 'transparent' : shape.backgroundColor,
+        background: shape.gradient || undefined,
+        borderRadius: shape.borderRadius,
+        border: shape.borderWidth > 0
+          ? `${shape.borderWidth}px solid ${shape.borderColor}`
+          : 'none',
+        boxSizing: 'border-box',
+      };
+      return <div style={shapeStyle} />;
     }
 
     return null;

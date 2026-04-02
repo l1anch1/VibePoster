@@ -2,7 +2,7 @@
  * 编辑器工具函数
  */
 
-import type { Layer, PosterData, TextLayer } from '../types/PosterSchema';
+import type { Layer, TextLayer, ShapeLayer } from '../types/PosterSchema';
 import type { Transform } from '../types/EditorTypes';
 
 /**
@@ -94,6 +94,13 @@ export function constrainToCanvas(
  */
 export function isTextLayer(layer: Layer): layer is TextLayer {
   return layer.type === 'text';
+}
+
+/**
+ * 检查图层是否是形状图层
+ */
+export function isShapeLayer(layer: Layer): layer is ShapeLayer {
+  return layer.type === 'rect';
 }
 
 /**

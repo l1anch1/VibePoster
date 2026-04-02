@@ -93,7 +93,12 @@ class SchemaConverter:
         if elem_type == "rect":
             return ShapeLayer(
                 **base_attrs,
+                subtype=elem.get("subtype", "rect"),
                 backgroundColor=elem.get("backgroundColor", "transparent"),
+                borderRadius=int(elem.get("borderRadius", 0)),
+                borderColor=elem.get("borderColor", "transparent"),
+                borderWidth=int(elem.get("borderWidth", 0)),
+                gradient=elem.get("gradient", ""),
             )
 
         logger.warning(f"未知元素类型: {elem_type}")
