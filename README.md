@@ -1,283 +1,78 @@
-# VibePoster - AI 海报设计系统
+# VibePoster
 
-一个能听懂人话、能看懂图片、会自我反思的海报设计系统。支持文生图、图生图以及复杂的双图融合（换背景/换人）场景，最终交付可分层编辑的 PSD 源文件。
+AI-powered poster design system. Multi-agent orchestration + Knowledge Graph + RAG brand knowledge + image understanding/generation + online editor, delivering layered PSD source files.
 
-## 📋 系统架构
+## Architecture
 
-### 四大智能体架构 (The 4-Agent Architecture)
+```
+User Input → Planner → Visual → Layout → Critic → Poster
+                │          │        │        │
+            Intent      Image    Pixel     Quality
+           KG+RAG+LLM  OCR+Gen  DSL Cmds  Dual Review
+                                            ↓ REJECT
+                                         Retry Layout
+```
 
-1. 🧠 **Planner (规划)**：理解意图，写文案，定色调
-2. 🎨 **Visual (感知)**：处理图片（抠图、分析、搜图），是"视觉感知中心"
-3. 📐 **Layout (执行)**：计算坐标，生成图层数据
-4. ⚖️ **Critic (反思)**：基于规则和视觉冲突检测，进行自修正
+- **Planner**: 4-Skill pipeline (IntentParse → KG inference → RAG brand context → LLM design brief)
+- **Visual**: Image understanding + asset search/generation (Pexels / Flux text-to-image)
+- **Layout**: Pixel-precise DSL instructions; decoration styles auto-driven by KG
+- **Critic**: JSON structure review + visual rendering review, auto-retry on failure
 
-### 技术栈
+## Tech Stack
 
-- **前端**: React + TypeScript + Vite
-- **后端引擎**: Python + FastAPI + LangGraph
-- **渲染服务**: Node.js + Express + ag-psd
-- **AI 模型**: DeepSeek (Planner/Visual/Critic) + Gemini (Layout)
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19 + TypeScript + Vite 7 + Tailwind CSS 4 |
+| Backend Engine | Python + FastAPI + LangGraph |
+| Render Service | Node.js + Express + Sharp + ag-psd |
+| AI Models | DeepSeek / Gemini / GPT-4o-mini / Flux |
 
-## 🚀 快速开始
-
-### 方式一：Docker 部署（推荐）
-
-最简单的部署方式，一键启动所有服务。
-
-- Docker 20.10+
-- Docker Compose 2.0+
-
-#### 部署步骤
+## Quick Start
 
 ```bash
-# 1. 克隆项目
-git clone <repository-url>
-cd VibePoster
-
-# 2. 配置环境变量
+# 1. Configure
 cp backend/engine/env.template backend/engine/.env
-# 编辑 backend/engine/.env 文件，填入你的 API Keys
+# Edit .env with your API keys (5 required — see checklist at bottom of env.template)
 
-# 3. 构建并启动所有服务
+# 2. Docker
 docker-compose up -d --build
 
-# 4. 查看服务状态
-docker-compose ps
-
-# 5. 查看日志
-docker-compose logs -f
+# Or local dev (3 terminals)
+cd backend/engine && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000
+cd backend/render && npm install && node src/server.js
+cd frontend && npm install && npm run dev
 ```
 
-#### 访问应用
+| Service | Dev Port | Prod Port |
+|---------|----------|-----------|
+| Frontend | 5173 | 80 (Nginx) |
+| Engine | 8000 | 8000 |
+| Render | 3000 | 3000 |
 
-- **前端**: <http://localhost>
-- **后端 API**: <http://localhost:8000>
-- **渲染服务**: <http://localhost:3000>
-
-#### 常用命令
-
-```bash
-# 停止所有服务
-docker-compose down
-
-# 重新构建并启动
-docker-compose up -d --build
-
-# 查看特定服务日志
-docker-compose logs -f engine
-
-# 进入容器调试
-docker exec -it vibeposter-engine bash
-```
-
----
-
-### 方式二：本地开发
-
-#### 前置要求
-
-- Python 3.13+ (推荐使用 venv)
-- Node.js 18+
-- npm 或 yarn
-
-### 1. 环境配置
-
-#### 后端引擎 (Python)
-
-```bash
-# 进入后端引擎目录
-cd backend/engine
-
-# 创建虚拟环境（如果还没有）
-python3 -m venv venv
-
-# 激活虚拟环境
-# macOS/Linux:
-source venv/bin/activate
-# Windows:
-# venv\Scripts\activate
-
-# 安装 Python 依赖
-pip install fastapi uvicorn langgraph openai google-genai python-dotenv pydantic pillow numpy
-
-# 复制 env.template 为 .env 并填写你的 API Key
-cp env.template .env
-# 然后编辑 .env 文件，填入你的 API Key
+## Project Structure
 
 ```
-
-#### 渲染服务 (Node.js)
-
-```bash
-# 进入渲染服务目录
-cd backend/render
-
-# 安装依赖
-npm install
-```
-
-#### 前端 (React)
-
-```bash
-# 进入前端目录
-cd frontend
-
-# 安装依赖
-npm install
-```
-
-### 2. 启动服务
-
-项目需要同时运行三个服务：
-
-#### 终端 1: 启动后端引擎 (FastAPI)
-
-```bash
-cd backend/engine
-source venv/bin/activate  # macOS/Linux
-# 或 venv\Scripts\activate  # Windows
-
-# 启动 FastAPI 服务（端口 8000）
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### 终端 2: 启动渲染服务 (Node.js)
-
-```bash
-cd backend/render
-
-# 启动 Express 服务（端口 3000）
-node src/server.js
-```
-
-#### 终端 3: 启动前端 (Vite)
-
-```bash
-cd frontend
-
-# 启动开发服务器（默认端口 5173）
-npm run dev
-```
-
-### 3. 访问应用
-
-打开浏览器访问：`http://localhost:5173`
-
-## 📁 项目结构
-
-```plaintext
 VibePoster/
-├── frontend/                 # React 前端 (TypeScript + Tailwind CSS)
-│   ├── src/
-│   │   ├── components/      # 组件 (editor/, landing/, poster/)
-│   │   ├── hooks/           # 自定义 Hooks
-│   │   ├── services/        # API 服务
-│   │   ├── types/           # TypeScript 类型定义
-│   │   └── App.tsx          # 主应用
-│   └── package.json
-│
+├── frontend/              # React SPA + online editor
 ├── backend/
-│   ├── engine/              # Python 后端引擎 (FastAPI + LangGraph)
+│   ├── engine/            # Python FastAPI — Agent engine
 │   │   ├── app/
-│   │   │   ├── api/         # API 路由层
-│   │   │   ├── workflow/    # 工作流模块 (LangGraph)
-│   │   │   ├── core/        # 核心基础设施 (config, llm, logger)
-│   │   │   ├── agents/      # 四个智能体 (planner, visual, layout, critic)
-│   │   │   ├── knowledge/   # 知识模块 (Knowledge Graph + RAG)
-│   │   │   ├── services/    # 业务服务 (poster, knowledge, renderer)
-│   │   │   ├── models/      # 数据模型 (poster, response)
-│   │   │   ├── tools/       # 工具函数 (抠图, OCR, 素材搜索)
-│   │   │   ├── prompts/     # Prompt 管理
-│   │   │   └── main.py      # FastAPI 入口
-│   │   ├── tests/           # 测试目录
-│   │   └── venv/            # Python 虚拟环境
-│   │
-│   └── render/              # Node.js 渲染服务 (Express + ag-psd)
-│       ├── src/
-│       │   └── server.js    # PSD 生成服务
-│       └── package.json
-│
-├── docs/                     # 技术文档
-└── README.md
+│   │   │   ├── agents/    # 4 Agents
+│   │   │   ├── skills/    # Semantic Kernel-style skill orchestration
+│   │   │   ├── knowledge/ # KG + RAG
+│   │   │   ├── prompts/   # Prompt templates
+│   │   │   ├── services/  # Business services + DSL parser
+│   │   │   └── workflow/  # LangGraph orchestration
+│   │   └── tests/         # pytest tests
+│   └── render/            # Node.js — PNG/JPG/PSD export
+├── docs/                  # Architecture docs, design system
+└── CLAUDE.md              # Claude Code project guide
 ```
 
-## 🔧 配置说明
+## Docs
 
-### 端口配置
+See `CLAUDE.md` for developer guide, and `docs/` for architecture, configuration, and design system references.
 
-- **前端**: `http://localhost:5173` (Vite 默认)
-- **后端引擎**: `http://localhost:8000` (FastAPI)
-- **渲染服务**: `http://localhost:3000` (Express)
+## License
 
-如需修改端口，请更新：
-
-- 前端：修改 `vite.config.ts` 或使用 `npm run dev -- --port <端口>`
-- 后端引擎：修改 `uvicorn` 命令中的 `--port` 参数
-- 渲染服务：修改 `backend/render/src/server.js` 中的 `PORT` 常量
-
-## 🎯 使用说明
-
-### 基本流程
-
-1. **输入设计需求**：在左侧控制区输入文字描述
-2. **上传图片**（可选）：
-   - 上传背景图：作为海报背景
-   - 上传人物图：系统会自动抠图并合成
-3. **选择画布尺寸**：竖版或横版，三种尺寸可选
-4. **生成海报**：点击"开始融合生成"按钮
-5. **下载 PSD**：点击下载按钮，获取可编辑的 PSD 文件
-
-### 工作流说明
-
-（待补充）
-
-## 🛠️ 开发指南
-
-### 添加新的 Agent
-
-1. 在 `backend/engine/app/agents/` 创建新文件
-2. 实现 `BaseAgent` 子类
-3. 在 `agents/base.py` 的 `AgentFactory` 中添加获取方法
-4. 在 `core/config.py` 中添加配置
-5. 在 `workflow/orchestrator.py` 中注册节点
-
-### 修改 Prompt
-
-- Layout Prompt：`backend/engine/app/prompts/layout.py`
-- Planner Prompt：`backend/engine/app/prompts/planner.py`
-- Critic Prompt：`backend/engine/app/prompts/critic.py`
-- Visual Prompt：`backend/engine/app/prompts/visual.py`
-
-### 修改配置
-
-所有配置集中在：`backend/engine/app/core/config.py`
-
-## 🐛 故障排除
-
-### 后端引擎启动失败
-
-- 检查 Python 版本（需要 3.13+）
-- 确认虚拟环境已激活
-- 检查 `.env` 文件中的 API Key 是否正确
-- 确认所有依赖已安装：`pip list`
-
-### 渲染服务启动失败
-
-- 检查 Node.js 版本（需要 18+）
-- 确认依赖已安装：`npm list`
-- 检查端口 3000 是否被占用
-
-### 前端无法连接后端
-
-- 确认三个服务都已启动
-- 检查浏览器控制台的错误信息
-- 确认 API 地址配置正确
-
-### 主体素材上传
-
-- With Material 模式要求用户直接上传透明背景的 PNG 素材图
-- 系统不再内置自动抠图功能
-
-## 📄 许可证
-
-© 2025 Graduation Project by Anchi Li
+(c) 2025 Graduation Project by Anchi Li

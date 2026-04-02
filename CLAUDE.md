@@ -1,30 +1,30 @@
 # VibePoster
 
-AI 驱动的海报生成系统。多 Agent 编排 + 知识图谱（KG）+ RAG 品牌知识库 + 图像理解/生成 + 在线编辑器。
+AI-powered poster design system. Multi-agent orchestration + Knowledge Graph (KG) + RAG brand knowledge + image understanding/generation + online editor.
 
-## 项目结构
+## Project Structure
 
 ```
 VibePoster/
 ├── frontend/          # React 19 + TypeScript + Vite 7 + Tailwind CSS 4
 ├── backend/
-│   ├── engine/        # Python FastAPI — AI Agent 引擎（LangGraph 编排）
-│   └── render/        # Node.js Express — PNG/JPG/PSD 导出服务
-└── docs/              # 架构文档
+│   ├── engine/        # Python FastAPI — AI Agent engine (LangGraph orchestration)
+│   └── render/        # Node.js Express — PNG/JPG/PSD export service
+└── docs/              # Architecture docs
 ```
 
-## 快速启动
+## Quick Start
 
-### Docker（推荐）
+### Docker (recommended)
 
 ```bash
 cp backend/engine/env.template backend/engine/.env
-# 编辑 .env 填入 API Keys
-docker-compose up -d --build                                          # 生产
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up     # 开发（热更新）
+# Edit .env with your API keys
+docker-compose up -d --build                                          # production
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up     # dev (hot reload)
 ```
 
-### 本地开发（三个终端）
+### Local Development (3 terminals)
 
 ```bash
 # Terminal 1: Engine
@@ -38,114 +38,114 @@ cd backend/render && npm install && node src/server.js
 cd frontend && npm install && npm run dev
 ```
 
-| 服务 | 开发端口 | 生产端口 |
-|------|---------|---------|
+| Service | Dev Port | Prod Port |
+|---------|----------|-----------|
 | Frontend (Vite) | 5173 | 80 (Nginx) |
 | Engine (FastAPI) | 8000 | 8000 |
 | Render (Express) | 3000 | 3000 |
 
-## 环境变量
+## Environment Variables
 
-唯一配置文件：`backend/engine/.env`（模板：`backend/engine/env.template`）
+Single config file: `backend/engine/.env` (template: `backend/engine/env.template`)
 
-必填 API Keys：`PLANNER_API_KEY`、`VISUAL_API_KEY`、`LAYOUT_API_KEY`、`CRITIC_API_KEY`，以及 `VISUAL_FLUX_API_KEY` 或 `VISUAL_PEXELS_API_KEY` 至少一个。
+Required API keys: `PLANNER_API_KEY`, `VISUAL_API_KEY`, `LAYOUT_API_KEY`, `CRITIC_API_KEY`, plus at least one of `VISUAL_FLUX_API_KEY` or `VISUAL_PEXELS_API_KEY`.
 
-每个 Agent 支持独立配置：`{AGENT}_PROVIDER`、`{AGENT}_API_KEY`、`{AGENT}_BASE_URL`、`{AGENT}_MODEL`、`{AGENT}_TEMPERATURE`。
+Each agent supports independent config: `{AGENT}_PROVIDER`, `{AGENT}_API_KEY`, `{AGENT}_BASE_URL`, `{AGENT}_MODEL`, `{AGENT}_TEMPERATURE`.
 
-前端环境变量通过 Vite 注入：`VITE_API_URL`（默认 `http://localhost:8000`）、`VITE_RENDER_URL`（默认 `http://localhost:3000`）。
+Frontend env vars injected via Vite: `VITE_API_URL` (default `http://localhost:8000`), `VITE_RENDER_URL` (default `http://localhost:3000`).
 
-## Agent 架构
+## Agent Architecture
 
 ```
-Planner → Visual → Layout → Critic → [retry Layout 或 END]
+Planner → Visual → Layout → Critic → [retry Layout or END]
 ```
 
-- **Planner**: 4-Skill 编排（IntentParse → DesignRule/KG → BrandContext/RAG → DesignBrief/LLM）
-- **Visual**: 图像理解 + 素材搜索/生成（Pexels/Flux）
-- **Layout**: DSL 指令生成（绝对坐标），KG 驱动字体和装饰风格
-- **Critic**: 双路审核（JSON 结构 + 视觉渲染），失败重试 Layout（最多 2 次）
+- **Planner**: 4-Skill pipeline (IntentParse → DesignRule/KG → BrandContext/RAG → DesignBrief/LLM)
+- **Visual**: Image understanding + asset search/generation (Pexels/Flux)
+- **Layout**: DSL instruction generation (absolute coordinates), KG-driven font and decoration styles
+- **Critic**: Dual-path review (JSON structure + visual rendering), retries Layout on failure (up to 2x)
 
-### 知识图谱（KG）
+### Knowledge Graph (KG)
 
-位于 `backend/engine/app/knowledge/kg/`。三层语义推理链：
+Located at `backend/engine/app/knowledge/kg/`. Three-layer semantic inference chain:
 
 ```
 Entry (Industry/Vibe) → Emotion → Visual Elements + Decorations
 ```
 
-数据文件：`kg/data/kg_rules.json`。7 个 Emotion、6 个 Industry、5 个 Vibe。
+Data file: `kg/data/kg_rules.json`. 7 Emotions, 6 Industries, 5 Vibes.
 
-### DSL 命令
+### DSL Commands
 
-Layout LLM 输出 DSL 指令，DSL Parser 转换为图层：
+Layout LLM outputs DSL instructions, DSL Parser converts them to layers:
 
-| 命令 | 产出类型 | 说明 |
-|------|---------|------|
-| `add_image` | image | 图片图层 |
-| `add_title` / `add_subtitle` / `add_text` / `add_cta` | text | 文本图层 |
-| `add_divider` / `add_overlay` / `add_shape` | rect | 装饰图层（KG 驱动样式） |
+| Command | Output Type | Description |
+|---------|-------------|-------------|
+| `add_image` | image | Image layer |
+| `add_title` / `add_subtitle` / `add_text` / `add_cta` | text | Text layers |
+| `add_divider` / `add_overlay` / `add_shape` | rect | Decoration layers (KG-driven styles) |
 
-装饰类命令的视觉属性由 DSL Parser 从 KG 推理结果自动填充，LLM 只需指定位置。
+Decoration commands have their visual properties auto-filled by DSL Parser from KG inference results — the LLM only specifies position.
 
-### 图层类型
+### Layer Types
 
-- `text`: 文本（content, fontSize, color, fontFamily, textAlign, fontWeight）
-- `image`: 图片（src）
-- `rect`: 形状（subtype: rect/divider/overlay, backgroundColor, borderRadius, borderColor, borderWidth, gradient）
+- `text`: content, fontSize, color, fontFamily, textAlign, fontWeight
+- `image`: src
+- `rect`: subtype (rect/divider/overlay), backgroundColor, borderRadius, borderColor, borderWidth, gradient
 
-## API 路由
+## API Routes
 
-### Engine（FastAPI, :8000）
+### Engine (FastAPI, :8000)
 
-- `POST /api/step/plan` — 意图理解，返回设计简报
-- `POST /api/step/assets` — 素材搜索（支持 FormData 图片上传）
-- `POST /api/step/layouts` — 布局生成 + 审核（180s 超时）
-- `POST /api/step/finalize` — 确认选择
-- `POST /api/brand/upload` — 品牌文档上传（RAG）
-- `GET /health` — 健康检查
+- `POST /api/step/plan` — Intent understanding, returns design brief
+- `POST /api/step/assets` — Asset search (accepts FormData with image uploads)
+- `POST /api/step/layouts` — Layout generation + review (180s timeout)
+- `POST /api/step/finalize` — Confirm selection
+- `POST /api/brand/upload` — Upload brand documents (RAG)
+- `GET /health` — Health check
 
-### Render（Express, :3000）
+### Render (Express, :3000)
 
-- `POST /api/render/image?format=png|jpg&quality=95` — 生成 PNG/JPG
-- `POST /api/render/psd` — 生成 PSD（ZIP 包含 PSD + 字体 README）
-- `GET /health` — 健康检查
+- `POST /api/render/image?format=png|jpg&quality=95` — Generate PNG/JPG
+- `POST /api/render/psd` — Generate PSD (ZIP with PSD + font README)
+- `GET /health` — Health check
 
-## 测试
+## Testing
 
 ```bash
 cd backend/engine
-pytest                          # 全部测试
-pytest -m unit                  # 单元测试
-pytest -m api                   # API 测试
-pytest -m "not slow"            # 跳过慢速测试
-pytest --cov=app                # 覆盖率
+pytest                          # all tests
+pytest -m unit                  # unit tests
+pytest -m api                   # API tests
+pytest -m "not slow"            # skip slow tests
+pytest --cov=app                # coverage
 ```
 
-前端和 Render 服务暂无测试套件。
+Frontend and Render service have no test suites yet.
 
-## 代码规范
+## Code Conventions
 
-- **Python**: Black 格式化（line-length=100），Pydantic v2 模型
-- **TypeScript**: ESLint + react-hooks/react-refresh 插件
-- **前端设计**: iOS 液态玻璃风格，详见 `docs/DESIGN_SYSTEM.md`
-- **Commit 风格**: `feat:` / `refactor:` / `polish:` / `fix:` 前缀
+- **Python**: Black formatter (line-length=100), Pydantic v2 models
+- **TypeScript**: ESLint + react-hooks/react-refresh plugins
+- **Frontend design**: iOS liquid glass style, see `docs/DESIGN_SYSTEM.md`
+- **Commits**: `feat:` / `refactor:` / `polish:` / `fix:` prefixes
 
-## 关键文件索引
+## Key File Index
 
-| 领域 | 文件 |
+| Area | File |
 |------|------|
-| Agent 编排 | `backend/engine/app/workflow/orchestrator.py` |
-| Agent 实现 | `backend/engine/app/agents/{planner,visual,layout,critic}.py` |
-| Prompt 模板 | `backend/engine/app/prompts/{planner,layout,visual,critic}.py` |
-| KG 数据 | `backend/engine/app/knowledge/kg/data/kg_rules.json` |
-| KG 推理 | `backend/engine/app/knowledge/kg/inference.py` |
+| Agent orchestration | `backend/engine/app/workflow/orchestrator.py` |
+| Agent implementations | `backend/engine/app/agents/{planner,visual,layout,critic}.py` |
+| Prompt templates | `backend/engine/app/prompts/{planner,layout,visual,critic}.py` |
+| KG data | `backend/engine/app/knowledge/kg/data/kg_rules.json` |
+| KG inference | `backend/engine/app/knowledge/kg/inference.py` |
 | Skills | `backend/engine/app/skills/{intent_parse,design_rule,brand_context,design_brief}/` |
-| DSL 解析 | `backend/engine/app/services/renderer/dsl_parser.py` |
-| 字体注册 | `backend/engine/app/services/renderer/font_registry.py` |
-| 数据模型 | `backend/engine/app/models/poster.py` |
-| 配置中心 | `backend/engine/app/core/config.py` |
-| 前端类型 | `frontend/src/types/PosterSchema.ts` |
-| 编辑器 | `frontend/src/components/editor/` |
-| 状态管理 | `frontend/src/hooks/useEditorState.ts` |
-| PNG/JPG 导出 | `backend/render/src/services/imageGenerator.js` |
-| PSD 导出 | `backend/render/src/services/psdGenerator.js` |
+| DSL parser | `backend/engine/app/services/renderer/dsl_parser.py` |
+| Font registry | `backend/engine/app/services/renderer/font_registry.py` |
+| Data models | `backend/engine/app/models/poster.py` |
+| Config | `backend/engine/app/core/config.py` |
+| Frontend types | `frontend/src/types/PosterSchema.ts` |
+| Editor | `frontend/src/components/editor/` |
+| State management | `frontend/src/hooks/useEditorState.ts` |
+| PNG/JPG export | `backend/render/src/services/imageGenerator.js` |
+| PSD export | `backend/render/src/services/psdGenerator.js` |
