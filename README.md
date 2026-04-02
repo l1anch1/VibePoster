@@ -1,5 +1,11 @@
 # VibePoster
 
+![LangGraph](https://img.shields.io/badge/LangGraph-Multi_Agent-1C3C3C?logo=langchain&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue)
+
 AI-powered poster design system. Multi-agent orchestration + Knowledge Graph + RAG brand knowledge + image understanding/generation + online editor, delivering layered PSD source files.
 
 ## Architecture
@@ -75,4 +81,4 @@ See `CLAUDE.md` for developer guide, and `docs/` for architecture, configuration
 
 ## License
 
-(c) 2025 Graduation Project by Anchi Li
+Copyright 2025 Anchi Li. Licensed under the [Apache License 2.0](LICENSE).
