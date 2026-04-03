@@ -30,9 +30,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       <nav
         className="relative z-50 flex items-center justify-between px-6 py-4 lg:px-12 mx-4 mt-4 rounded-2xl"
         style={{
-          background: 'rgba(255,255,255,0.6)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.5)',
+          background: 'rgba(255,255,255,0.88)',
+          backdropFilter: 'blur(8px) saturate(120%)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.6)',
         }}
       >
         <div className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </div>
           <span className="font-bold text-lg text-gray-800">VibePoster</span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
+        <div className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-700">
           <a href="#features" className="hover:text-violet-600 transition-colors">
             Features
           </a>
@@ -54,7 +54,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         </div>
         <button
           onClick={onEnter}
-          className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl hover:opacity-90 transition-all shadow-lg shadow-violet-500/30"
+          className="px-5 py-2.5 text-[15px] font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl hover:opacity-90 transition-all shadow-lg shadow-violet-500/30"
         >
           Launch App →
         </button>
@@ -130,10 +130,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <div
             className="relative rounded-[32px] overflow-hidden"
             style={{
-              background: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(20px) saturate(180%)',
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(8px) saturate(120%)',
               boxShadow:
-                '0 25px 80px rgba(0,0,0,0.1), 0 8px 32px rgba(139,92,246,0.15), inset 0 0 0 1px rgba(255,255,255,0.5)',
+                '0 25px 80px rgba(0,0,0,0.1), 0 8px 32px rgba(139,92,246,0.15), inset 0 0 0 1px rgba(255,255,255,0.6)',
             }}
           >
             <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-200/50">
@@ -162,7 +162,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-900">
             Everything you need to create
           </h2>
-          <p className="text-base text-gray-600 text-center mb-16 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 text-center mb-16 max-w-2xl mx-auto">
             Powerful features that make poster design effortless
           </p>
 
@@ -203,16 +203,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                 key={i}
                 className="p-6 rounded-3xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
                 style={{
-                  background: 'rgba(255,255,255,0.6)',
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.5)',
+                  background: 'rgba(255,255,255,0.88)',
+                  backdropFilter: 'blur(8px) saturate(120%)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.6)',
                 }}
               >
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center mb-4 text-2xl">
                   {feature.icon}
                 </div>
-                <h3 className="text-base font-semibold mb-2 text-gray-900">{feature.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{feature.desc}</p>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{feature.title}</h3>
+                <p className="text-[15px] text-gray-600 leading-relaxed">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -225,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-900">
             How it Works
           </h2>
-          <p className="text-base text-gray-600 text-center mb-16">Three simple steps to stunning designs</p>
+          <p className="text-lg text-gray-600 text-center mb-16">Three simple steps to stunning designs</p>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             {[
@@ -248,7 +248,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">{item.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+                <p className="text-[15px] text-gray-600 leading-relaxed">{item.desc}</p>
                 {i < 2 && (
                   <div className="hidden md:block text-3xl text-violet-300 mt-4 font-light">→</div>
                 )}
@@ -263,15 +263,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         <div
           className="max-w-2xl mx-auto p-12 rounded-[40px]"
           style={{
-            background: 'rgba(255,255,255,0.6)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            boxShadow: '0 8px 40px rgba(139,92,246,0.15), inset 0 0 0 1px rgba(255,255,255,0.5)',
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(8px) saturate(120%)',
+            boxShadow: '0 8px 40px rgba(139,92,246,0.15), inset 0 0 0 1px rgba(255,255,255,0.6)',
           }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
             Ready to create something amazing?
           </h2>
-          <p className="text-base text-gray-600 mb-8">Join thousands of creators using VibePoster</p>
+          <p className="text-lg text-gray-600 mb-8">Join thousands of creators using VibePoster</p>
           <button
             onClick={onEnter}
             className="px-8 py-4 text-base font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-violet-500/30"

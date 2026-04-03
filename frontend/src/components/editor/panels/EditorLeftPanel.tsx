@@ -36,6 +36,8 @@ interface EditorLeftPanelProps {
   onGenerate: () => void;
   onImagesChange?: (images: UploadedImages) => void;
   analysisData?: ExtractedData | null;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 // ============================================================================
@@ -99,10 +101,10 @@ const ImageUploadBox: React.FC<{
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-1.5">
-        <label className="text-sm font-medium text-gray-600">{label}</label>
+      <div className="flex items-center gap-2 mb-2">
+        <label className="text-[13px] font-semibold text-gray-700">{label}</label>
         {badge && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">
+          <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
             {badge}
           </span>
         )}
@@ -125,7 +127,7 @@ const ImageUploadBox: React.FC<{
           className="w-full h-20 border-2 border-dashed border-gray-300 bg-white rounded-2xl flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-500 transition-all shadow-sm"
         >
           <UploadIcon className="w-5 h-5" />
-          <span className="text-[11px] font-medium px-2 text-center leading-tight">{hint}</span>
+          <span className="text-xs font-medium px-2 text-center leading-tight">{hint}</span>
         </button>
       )}
       <input ref={inputRef} type="file" accept="image/*" onChange={handleChange} className="hidden" />
@@ -187,7 +189,7 @@ const AnalysisDashboard: React.FC<{ data: ExtractedData }> = ({ data }) => (
 const ModeBadge: React.FC<{ mode: DetectedMode }> = ({ mode }) => {
   const meta = MODE_META[mode];
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.color}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${meta.bg} ${meta.color}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-current" />
       {meta.label}
     </span>
@@ -205,6 +207,8 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
   onGenerate,
   onImagesChange,
   analysisData,
+  collapsed = false,
+  onToggleCollapse,
 }) => {
   const [refSlot, setRefSlot] = useState<ImageSlot>({ preview: null, file: null });
   const [fgSlot, setFgSlot] = useState<ImageSlot>({ preview: null, file: null });
@@ -234,28 +238,70 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
   const refHint = fgSlot.file ? 'Upload custom background (or let AI generate)' : 'Upload a style reference image';
   const refBadge = fgSlot.file ? 'optional' : 'optional';
 
+  if (collapsed) {
+    return (
+      <aside
+        className="w-12 flex flex-col items-center shrink-0 m-3 mr-0 rounded-3xl py-3 gap-3"
+        style={{
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(8px) saturate(120%)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.7)',
+          border: '1px solid rgba(0,0,0,0.06)',
+        }}
+      >
+        <button
+          onClick={onToggleCollapse}
+          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-violet-50 text-gray-500 hover:text-violet-600 transition-colors"
+          title="Expand panel"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20">
+          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside
-      className="w-72 flex flex-col shrink-0 m-3 mr-0 rounded-3xl overflow-hidden"
+      className="w-80 flex flex-col shrink-0 m-3 mr-0 rounded-3xl overflow-hidden"
       style={{
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.6)',
-        border: '1px solid rgba(0,0,0,0.08)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(8px) saturate(120%)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.7)',
+        border: '1px solid rgba(0,0,0,0.06)',
       }}
     >
-      <div className="px-5 py-4 border-b border-gray-200">
+      <div className="px-6 py-5 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-800">Create Poster</h2>
+          <div className="flex items-center gap-2">
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Collapse panel"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <h2 className="text-lg font-semibold text-gray-900">Create Poster</h2>
+          </div>
           <ModeBadge mode={detectedMode} />
         </div>
-        <p className="text-sm text-gray-500 mt-0.5">Describe your idea, optionally add images</p>
+        <p className="text-[13px] text-gray-500 mt-1">Describe your idea, optionally add images</p>
       </div>
 
-      <div className="flex-1 p-5 flex flex-col gap-3.5 overflow-y-auto">
+      <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
         {/* Prompt */}
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1.5">Prompt</label>
+          <label className="block text-[13px] font-semibold text-gray-700 mb-2">Prompt</label>
           <textarea
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
@@ -263,7 +309,7 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
             placeholder={meta.placeholder}
             rows={4}
             disabled={isGenerating}
-            className="w-full px-3 py-2.5 text-sm bg-white border border-gray-300 rounded-2xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none resize-none transition-all text-gray-900 placeholder-gray-400 shadow-sm"
+            className="w-full px-4 py-3 text-[14px] leading-relaxed bg-white border border-gray-300 rounded-2xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none resize-none transition-all text-gray-900 placeholder-gray-400 shadow-sm"
           />
         </div>
 
@@ -293,13 +339,13 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
         {/* 快速示例：仅在输入框和上传框都空白时显示 */}
         {!prompt.trim() && !refSlot.file && !fgSlot.file && (
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">Quick Examples</label>
-            <div className="flex flex-wrap gap-1.5">
+            <label className="block text-[13px] font-semibold text-gray-700 mb-2">Quick Examples</label>
+            <div className="flex flex-wrap gap-2">
               {EXAMPLE_PROMPTS[detectedMode].map((ex, i) => (
                 <button
                   key={`${detectedMode}-${i}`}
                   onClick={() => onPromptChange(ex)}
-                  className="px-2.5 py-1 text-xs text-gray-600 bg-white hover:bg-violet-50 rounded-full border border-gray-300 hover:border-violet-400 hover:text-violet-600 transition-all shadow-sm"
+                  className="px-3 py-1.5 text-[13px] text-gray-700 bg-white hover:bg-violet-50 rounded-full border border-gray-300 hover:border-violet-400 hover:text-violet-600 transition-all shadow-sm"
                 >
                   {ex}
                 </button>
@@ -310,11 +356,11 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
       </div>
 
       {/* 底部 */}
-      <div className="p-5 pt-0 space-y-3">
+      <div className="p-6 pt-0 space-y-3">
         <button
           onClick={onGenerate}
           disabled={!prompt.trim() || isGenerating}
-          className={`w-full py-3 text-sm font-semibold rounded-2xl transition-all flex items-center justify-center gap-2 ${
+          className={`w-full py-3.5 text-[15px] font-semibold rounded-2xl transition-all flex items-center justify-center gap-2 ${
             prompt.trim() && !isGenerating
               ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 hover:-translate-y-0.5'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300'
@@ -335,8 +381,8 @@ export const EditorLeftPanel: React.FC<EditorLeftPanelProps> = ({
           )}
         </button>
 
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-          <kbd className="px-2 py-1 bg-white rounded-lg border border-gray-300 font-mono text-gray-600 shadow-sm">⌘↵</kbd>
+        <div className="flex items-center justify-center gap-2 text-[13px] text-gray-500">
+          <kbd className="px-2 py-1 bg-white rounded-lg border border-gray-300 font-mono text-gray-700 shadow-sm text-[13px]">⌘↵</kbd>
           <span>to generate</span>
         </div>
       </div>

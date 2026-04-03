@@ -9,7 +9,7 @@
 import axios from 'axios';
 import type { AxiosError } from 'axios';
 import type { PosterData } from '../types/PosterSchema';
-import { toSnakeCase } from '../utils/caseConvert';
+import { toSnakeCase, toCamelCase } from '../utils/caseConvert';
 
 // ============================================================================
 // Axios 实例
@@ -171,7 +171,12 @@ export async function stepFinalize(params: {
   const res = await apiClient.post('/api/step/finalize', {
     posterData: params.posterData,
   });
-  return res.data;
+  const data = res.data;
+  // 后端返回的 poster 可能是 snake_case 键（因请求经过 toSnakeCase 拦截），需还原为驼峰
+  if (data.poster) {
+    data.poster = toCamelCase(data.poster) as PosterData;
+  }
+  return data;
 }
 
 // ============================================================================
@@ -194,4 +199,18 @@ export async function uploadBrandDocument(
 export async function getBrandStats(): Promise<{ document_count: number; [key: string]: unknown }> {
   const res = await apiClient.get('/api/brand/stats');
   return res.data?.data || { document_count: 0 };
+}
+
+export interface BrandDocumentItem {
+  docId: string;
+  brandName: string;
+  category: string;
+  textPreview: string;
+  textLength: number;
+}
+
+export async function getBrandDocuments(): Promise<BrandDocumentItem[]> {
+  const res = await apiClient.get('/api/brand/documents');
+  const data = res.data?.data;
+  return data?.documents ?? [];
 }

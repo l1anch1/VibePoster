@@ -9,7 +9,7 @@ Author: VibePoster Team
 Date: 2025-01
 """
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Request
 from typing import Optional
 
 from ...core.exceptions import ValidationException, ServiceException
@@ -25,6 +25,8 @@ from ...models.response import (
     KGInferResult,
     BrandSearchResult,
     BrandUploadResult,
+    BrandDocumentItem,
+    BrandDocumentListResult,
     StatsResult,
 )
 from ...skills import DesignRuleSkill, DesignRuleInput, BrandContextSkill, BrandContextInput
@@ -37,14 +39,12 @@ router = APIRouter(prefix="/api", tags=["knowledge"])
 # 品牌知识库 API（RAG）
 # ============================================================================
 
+MAX_UPLOAD_PART_SIZE = 1024 * 1024 * 10  # 10 MB
+
 @router.post("/brand/upload", summary="上传企业品牌文档")
-async def upload_brand_document(
-    text: str = Form(..., description="品牌规范文本内容"),
-    brand_name: str = Form(..., description="品牌名称"),
-    category: str = Form(default="通用", description="文档类别"),
-) -> APIResponse[BrandUploadResult]:
+async def upload_brand_document(request: Request) -> APIResponse[BrandUploadResult]:
     """
-    上传企业品牌文档到 RAG 知识库
+    上传企业品牌文档到 RAG 知识库（multipart/form-data，单字段最大 10MB）
     
     参数说明：
     - **text**: 品牌规范文本内容
@@ -52,6 +52,16 @@ async def upload_brand_document(
     - **category**: 文档类别（配色方案/设计风格/字体规范/品牌口号）
     """
     try:
+        form = await request.form(max_part_size=MAX_UPLOAD_PART_SIZE)
+        text = str(form.get("text", ""))
+        brand_name = str(form.get("brand_name", ""))
+        category = str(form.get("category", "通用"))
+
+        if not brand_name:
+            raise ValidationException(
+                message="缺少品牌名称",
+                detail={"detail": "请提供 brand_name 字段"}
+            )
         if not text.strip():
             raise ValidationException(
                 message="文档内容为空",
@@ -89,6 +99,38 @@ async def upload_brand_document(
         raise ServiceException(
             message="品牌文档上传失败",
             detail={"detail": str(e)}
+        )
+
+
+@router.get("/brand/documents", summary="列出品牌知识库中的所有文档")
+async def list_brand_documents() -> APIResponse[BrandDocumentListResult]:
+    """返回知识库中所有文档的摘要列表"""
+    try:
+        knowledge_base = get_knowledge_base()
+        raw_docs = knowledge_base.get_all_documents()
+
+        items: list[BrandDocumentItem] = []
+        for doc in raw_docs:
+            meta = doc.get("metadata", {})
+            text = doc.get("text", "")
+            items.append(BrandDocumentItem(
+                doc_id=doc.get("id", ""),
+                brand_name=meta.get("brand", ""),
+                category=meta.get("category", "通用"),
+                text_preview=text[:200],
+                text_length=len(text),
+            ))
+
+        return APIResponse(
+            success=True,
+            data=BrandDocumentListResult(documents=items, total=len(items)),
+            message=f"共 {len(items)} 条文档",
+        )
+    except Exception as e:
+        logger.error(f"获取文档列表失败: {e}", exc_info=True)
+        raise ServiceException(
+            message="获取文档列表失败",
+            detail={"detail": str(e)},
         )
 
 

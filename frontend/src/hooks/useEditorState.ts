@@ -210,7 +210,7 @@ const MAX_HISTORY = 50;
 // 会记入 undo 历史的 action 类型
 const DATA_MUTATING_ACTIONS = new Set([
   'SET_DATA', 'CHANGE_PRESET', 'UPDATE_LAYER', 'DELETE_LAYER',
-  'REORDER_LAYER', 'WIZARD_COMPLETE', 'RESET',
+  'REORDER_LAYER', 'RESET',
 ]);
 
 interface HistoryState {
@@ -277,6 +277,17 @@ function historyReducer(history: HistoryState, action: Action): HistoryState {
         };
       }
       return { ...history, batching: false, batchSnapshot: null };
+    }
+
+    case 'WIZARD_COMPLETE': {
+      const newPresent = editorReducer(present, action);
+      return {
+        past: [],
+        present: newPresent,
+        future: [],
+        batching: false,
+        batchSnapshot: null,
+      };
     }
 
     default: {

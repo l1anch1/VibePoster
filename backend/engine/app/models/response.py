@@ -82,6 +82,21 @@ class BrandUploadResult(BaseModel):
     text_length: int = Field(..., description="文档长度")
 
 
+class BrandDocumentItem(BaseModel):
+    """品牌知识库中的单个文档摘要"""
+    doc_id: str = Field(..., description="文档 ID")
+    brand_name: str = Field(default="", description="品牌名称")
+    category: str = Field(default="通用", description="类别")
+    text_preview: str = Field(default="", description="文本前200字符预览")
+    text_length: int = Field(default=0, description="原文总长度")
+
+
+class BrandDocumentListResult(BaseModel):
+    """品牌文档列表结果"""
+    documents: List[BrandDocumentItem] = Field(default_factory=list, description="文档列表")
+    total: int = Field(default=0, description="文档总数")
+
+
 class StatsResult(BaseModel):
     """统计信息结果"""
     total_documents: Optional[int] = None
