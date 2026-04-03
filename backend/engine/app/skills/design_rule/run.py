@@ -79,6 +79,7 @@ class DesignRuleSkill(BaseSkill[DesignRuleInput, DesignRuleOutput]):
             layout_strategies=kg_result.get("layout_strategies", []),
             layout_intents=kg_result.get("layout_intents", []),
             layout_patterns=kg_result.get("layout_patterns", []),
+            decoration_styles=kg_result.get("decoration_styles", {}),
             design_principles=kg_result.get("design_principles", []),
             avoid=kg_result.get("avoid", []),
             source_keywords=source_keywords,

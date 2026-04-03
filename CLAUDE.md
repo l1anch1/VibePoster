@@ -62,30 +62,61 @@ Planner → Visual → Layout → Critic → [retry Layout or END]
 
 - **Planner**: 4-Skill pipeline (IntentParse → DesignRule/KG → BrandContext/RAG → DesignBrief/LLM)
 - **Visual**: Image understanding + asset search/generation (Pexels/Flux)
-- **Layout**: DSL instruction generation (absolute coordinates), KG-driven font and decoration styles
+- **Layout**: Semantic DSL generation + OOP layout engine (7 strategies, dynamic coordinate computation)
 - **Critic**: Dual-path review (JSON structure + visual rendering), retries Layout on failure (up to 2x)
 
 ### Knowledge Graph (KG)
 
-Located at `backend/engine/app/knowledge/kg/`. Three-layer semantic inference chain:
+Located at `backend/engine/app/knowledge/kg/`. Five-layer design ontology with explicit semantic triples:
 
 ```
-Entry (Industry/Vibe) → Emotion → Visual Elements + Decorations
+Layer 0: Domain Entry    — Industry(8) / Vibe(7)
+Layer 1: Emotion         — 9 emotions (semantic hub)
+Layer 2: Visual Strategy — ColorStrategy(11) / TypographyStyle(5) / LayoutPattern(11) / DecorationTheme(6)
 ```
 
-Data file: `kg/data/kg_rules.json`. 7 Emotions, 6 Industries, 5 Vibes.
+Relations: `EMBODIES` · `EVOKES` · `AVOIDS` · `CONFLICTS_WITH` (119 edges total).
+Inference: multi-hop graph traversal + weighted aggregation + conflict resolution + trace recording.
 
-### DSL Commands
+Data file: `kg/data/ontology.json`. 57 nodes, 119 edges.
 
-Layout LLM outputs DSL instructions, DSL Parser converts them to layers:
+### OOP Layout Engine
+
+Located at `backend/engine/app/core/layout/`. CSS Flexbox-like container + component model:
+
+```
+Element (ABC)
+├── TextBlock   — auto-calculates height from content + font_size
+├── ImageBlock  — aspect-ratio-aware resize
+└── ShapeBlock  — divider / overlay / rect decorations
+Container (extends Element)
+├── VerticalContainer  — top-to-bottom flow, auto y-spacing
+└── HorizontalContainer — left-to-right flow
+```
+
+### DSL Commands + Layout Strategies
+
+LLM outputs **semantic DSL** (no coordinates). `LayoutBuilder` maps `layout_strategy` to OOP containers:
+
+| Strategy | Description | Content Region |
+|----------|-------------|---------------|
+| `top_text` | Title top, visual below | 6%–55% |
+| `centered` | Vertically centered | 25%–75% |
+| `bottom_heavy` | Content at bottom | 55%–95% |
+| `left_aligned` | Magazine-style left | 10%–90% |
+| `diagonal` | Title top-left, CTA bottom-right | split regions |
+| `big_title` | 1.5× title scale | 20%–80% |
+| `split_vertical` | Top half / bottom half | split regions |
+
+DSL commands (no x/y/width/height):
 
 | Command | Output Type | Description |
 |---------|-------------|-------------|
-| `add_image` | image | Image layer |
-| `add_title` / `add_subtitle` / `add_text` / `add_cta` | text | Text layers |
+| `add_image` | image | Background (fullscreen) / subject image |
+| `add_title` / `add_subtitle` / `add_text` / `add_cta` | text | Text layers (auto-height) |
 | `add_divider` / `add_overlay` / `add_shape` | rect | Decoration layers (KG-driven styles) |
 
-Decoration commands have their visual properties auto-filled by DSL Parser from KG inference results — the LLM only specifies position.
+Coordinate pipeline: `LLM semantic DSL → LayoutBuilder → VerticalContainer.arrange() → flat element list → SchemaConverter → PosterData`.
 
 ### Layer Types
 
@@ -137,10 +168,12 @@ Frontend and Render service have no test suites yet.
 | Agent orchestration | `backend/engine/app/workflow/orchestrator.py` |
 | Agent implementations | `backend/engine/app/agents/{planner,visual,layout,critic}.py` |
 | Prompt templates | `backend/engine/app/prompts/{planner,layout,visual,critic}.py` |
-| KG data | `backend/engine/app/knowledge/kg/data/kg_rules.json` |
+| KG ontology data | `backend/engine/app/knowledge/kg/data/ontology.json` |
 | KG inference | `backend/engine/app/knowledge/kg/inference.py` |
 | Skills | `backend/engine/app/skills/{intent_parse,design_rule,brand_context,design_brief}/` |
-| DSL parser | `backend/engine/app/services/renderer/dsl_parser.py` |
+| OOP layout engine | `backend/engine/app/core/layout/` |
+| Layout builder | `backend/engine/app/services/renderer/layout_builder.py` |
+| DSL parser (delegate) | `backend/engine/app/services/renderer/dsl_parser.py` |
 | Font registry | `backend/engine/app/services/renderer/font_registry.py` |
 | Data models | `backend/engine/app/models/poster.py` |
 | Config | `backend/engine/app/core/config.py` |

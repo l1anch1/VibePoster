@@ -232,8 +232,8 @@ class KGConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="KG_", env_file=".env", extra="ignore")
 
     RULES_FILE: str = Field(
-        default=str(BASE_DIR / "knowledge" / "kg" / "data" / "kg_rules.json"),
-        description="KG 规则数据文件路径"
+        default=str(BASE_DIR / "knowledge" / "kg" / "data" / "ontology.json"),
+        description="KG 本体数据文件路径"
     )
 
 

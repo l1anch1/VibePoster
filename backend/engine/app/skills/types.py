@@ -28,7 +28,7 @@ class PosterType(str, Enum):
 
 
 class Industry(str, Enum):
-    """行业枚举（与 KG 对齐）"""
+    """行业枚举（与 KG v3 本体对齐）"""
     TECH = "Tech"
     FOOD = "Food"
     LUXURY = "Luxury"
@@ -36,21 +36,18 @@ class Industry(str, Enum):
     EDUCATION = "Education"
     ENTERTAINMENT = "Entertainment"
     FINANCE = "Finance"
-    TRAVEL = "Travel"
-    FASHION = "Fashion"
-    REAL_ESTATE = "Real Estate"
+    BEAUTY = "Beauty"
 
 
 class Vibe(str, Enum):
-    """风格枚举（与 KG 对齐）"""
+    """风格枚举（与 KG v3 本体对齐）"""
     MINIMALIST = "Minimalist"
     ENERGETIC = "Energetic"
     PROFESSIONAL = "Professional"
     FRIENDLY = "Friendly"
     BOLD = "Bold"
-    VINTAGE = "Vintage"
-    MODERN = "Modern"
-    NATURAL = "Natural"
+    RETRO = "Retro"
+    FUTURISTIC = "Futuristic"
 
 
 # ============================================================================

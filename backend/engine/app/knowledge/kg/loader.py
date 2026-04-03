@@ -1,10 +1,7 @@
 """
-KG 数据加载器 v2
+本体数据加载器 v3
 
-支持语义化设计知识图谱数据结构。
-
-Author: VibePoster Team
-Date: 2025-01
+加载 ontology.json 的节点表和关系表，返回类型化的 Pydantic 模型。
 """
 
 import json
@@ -15,206 +12,189 @@ from .types import (
     EmotionDefinition,
     IndustryDefinition,
     VibeDefinition,
-    ColorPalette,
-    Typography,
-    LayoutStyle
+    ColorStrategyDefinition,
+    TypographyStyleDefinition,
+    LayoutPatternDefinition,
+    DecorationThemeDefinition,
+    Relation,
 )
 from ...core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# 默认数据文件路径
 DEFAULT_DATA_DIR = Path(__file__).parent / "data"
-DEFAULT_KG_RULES_FILE = DEFAULT_DATA_DIR / "kg_rules.json"
+DEFAULT_ONTOLOGY_FILE = DEFAULT_DATA_DIR / "ontology.json"
 
 
-class RulesLoader:
-    """规则数据加载器 v2"""
-    
-    def __init__(self, rules_file: Optional[str] = None):
-        """
-        初始化加载器
-        
-        Args:
-            rules_file: 规则文件路径（可选）
-        """
-        self.rules_file = self._resolve_rules_file(rules_file)
-        self._cache: Optional[Dict[str, Any]] = None
-        self._emotions_cache: Optional[Dict[str, EmotionDefinition]] = None
-        self._industries_cache: Optional[Dict[str, IndustryDefinition]] = None
-        self._vibes_cache: Optional[Dict[str, VibeDefinition]] = None
-    
-    def _resolve_rules_file(self, rules_file: Optional[str]) -> Path:
-        """解析规则文件路径"""
-        if rules_file:
-            return Path(rules_file)
-        
+class OntologyLoader:
+    """本体数据加载器 v3"""
+
+    def __init__(self, ontology_file: Optional[str] = None):
+        self.ontology_file = self._resolve_file(ontology_file)
+        self._raw: Optional[Dict[str, Any]] = None
+
+    # ------------------------------------------------------------------
+    # 文件解析
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _resolve_file(ontology_file: Optional[str]) -> Path:
+        if ontology_file:
+            return Path(ontology_file)
         try:
             from ...core.config import settings
-            config_path = getattr(settings.kg, 'RULES_FILE', None)
-            if config_path and Path(config_path).exists():
-                return Path(config_path)
+            cfg_path = getattr(settings.kg, "RULES_FILE", None)
+            if cfg_path and Path(cfg_path).exists():
+                return Path(cfg_path)
         except Exception:
             pass
-        
-        return DEFAULT_KG_RULES_FILE
-    
+        return DEFAULT_ONTOLOGY_FILE
+
     def load(self, force_reload: bool = False) -> Dict[str, Any]:
-        """加载原始规则数据"""
-        if self._cache is not None and not force_reload:
-            return self._cache
-        
-        if not self.rules_file.exists():
-            logger.warning(f"规则文件不存在: {self.rules_file}")
-            self._cache = self._empty_rules()
-            return self._cache
-        
+        if self._raw is not None and not force_reload:
+            return self._raw
+        if not self.ontology_file.exists():
+            logger.warning(f"本体文件不存在: {self.ontology_file}")
+            self._raw = self._empty()
+            return self._raw
         try:
-            with open(self.rules_file, 'r', encoding='utf-8') as f:
-                self._cache = json.load(f)
-            logger.info(f"成功加载 KG 规则 v{self._cache.get('$version', '1.0')}: {self.rules_file}")
-            return self._cache
-        except json.JSONDecodeError as e:
-            logger.error(f"规则文件 JSON 解析失败: {e}")
-            self._cache = self._empty_rules()
-            return self._cache
-        except Exception as e:
-            logger.error(f"加载规则文件失败: {e}")
-            self._cache = self._empty_rules()
-            return self._cache
-    
-    def _empty_rules(self) -> Dict[str, Any]:
-        """返回空规则结构"""
+            with open(self.ontology_file, "r", encoding="utf-8") as f:
+                self._raw = json.load(f)
+            logger.info(
+                f"本体 v{self._raw.get('$version', '?')} 加载完成: {self.ontology_file}"
+            )
+            return self._raw
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error(f"本体文件加载失败: {e}")
+            self._raw = self._empty()
+            return self._raw
+
+    @staticmethod
+    def _empty() -> Dict[str, Any]:
         return {
-            "$version": "2.0.0",
-            "emotions": {},
-            "industries": {},
-            "vibes": {},
-            "design_strategies": {}
+            "$version": "3.0.0",
+            "nodes": {
+                "emotions": {},
+                "industries": {},
+                "vibes": {},
+                "color_strategies": {},
+                "typography_styles": {},
+                "layout_patterns": {},
+                "decoration_themes": {},
+            },
+            "relations": [],
         }
-    
-    # ========================================================================
-    # 情绪层
-    # ========================================================================
-    
-    def get_emotions(self, force_reload: bool = False) -> Dict[str, EmotionDefinition]:
-        """获取所有情绪定义"""
-        if self._emotions_cache is not None and not force_reload:
-            return self._emotions_cache
-        
-        data = self.load(force_reload)
-        emotions_raw = data.get("emotions", {})
-        
-        self._emotions_cache = {}
-        for name, config in emotions_raw.items():
+
+    # ------------------------------------------------------------------
+    # 节点访问
+    # ------------------------------------------------------------------
+
+    def _nodes(self) -> Dict[str, Any]:
+        return self.load().get("nodes", {})
+
+    def get_emotions(self) -> Dict[str, EmotionDefinition]:
+        raw = self._nodes().get("emotions", {})
+        result: Dict[str, EmotionDefinition] = {}
+        for name, cfg in raw.items():
             try:
-                # 解析嵌套结构
-                color_palettes = ColorPalette(**config.get("color_palettes", {}))
-                typography = None
-                if "typography" in config:
-                    typography = Typography(**config["typography"])
-                layout = None
-                if "layout" in config:
-                    layout = LayoutStyle(**config["layout"])
-                
-                self._emotions_cache[name] = EmotionDefinition(
-                    description=config.get("description", ""),
-                    color_strategies=config.get("color_strategies", []),
-                    color_palettes=color_palettes,
-                    typography=typography,
-                    layout=layout
-                )
+                result[name] = EmotionDefinition(**cfg)
             except Exception as e:
-                logger.warning(f"解析情绪 '{name}' 失败: {e}")
-        
-        return self._emotions_cache
-    
-    def get_emotion(self, name: str) -> Optional[EmotionDefinition]:
-        """获取单个情绪定义"""
-        emotions = self.get_emotions()
-        return emotions.get(name)
-    
-    # ========================================================================
-    # 行业层
-    # ========================================================================
-    
-    def get_industries(self, force_reload: bool = False) -> Dict[str, IndustryDefinition]:
-        """获取所有行业定义"""
-        if self._industries_cache is not None and not force_reload:
-            return self._industries_cache
-        
-        data = self.load(force_reload)
-        industries_raw = data.get("industries", {})
-        
-        self._industries_cache = {}
-        for name, config in industries_raw.items():
+                logger.warning(f"解析 Emotion '{name}' 失败: {e}")
+        return result
+
+    def get_industries(self) -> Dict[str, IndustryDefinition]:
+        raw = self._nodes().get("industries", {})
+        result: Dict[str, IndustryDefinition] = {}
+        for name, cfg in raw.items():
             try:
-                self._industries_cache[name] = IndustryDefinition(
-                    description=config.get("description", ""),
-                    embodies=config.get("embodies", []),
-                    design_principles=config.get("design_principles", []),
-                    avoid=config.get("avoid", [])
-                )
+                result[name] = IndustryDefinition(**cfg)
             except Exception as e:
-                logger.warning(f"解析行业 '{name}' 失败: {e}")
-        
-        return self._industries_cache
-    
-    def get_industry(self, name: str) -> Optional[IndustryDefinition]:
-        """获取单个行业定义"""
-        industries = self.get_industries()
-        return industries.get(name)
-    
-    # ========================================================================
-    # 风格层
-    # ========================================================================
-    
-    def get_vibes(self, force_reload: bool = False) -> Dict[str, VibeDefinition]:
-        """获取所有风格定义"""
-        if self._vibes_cache is not None and not force_reload:
-            return self._vibes_cache
-        
-        data = self.load(force_reload)
-        vibes_raw = data.get("vibes", {})
-        
-        self._vibes_cache = {}
-        for name, config in vibes_raw.items():
+                logger.warning(f"解析 Industry '{name}' 失败: {e}")
+        return result
+
+    def get_vibes(self) -> Dict[str, VibeDefinition]:
+        raw = self._nodes().get("vibes", {})
+        result: Dict[str, VibeDefinition] = {}
+        for name, cfg in raw.items():
             try:
-                self._vibes_cache[name] = VibeDefinition(
-                    description=config.get("description", ""),
-                    embodies=config.get("embodies", []),
-                    modifiers=config.get("modifiers", {})
-                )
+                result[name] = VibeDefinition(**cfg)
             except Exception as e:
-                logger.warning(f"解析风格 '{name}' 失败: {e}")
-        
-        return self._vibes_cache
-    
-    def get_vibe(self, name: str) -> Optional[VibeDefinition]:
-        """获取单个风格定义"""
-        vibes = self.get_vibes()
-        return vibes.get(name)
-    
-    # ========================================================================
-    # 辅助方法
-    # ========================================================================
-    
+                logger.warning(f"解析 Vibe '{name}' 失败: {e}")
+        return result
+
+    def get_color_strategies(self) -> Dict[str, ColorStrategyDefinition]:
+        raw = self._nodes().get("color_strategies", {})
+        result: Dict[str, ColorStrategyDefinition] = {}
+        for name, cfg in raw.items():
+            try:
+                result[name] = ColorStrategyDefinition(**cfg)
+            except Exception as e:
+                logger.warning(f"解析 ColorStrategy '{name}' 失败: {e}")
+        return result
+
+    def get_typography_styles(self) -> Dict[str, TypographyStyleDefinition]:
+        raw = self._nodes().get("typography_styles", {})
+        result: Dict[str, TypographyStyleDefinition] = {}
+        for name, cfg in raw.items():
+            try:
+                result[name] = TypographyStyleDefinition(**cfg)
+            except Exception as e:
+                logger.warning(f"解析 TypographyStyle '{name}' 失败: {e}")
+        return result
+
+    def get_layout_patterns(self) -> Dict[str, LayoutPatternDefinition]:
+        raw = self._nodes().get("layout_patterns", {})
+        result: Dict[str, LayoutPatternDefinition] = {}
+        for name, cfg in raw.items():
+            try:
+                result[name] = LayoutPatternDefinition(**cfg)
+            except Exception as e:
+                logger.warning(f"解析 LayoutPattern '{name}' 失败: {e}")
+        return result
+
+    def get_decoration_themes(self) -> Dict[str, DecorationThemeDefinition]:
+        raw = self._nodes().get("decoration_themes", {})
+        result: Dict[str, DecorationThemeDefinition] = {}
+        for name, cfg in raw.items():
+            try:
+                result[name] = DecorationThemeDefinition(**cfg)
+            except Exception as e:
+                logger.warning(f"解析 DecorationTheme '{name}' 失败: {e}")
+        return result
+
+    # ------------------------------------------------------------------
+    # 关系访问
+    # ------------------------------------------------------------------
+
+    def get_relations(self) -> List[Relation]:
+        raw_list = self.load().get("relations", [])
+        relations: List[Relation] = []
+        for item in raw_list:
+            if "_comment" in item:
+                continue
+            try:
+                relations.append(Relation(**item))
+            except Exception as e:
+                logger.warning(f"解析关系失败 {item}: {e}")
+        return relations
+
+    # ------------------------------------------------------------------
+    # 辅助
+    # ------------------------------------------------------------------
+
     def get_supported_keywords(self) -> Dict[str, List[str]]:
-        """获取支持的关键词列表"""
         return {
             "industries": list(self.get_industries().keys()),
             "vibes": list(self.get_vibes().keys()),
-            "emotions": list(self.get_emotions().keys())
+            "emotions": list(self.get_emotions().keys()),
         }
-    
+
     def get_version(self) -> str:
-        """获取数据版本"""
-        data = self.load()
-        return data.get("$version", "1.0.0")
-    
-    def clear_cache(self):
-        """清除所有缓存"""
-        self._cache = None
-        self._emotions_cache = None
-        self._industries_cache = None
-        self._vibes_cache = None
+        return self.load().get("$version", "3.0.0")
+
+    def clear_cache(self) -> None:
+        self._raw = None
+
+
+# backward-compat alias
+RulesLoader = OntologyLoader

@@ -184,10 +184,8 @@ class TextBlock(Element):
 
 
 class ImageBlock(Element):
-    """
-    图片块组件
-    """
-    
+    """图片块组件"""
+
     def __init__(
         self,
         src: str,
@@ -198,29 +196,14 @@ class ImageBlock(Element):
         maintain_aspect_ratio: bool = True,
         style: Optional[Style] = None
     ):
-        """
-        初始化图片块
-        
-        Args:
-            src: 图片源（URL 或 Base64）
-            width: 宽度
-            height: 高度
-            x, y: 初始位置
-            maintain_aspect_ratio: 是否保持宽高比
-            style: 样式配置
-        """
         super().__init__(
-            x=x,
-            y=y,
-            width=width,
-            height=height,
+            x=x, y=y, width=width, height=height,
             style=style or Style()
         )
         self.src = src
         self.maintain_aspect_ratio = maintain_aspect_ratio
-    
+
     def render(self) -> Dict[str, Any]:
-        """渲染为字典"""
         return {
             "type": "image",
             "x": self.x,
@@ -231,23 +214,57 @@ class ImageBlock(Element):
             "opacity": self.style.opacity,
             "rotation": self.style.rotation,
         }
-    
+
     def resize(self, width: float, height: Optional[float] = None):
-        """
-        调整图片大小
-        
-        Args:
-            width: 新宽度
-            height: 新高度（如果为 None 且 maintain_aspect_ratio=True，则自动计算）
-        """
         if height is None and self.maintain_aspect_ratio:
             aspect_ratio = self.height / self.width
             height = width * aspect_ratio
-        
+
         self.width = width
         self.height = height or self.height
-        
-        # 通知父容器重新排列
+
         if self._parent:
             self._parent.arrange()
+
+
+class ShapeBlock(Element):
+    """装饰形状组件（分隔线、渐变遮罩、色块标签等）"""
+
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        subtype: str = "rect",
+        background_color: str = "transparent",
+        border_radius: int = 0,
+        border_color: str = "transparent",
+        border_width: int = 0,
+        gradient: str = "",
+        x: float = 0,
+        y: float = 0,
+        style: Optional[Style] = None,
+    ):
+        super().__init__(x=x, y=y, width=width, height=height, style=style)
+        self.subtype = subtype
+        self.background_color = background_color
+        self.border_radius = border_radius
+        self.border_color = border_color
+        self.border_width = border_width
+        self.gradient = gradient
+
+    def render(self) -> Dict[str, Any]:
+        return {
+            "type": "rect",
+            "subtype": self.subtype,
+            "x": self.x,
+            "y": self.y,
+            "width": self.width,
+            "height": self.height,
+            "backgroundColor": self.background_color,
+            "borderRadius": self.border_radius,
+            "borderColor": self.border_color,
+            "borderWidth": self.border_width,
+            "gradient": self.gradient,
+            "opacity": self.style.opacity,
+        }
 

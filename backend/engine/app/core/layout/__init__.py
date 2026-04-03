@@ -23,7 +23,7 @@ Date: 2025-01
 """
 
 from .styles import Style
-from .elements import Element, TextBlock, ImageBlock
+from .elements import Element, TextBlock, ImageBlock, ShapeBlock
 from .containers import Container, VerticalContainer, HorizontalContainer
 
 __all__ = [
@@ -31,6 +31,7 @@ __all__ = [
     "Element",
     "TextBlock",
     "ImageBlock",
+    "ShapeBlock",
     "Container",
     "VerticalContainer",
     "HorizontalContainer",

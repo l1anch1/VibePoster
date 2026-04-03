@@ -1,0 +1,533 @@
+{
+  "$schema": "design_ontology_v3",
+  "$version": "3.0.0",
+  "$description": "五层设计知识本体 — 显式语义三元组 + 多跳推理链",
+
+  "nodes": {
+
+    "emotions": {
+      "Trust": {
+        "description": "可靠、稳定、专业的信任感",
+        "palettes": {
+          "primary": ["#0066CC", "#1E3A5F", "#2C5282"],
+          "accent": ["#48BB78", "#38B2AC"]
+        }
+      },
+      "Innovation": {
+        "description": "前沿、突破、科技感",
+        "palettes": {
+          "primary": ["#6366F1", "#8B5CF6", "#0EA5E9"],
+          "accent": ["#22D3EE", "#A855F7"],
+          "gradient": ["linear-gradient(135deg, #667eea 0%, #764ba2 100%)"]
+        }
+      },
+      "Excitement": {
+        "description": "活力、热情、行动力",
+        "palettes": {
+          "primary": ["#EF4444", "#F97316", "#FBBF24"],
+          "accent": ["#EC4899", "#F43F5E"]
+        }
+      },
+      "Premium": {
+        "description": "奢华、高端、独特品位",
+        "palettes": {
+          "primary": ["#1A1A1A", "#2D2D2D", "#0F0F0F"],
+          "accent": ["#D4AF37", "#C9A962", "#B8860B"],
+          "metallic": ["#FFD700", "#C0C0C0", "#E8D5B7"]
+        }
+      },
+      "Warmth": {
+        "description": "温暖、亲切、自然",
+        "palettes": {
+          "primary": ["#D97706", "#B45309", "#92400E"],
+          "accent": ["#059669", "#10B981"],
+          "natural": ["#F5F0E6", "#E7DDD0", "#D4C4A8"]
+        }
+      },
+      "Freshness": {
+        "description": "新鲜、健康、活力",
+        "palettes": {
+          "primary": ["#22C55E", "#16A34A", "#15803D"],
+          "accent": ["#FBBF24", "#F59E0B"],
+          "fresh": ["#ECFDF5", "#D1FAE5", "#A7F3D0"]
+        }
+      },
+      "Playfulness": {
+        "description": "趣味、童趣、创意",
+        "palettes": {
+          "primary": ["#EC4899", "#8B5CF6", "#06B6D4"],
+          "accent": ["#FBBF24", "#22C55E", "#F43F5E"],
+          "pop": ["#FF6B6B", "#4ECDC4", "#FFE66D"]
+        }
+      },
+      "Serenity": {
+        "description": "宁静、平和、冥想感",
+        "palettes": {
+          "primary": ["#818CF8", "#6366F1", "#4F46E5"],
+          "accent": ["#C7D2FE", "#A5B4FC"],
+          "muted": ["#F5F3FF", "#EDE9FE", "#DDD6FE"]
+        }
+      },
+      "Urgency": {
+        "description": "紧迫感、促销、即刻行动",
+        "palettes": {
+          "primary": ["#DC2626", "#B91C1C", "#991B1B"],
+          "accent": ["#FBBF24", "#F59E0B", "#D97706"],
+          "alert": ["#FEF3C7", "#FDE68A"]
+        }
+      }
+    },
+
+    "industries": {
+      "Tech": {
+        "description": "科技、互联网、软件行业",
+        "design_principles": ["Clean interfaces", "Data visualization friendly", "Scalable design system"],
+        "avoid": ["Overly decorative", "Warm earth tones", "Script fonts"]
+      },
+      "Food": {
+        "description": "餐饮、食品、饮料行业",
+        "design_principles": ["Appetite appeal", "High-quality food photography", "Sensory engagement"],
+        "avoid": ["Cold blue tones", "Sterile layouts", "Technical fonts"]
+      },
+      "Luxury": {
+        "description": "奢侈品、高端消费、时尚行业",
+        "design_principles": ["Less is more", "Quality over quantity", "Timeless aesthetics"],
+        "avoid": ["Bright neon colors", "Cluttered layouts", "Casual fonts"]
+      },
+      "Healthcare": {
+        "description": "医疗、健康、制药行业",
+        "design_principles": ["Clear information hierarchy", "Accessible design", "Professional credibility"],
+        "avoid": ["Aggressive colors", "Complex patterns", "Decorative fonts"]
+      },
+      "Education": {
+        "description": "教育、培训、知识服务",
+        "design_principles": ["Easy to read", "Engaging visuals", "Clear structure"],
+        "avoid": ["Monotonous layouts", "Small text", "Distracting elements"]
+      },
+      "Entertainment": {
+        "description": "娱乐、游戏、媒体行业",
+        "design_principles": ["High visual impact", "Immersive experience", "Bold statements"],
+        "avoid": ["Conservative colors", "Static layouts", "Formal typography"]
+      },
+      "Finance": {
+        "description": "金融、银行、投资行业",
+        "design_principles": ["Clear data presentation", "Authority signaling", "Precise typography"],
+        "avoid": ["Playful fonts", "Neon colors", "Casual layouts"]
+      },
+      "Beauty": {
+        "description": "美妆、个护、护肤行业",
+        "design_principles": ["Sensory appeal", "Elegant whitespace", "Premium color palettes"],
+        "avoid": ["Heavy technical layouts", "Dark cluttered backgrounds", "Rigid grid structures"]
+      }
+    },
+
+    "vibes": {
+      "Minimalist": {
+        "description": "极简主义风格",
+        "modifiers": { "whitespace": "generous", "elements": "essential-only", "color_count": "1-2" }
+      },
+      "Energetic": {
+        "description": "充满活力的风格",
+        "modifiers": { "whitespace": "minimal", "elements": "abundant", "color_count": "3-5" }
+      },
+      "Professional": {
+        "description": "专业商务风格",
+        "modifiers": { "whitespace": "balanced", "elements": "structured", "color_count": "2-3" }
+      },
+      "Friendly": {
+        "description": "亲切友好风格",
+        "modifiers": { "whitespace": "comfortable", "elements": "rounded", "color_count": "3-4" }
+      },
+      "Bold": {
+        "description": "大胆醒目风格",
+        "modifiers": { "whitespace": "strategic", "elements": "oversized", "color_count": "2-4" }
+      },
+      "Retro": {
+        "description": "复古怀旧风格",
+        "modifiers": { "whitespace": "moderate", "elements": "vintage-styled", "color_count": "3-4" }
+      },
+      "Futuristic": {
+        "description": "未来科技风格",
+        "modifiers": { "whitespace": "strategic", "elements": "high-tech", "color_count": "2-4" }
+      }
+    },
+
+    "color_strategies": {
+      "Monochromatic": {
+        "description": "单色系配色",
+        "method": "使用同一色相的不同明度和饱和度",
+        "effect": "统一、和谐、专业"
+      },
+      "Complementary": {
+        "description": "互补色配色",
+        "method": "使用色轮上相对的两种颜色",
+        "effect": "对比强烈、视觉冲击、活力"
+      },
+      "Analogous": {
+        "description": "类似色配色",
+        "method": "使用色轮上相邻的颜色",
+        "effect": "和谐、自然、舒适"
+      },
+      "Triadic": {
+        "description": "三色配色",
+        "method": "使用色轮上等距的三种颜色",
+        "effect": "丰富、平衡、创意"
+      },
+      "Split-Complementary": {
+        "description": "分裂互补色配色",
+        "method": "一种颜色加其互补色两侧的颜色",
+        "effect": "对比但不冲突、现代感"
+      },
+      "Neutral-with-Accent": {
+        "description": "中性色加强调色",
+        "method": "大面积中性色搭配少量亮眼强调色",
+        "effect": "高端、克制、聚焦"
+      },
+      "High-Contrast": {
+        "description": "高对比配色",
+        "method": "使用明度或色相差异极大的颜色组合",
+        "effect": "醒目、紧迫、视觉张力"
+      },
+      "Earth-tones": {
+        "description": "大地色系配色",
+        "method": "使用棕、米、橄榄绿等自然色",
+        "effect": "自然、温暖、朴实"
+      },
+      "Nature-inspired": {
+        "description": "自然灵感配色",
+        "method": "取自植物、天空、水等自然场景的色彩",
+        "effect": "清新、健康、生机"
+      },
+      "Multi-color": {
+        "description": "多色配色",
+        "method": "同时使用四种及以上高饱和度颜色",
+        "effect": "欢快、童趣、丰富"
+      },
+      "High-saturation": {
+        "description": "高饱和度配色",
+        "method": "所有颜色均保持高彩度",
+        "effect": "夺目、活泼、年轻化"
+      }
+    },
+
+    "typography_styles": {
+      "Sans-Serif": {
+        "description": "无衬线字体，现代清晰",
+        "family_hints": ["Inter", "Helvetica Neue", "Source Han Sans"]
+      },
+      "Serif": {
+        "description": "衬线字体，经典优雅",
+        "family_hints": ["Playfair Display", "Source Han Serif", "Noto Serif"]
+      },
+      "Display": {
+        "description": "展示型字体，强视觉冲击",
+        "family_hints": ["Impact", "Anton", "Black Han Sans"]
+      },
+      "Rounded-Sans": {
+        "description": "圆体无衬线，亲切友好",
+        "family_hints": ["Nunito", "Varela Round", "LXGW WenKai"]
+      },
+      "Handwriting": {
+        "description": "手写体，个性自然",
+        "family_hints": ["Dancing Script", "Caveat", "ZCOOL XiaoWei"]
+      }
+    },
+
+    "layout_patterns": {
+      "Grid": {
+        "description": "网格布局，元素按行列对齐",
+        "strategy": "Structured",
+        "intent": "Stability",
+        "patterns": ["Grid", "Symmetrical"],
+        "effect": "可靠、专业、有序"
+      },
+      "Centered": {
+        "description": "居中布局，视线聚焦于中心",
+        "strategy": "Balanced",
+        "intent": "Focus",
+        "patterns": ["Centered"],
+        "effect": "平衡、庄重、聚焦"
+      },
+      "Diagonal": {
+        "description": "对角线布局，产生动感张力",
+        "strategy": "Dynamic",
+        "intent": "Forward-thinking",
+        "patterns": ["Diagonal"],
+        "effect": "活力、现代、前瞻"
+      },
+      "Asymmetric": {
+        "description": "不对称布局，打破常规引发关注",
+        "strategy": "Dynamic",
+        "intent": "Disruption",
+        "patterns": ["Asymmetric"],
+        "effect": "创新、个性、吸引力"
+      },
+      "Layered": {
+        "description": "层叠布局，通过前后景创造深度",
+        "strategy": "Dynamic",
+        "intent": "Depth",
+        "patterns": ["Layered", "Overlapping"],
+        "effect": "丰富、立体、沉浸"
+      },
+      "Burst": {
+        "description": "放射布局，从中心向外扩散",
+        "strategy": "Energetic",
+        "intent": "Impact",
+        "patterns": ["Burst"],
+        "effect": "爆发力、注意力捕获"
+      },
+      "GoldenRatio": {
+        "description": "黄金比例布局，经典美学分割",
+        "strategy": "Minimal",
+        "intent": "Sophistication",
+        "patterns": ["Golden-ratio", "Generous-whitespace"],
+        "effect": "高端、优雅、比例和谐"
+      },
+      "Flowing": {
+        "description": "流动曲线布局，自然有机形态",
+        "strategy": "Organic",
+        "intent": "Comfort",
+        "patterns": ["Curved", "Flowing", "Natural-hierarchy"],
+        "effect": "自然、亲切、引导视线"
+      },
+      "ZPattern": {
+        "description": "Z 形阅读路径布局，引导快速扫描",
+        "strategy": "Guided",
+        "intent": "Conversion",
+        "patterns": ["Z-pattern", "Visual-hierarchy"],
+        "effect": "高转化、易扫描、信息明确"
+      },
+      "Scattered": {
+        "description": "散落式布局，随机感强",
+        "strategy": "Playful",
+        "intent": "Engagement",
+        "patterns": ["Scattered", "Irregular-grid"],
+        "effect": "趣味、探索感、年轻"
+      },
+      "WhitespaceRich": {
+        "description": "留白丰富布局，极简呼吸感",
+        "strategy": "Clean",
+        "intent": "Clarity",
+        "patterns": ["Whitespace-rich", "Balanced"],
+        "effect": "清爽、健康、通透"
+      }
+    },
+
+    "decoration_themes": {
+      "SolidClean": {
+        "description": "纯色简洁装饰，适合信任感与专业场景",
+        "divider":  { "style": "solid",    "color_source": "accent",  "thickness": 2, "opacity": 0.5  },
+        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "primary", "opacity": 0.4  },
+        "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
+      },
+      "GradientModern": {
+        "description": "渐变现代装饰，适合科技创新场景",
+        "divider":  { "style": "gradient",       "color_source": "gradient", "thickness": 3, "opacity": 0.7  },
+        "overlay":  { "type": "linear-gradient",  "direction": "diagonal",   "color_source": "primary", "opacity": 0.5  },
+        "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.85 }
+      },
+      "DashedEnergetic": {
+        "description": "虚线活力装饰，适合动感促销场景",
+        "divider":  { "style": "dashed",          "color_source": "accent",  "thickness": 3, "opacity": 0.8  },
+        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.45 },
+        "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
+      },
+      "SubtleElegant": {
+        "description": "细腻优雅装饰，适合高端奢华场景",
+        "divider":  { "style": "solid",           "color_source": "accent",  "thickness": 1, "opacity": 0.3  },
+        "overlay":  { "type": "linear-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.6  },
+        "shape":    { "border_radius": 0,  "fill_source": "primary",  "border_width": 1, "border_color_source": "accent", "opacity": 0.9 }
+      },
+      "DottedOrganic": {
+        "description": "点状有机装饰，适合温暖亲切场景",
+        "divider":  { "style": "dotted",   "color_source": "accent",  "thickness": 2, "opacity": 0.5  },
+        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "natural", "opacity": 0.4  },
+        "shape":    { "border_radius": 20, "fill_source": "natural",  "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
+      },
+      "PlayfulBold": {
+        "description": "趣味大胆装饰，适合童趣创意场景",
+        "divider":  { "style": "dashed",          "color_source": "pop",     "thickness": 3, "opacity": 0.7  },
+        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "pop",     "opacity": 0.35 },
+        "shape":    { "border_radius": 24, "fill_source": "pop",      "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
+      }
+    }
+  },
+
+  "relations": [
+
+    {"_comment": "========== EMBODIES: Industry → Emotion =========="},
+
+    {"source": "Tech",          "target": "Trust",       "type": "EMBODIES", "weight": 0.9},
+    {"source": "Tech",          "target": "Innovation",  "type": "EMBODIES", "weight": 0.8},
+
+    {"source": "Food",          "target": "Warmth",      "type": "EMBODIES", "weight": 0.8},
+    {"source": "Food",          "target": "Freshness",   "type": "EMBODIES", "weight": 0.7},
+    {"source": "Food",          "target": "Excitement",  "type": "EMBODIES", "weight": 0.6},
+
+    {"source": "Luxury",        "target": "Premium",     "type": "EMBODIES", "weight": 0.9},
+    {"source": "Luxury",        "target": "Trust",       "type": "EMBODIES", "weight": 0.6},
+
+    {"source": "Healthcare",    "target": "Trust",       "type": "EMBODIES", "weight": 0.9},
+    {"source": "Healthcare",    "target": "Freshness",   "type": "EMBODIES", "weight": 0.7},
+    {"source": "Healthcare",    "target": "Serenity",    "type": "EMBODIES", "weight": 0.5},
+
+    {"source": "Education",     "target": "Trust",       "type": "EMBODIES", "weight": 0.7},
+    {"source": "Education",     "target": "Innovation",  "type": "EMBODIES", "weight": 0.6},
+    {"source": "Education",     "target": "Playfulness", "type": "EMBODIES", "weight": 0.5},
+
+    {"source": "Entertainment", "target": "Excitement",  "type": "EMBODIES", "weight": 0.9},
+    {"source": "Entertainment", "target": "Playfulness", "type": "EMBODIES", "weight": 0.8},
+    {"source": "Entertainment", "target": "Innovation",  "type": "EMBODIES", "weight": 0.6},
+
+    {"source": "Finance",       "target": "Trust",       "type": "EMBODIES", "weight": 0.9},
+    {"source": "Finance",       "target": "Premium",     "type": "EMBODIES", "weight": 0.7},
+    {"source": "Finance",       "target": "Serenity",    "type": "EMBODIES", "weight": 0.4},
+
+    {"source": "Beauty",        "target": "Premium",     "type": "EMBODIES", "weight": 0.7},
+    {"source": "Beauty",        "target": "Freshness",   "type": "EMBODIES", "weight": 0.6},
+    {"source": "Beauty",        "target": "Warmth",      "type": "EMBODIES", "weight": 0.5},
+
+    {"_comment": "========== EMBODIES: Vibe → Emotion =========="},
+
+    {"source": "Minimalist",    "target": "Premium",     "type": "EMBODIES", "weight": 0.8},
+    {"source": "Minimalist",    "target": "Serenity",    "type": "EMBODIES", "weight": 0.7},
+    {"source": "Minimalist",    "target": "Trust",       "type": "EMBODIES", "weight": 0.5},
+
+    {"source": "Energetic",     "target": "Excitement",  "type": "EMBODIES", "weight": 0.9},
+    {"source": "Energetic",     "target": "Playfulness", "type": "EMBODIES", "weight": 0.7},
+
+    {"source": "Professional",  "target": "Trust",       "type": "EMBODIES", "weight": 0.9},
+    {"source": "Professional",  "target": "Premium",     "type": "EMBODIES", "weight": 0.6},
+
+    {"source": "Friendly",      "target": "Warmth",      "type": "EMBODIES", "weight": 0.8},
+    {"source": "Friendly",      "target": "Playfulness", "type": "EMBODIES", "weight": 0.6},
+
+    {"source": "Bold",          "target": "Excitement",  "type": "EMBODIES", "weight": 0.8},
+    {"source": "Bold",          "target": "Innovation",  "type": "EMBODIES", "weight": 0.7},
+    {"source": "Bold",          "target": "Urgency",     "type": "EMBODIES", "weight": 0.5},
+
+    {"source": "Retro",         "target": "Warmth",      "type": "EMBODIES", "weight": 0.7},
+    {"source": "Retro",         "target": "Premium",     "type": "EMBODIES", "weight": 0.5},
+    {"source": "Retro",         "target": "Playfulness", "type": "EMBODIES", "weight": 0.4},
+
+    {"source": "Futuristic",    "target": "Innovation",  "type": "EMBODIES", "weight": 0.9},
+    {"source": "Futuristic",    "target": "Premium",     "type": "EMBODIES", "weight": 0.6},
+    {"source": "Futuristic",    "target": "Serenity",    "type": "EMBODIES", "weight": 0.4},
+
+    {"_comment": "========== EVOKES: Emotion → ColorStrategy =========="},
+
+    {"source": "Trust",       "target": "Monochromatic",       "type": "EVOKES", "weight": 0.8},
+    {"source": "Trust",       "target": "Analogous",            "type": "EVOKES", "weight": 0.6},
+    {"source": "Innovation",  "target": "Triadic",              "type": "EVOKES", "weight": 0.8},
+    {"source": "Innovation",  "target": "Split-Complementary",  "type": "EVOKES", "weight": 0.7},
+    {"source": "Excitement",  "target": "Complementary",        "type": "EVOKES", "weight": 0.9},
+    {"source": "Excitement",  "target": "High-Contrast",        "type": "EVOKES", "weight": 0.8},
+    {"source": "Premium",     "target": "Monochromatic",        "type": "EVOKES", "weight": 0.7},
+    {"source": "Premium",     "target": "Neutral-with-Accent",  "type": "EVOKES", "weight": 0.9},
+    {"source": "Warmth",      "target": "Analogous",            "type": "EVOKES", "weight": 0.8},
+    {"source": "Warmth",      "target": "Earth-tones",          "type": "EVOKES", "weight": 0.9},
+    {"source": "Freshness",   "target": "Complementary",        "type": "EVOKES", "weight": 0.6},
+    {"source": "Freshness",   "target": "Nature-inspired",      "type": "EVOKES", "weight": 0.8},
+    {"source": "Playfulness", "target": "Multi-color",          "type": "EVOKES", "weight": 0.9},
+    {"source": "Playfulness", "target": "High-saturation",      "type": "EVOKES", "weight": 0.8},
+    {"source": "Serenity",    "target": "Monochromatic",        "type": "EVOKES", "weight": 0.8},
+    {"source": "Serenity",    "target": "Analogous",            "type": "EVOKES", "weight": 0.7},
+    {"source": "Urgency",     "target": "High-Contrast",        "type": "EVOKES", "weight": 0.9},
+    {"source": "Urgency",     "target": "Complementary",        "type": "EVOKES", "weight": 0.7},
+
+    {"_comment": "========== EVOKES: Emotion → TypographyStyle (with context) =========="},
+
+    {"source": "Trust",       "target": "Sans-Serif",   "type": "EVOKES", "weight": 0.9,
+     "context": {"weight": "Medium",    "characteristics": ["Clean", "Geometric", "Balanced"]}},
+
+    {"source": "Innovation",  "target": "Sans-Serif",   "type": "EVOKES", "weight": 0.7,
+     "context": {"weight": "Bold",      "characteristics": ["Modern", "Geometric", "Sharp"]}},
+
+    {"source": "Excitement",  "target": "Display",      "type": "EVOKES", "weight": 0.9,
+     "context": {"weight": "Black",     "characteristics": ["Bold", "Expressive", "Dynamic"]}},
+
+    {"source": "Premium",     "target": "Serif",        "type": "EVOKES", "weight": 0.9,
+     "context": {"weight": "Light",     "characteristics": ["Elegant", "Refined", "Classic"]}},
+
+    {"source": "Warmth",      "target": "Rounded-Sans", "type": "EVOKES", "weight": 0.9,
+     "context": {"weight": "Regular",   "characteristics": ["Friendly", "Organic", "Approachable"]}},
+
+    {"source": "Freshness",   "target": "Sans-Serif",   "type": "EVOKES", "weight": 0.8,
+     "context": {"weight": "Medium",    "characteristics": ["Clean", "Vibrant", "Modern"]}},
+
+    {"source": "Playfulness", "target": "Rounded-Sans", "type": "EVOKES", "weight": 0.8,
+     "context": {"weight": "Bold",      "characteristics": ["Fun", "Bouncy", "Expressive"]}},
+
+    {"source": "Serenity",    "target": "Serif",        "type": "EVOKES", "weight": 0.6,
+     "context": {"weight": "Light",     "characteristics": ["Graceful", "Serene", "Balanced"]}},
+    {"source": "Serenity",    "target": "Sans-Serif",   "type": "EVOKES", "weight": 0.5,
+     "context": {"weight": "Light",     "characteristics": ["Minimal", "Calm", "Airy"]}},
+
+    {"source": "Urgency",     "target": "Display",      "type": "EVOKES", "weight": 0.8,
+     "context": {"weight": "Black",     "characteristics": ["Impact", "Bold", "Attention-grabbing"]}},
+    {"source": "Urgency",     "target": "Sans-Serif",   "type": "EVOKES", "weight": 0.6,
+     "context": {"weight": "ExtraBold", "characteristics": ["Strong", "Direct", "Clear"]}},
+
+    {"_comment": "========== EVOKES: Emotion → LayoutPattern =========="},
+
+    {"source": "Trust",       "target": "Grid",         "type": "EVOKES", "weight": 0.8},
+    {"source": "Trust",       "target": "Centered",     "type": "EVOKES", "weight": 0.7},
+    {"source": "Innovation",  "target": "Diagonal",     "type": "EVOKES", "weight": 0.8},
+    {"source": "Innovation",  "target": "Asymmetric",   "type": "EVOKES", "weight": 0.7},
+    {"source": "Innovation",  "target": "Layered",      "type": "EVOKES", "weight": 0.6},
+    {"source": "Excitement",  "target": "Diagonal",     "type": "EVOKES", "weight": 0.7},
+    {"source": "Excitement",  "target": "Burst",        "type": "EVOKES", "weight": 0.8},
+    {"source": "Excitement",  "target": "Layered",      "type": "EVOKES", "weight": 0.5},
+    {"source": "Premium",     "target": "GoldenRatio",  "type": "EVOKES", "weight": 0.8},
+    {"source": "Premium",     "target": "Centered",     "type": "EVOKES", "weight": 0.7},
+    {"source": "Warmth",      "target": "Flowing",      "type": "EVOKES", "weight": 0.8},
+    {"source": "Warmth",      "target": "Centered",     "type": "EVOKES", "weight": 0.5},
+    {"source": "Freshness",   "target": "Grid",         "type": "EVOKES", "weight": 0.7},
+    {"source": "Freshness",   "target": "WhitespaceRich","type": "EVOKES", "weight": 0.8},
+    {"source": "Playfulness", "target": "Scattered",    "type": "EVOKES", "weight": 0.8},
+    {"source": "Playfulness", "target": "Asymmetric",   "type": "EVOKES", "weight": 0.7},
+    {"source": "Serenity",    "target": "GoldenRatio",  "type": "EVOKES", "weight": 0.7},
+    {"source": "Serenity",    "target": "Centered",     "type": "EVOKES", "weight": 0.8},
+    {"source": "Serenity",    "target": "Flowing",      "type": "EVOKES", "weight": 0.5},
+    {"source": "Urgency",     "target": "ZPattern",     "type": "EVOKES", "weight": 0.8},
+    {"source": "Urgency",     "target": "Grid",         "type": "EVOKES", "weight": 0.5},
+
+    {"_comment": "========== EVOKES: Emotion → DecorationTheme =========="},
+
+    {"source": "Trust",       "target": "SolidClean",       "type": "EVOKES", "weight": 0.9},
+    {"source": "Innovation",  "target": "GradientModern",   "type": "EVOKES", "weight": 0.9},
+    {"source": "Excitement",  "target": "DashedEnergetic",  "type": "EVOKES", "weight": 0.8},
+    {"source": "Premium",     "target": "SubtleElegant",    "type": "EVOKES", "weight": 0.9},
+    {"source": "Warmth",      "target": "DottedOrganic",    "type": "EVOKES", "weight": 0.8},
+    {"source": "Freshness",   "target": "SolidClean",       "type": "EVOKES", "weight": 0.7},
+    {"source": "Playfulness", "target": "PlayfulBold",      "type": "EVOKES", "weight": 0.9},
+    {"source": "Serenity",    "target": "SubtleElegant",    "type": "EVOKES", "weight": 0.8},
+    {"source": "Urgency",     "target": "DashedEnergetic",  "type": "EVOKES", "weight": 0.6},
+    {"source": "Urgency",     "target": "SolidClean",       "type": "EVOKES", "weight": 0.5},
+
+    {"_comment": "========== AVOIDS: Entry → Strategy (反模式约束) =========="},
+
+    {"source": "Tech",       "target": "Earth-tones",       "type": "AVOIDS"},
+    {"source": "Tech",       "target": "Handwriting",       "type": "AVOIDS"},
+    {"source": "Luxury",     "target": "Multi-color",       "type": "AVOIDS"},
+    {"source": "Luxury",     "target": "High-saturation",   "type": "AVOIDS"},
+    {"source": "Luxury",     "target": "PlayfulBold",       "type": "AVOIDS"},
+    {"source": "Healthcare", "target": "DashedEnergetic",   "type": "AVOIDS"},
+    {"source": "Healthcare", "target": "Handwriting",       "type": "AVOIDS"},
+    {"source": "Entertainment","target":"SubtleElegant",     "type": "AVOIDS"},
+    {"source": "Finance",    "target": "PlayfulBold",        "type": "AVOIDS"},
+    {"source": "Finance",    "target": "DashedEnergetic",    "type": "AVOIDS"},
+    {"source": "Finance",    "target": "Handwriting",        "type": "AVOIDS"},
+
+    {"_comment": "========== CONFLICTS_WITH: Strategy ↔ Strategy (互斥) =========="},
+
+    {"source": "Monochromatic",  "target": "Multi-color",      "type": "CONFLICTS_WITH"},
+    {"source": "Multi-color",    "target": "Monochromatic",     "type": "CONFLICTS_WITH"},
+    {"source": "Grid",           "target": "Scattered",         "type": "CONFLICTS_WITH"},
+    {"source": "Scattered",      "target": "Grid",              "type": "CONFLICTS_WITH"},
+    {"source": "SubtleElegant",  "target": "PlayfulBold",       "type": "CONFLICTS_WITH"},
+    {"source": "PlayfulBold",    "target": "SubtleElegant",     "type": "CONFLICTS_WITH"},
+    {"source": "SubtleElegant",  "target": "DashedEnergetic",   "type": "CONFLICTS_WITH"},
+    {"source": "DashedEnergetic","target": "SubtleElegant",     "type": "CONFLICTS_WITH"}
+  ]
+}

@@ -1,161 +1,177 @@
 """
-KG 类型定义 v2
+KG 类型定义 v3 — 五层设计知识本体
 
-支持语义化推理链：Industry → Emotion → Visual Elements
+本体层次:
+    Layer 0: Domain Entry    — Industry / Vibe（应用场景入口）
+    Layer 1: Emotion         — 语义中枢（9 种情绪）
+    Layer 2: Visual Strategy — ColorStrategy / TypographyStyle / LayoutPattern / DecorationTheme
+    Layer 3: Concrete Value  — 色值、字体参数等（承载在 EVOKES 边属性或策略节点属性中）
 
-Author: VibePoster Team
-Date: 2025-01
+语义关系:
+    EMBODIES        Entry → Emotion          行业/风格体现某种情绪
+    EVOKES          Emotion → Strategy       情绪唤起某种视觉策略
+    AVOIDS          Entry → Strategy         领域禁忌约束
+    CONFLICTS_WITH  Strategy ↔ Strategy      策略间互斥
 """
 
-from typing import List, Dict, Any, Optional, Set
+from typing import List, Dict, Any, Optional
 from enum import Enum
 from pydantic import BaseModel, Field
 
 
+# ============================================================================
+# 节点类型 & 边类型枚举
+# ============================================================================
+
 class NodeType(str, Enum):
-    """节点类型枚举"""
+    """本体节点类型"""
     INDUSTRY = "industry"
     VIBE = "vibe"
     EMOTION = "emotion"
     COLOR_STRATEGY = "color_strategy"
-    LAYOUT_INTENT = "layout_intent"
+    TYPOGRAPHY_STYLE = "typography_style"
+    LAYOUT_PATTERN = "layout_pattern"
+    DECORATION_THEME = "decoration_theme"
 
 
 class EdgeType(str, Enum):
-    """边类型枚举"""
-    EMBODIES = "embodies"           # Industry/Vibe → Emotion
-    USES_STRATEGY = "uses_strategy" # Emotion → ColorStrategy
-    HAS_INTENT = "has_intent"       # Emotion → LayoutIntent
+    """本体语义关系类型"""
+    EMBODIES = "embodies"
+    EVOKES = "evokes"
+    AVOIDS = "avoids"
+    CONFLICTS_WITH = "conflicts_with"
 
 
 # ============================================================================
-# 设计元素模型
+# Layer 0 — Domain Entry 节点
 # ============================================================================
-
-class ColorPalette(BaseModel):
-    """配色方案"""
-    primary: List[str] = Field(default_factory=list, description="主色调")
-    accent: List[str] = Field(default_factory=list, description="强调色")
-    gradient: List[str] = Field(default_factory=list, description="渐变色")
-    metallic: List[str] = Field(default_factory=list, description="金属色")
-    natural: List[str] = Field(default_factory=list, description="自然色")
-    fresh: List[str] = Field(default_factory=list, description="清新色")
-    pop: List[str] = Field(default_factory=list, description="流行色")
-    
-    def all_colors(self) -> List[str]:
-        """获取所有颜色"""
-        colors = []
-        for field in ['primary', 'accent', 'gradient', 'metallic', 'natural', 'fresh', 'pop']:
-            colors.extend(getattr(self, field, []))
-        return colors
-
-
-class Typography(BaseModel):
-    """排版风格"""
-    style: str = Field(..., description="字体风格")
-    weight: str = Field(..., description="字重")
-    characteristics: List[str] = Field(default_factory=list, description="特征")
-
-
-class LayoutStyle(BaseModel):
-    """布局风格"""
-    strategy: str = Field(..., description="布局策略")
-    intent: str = Field(..., description="布局意图")
-    patterns: List[str] = Field(default_factory=list, description="布局模式")
-
-
-class DividerStyle(BaseModel):
-    """分隔线装饰风格"""
-    style: str = Field(default="solid", description="线条样式: solid|dashed|dotted|gradient")
-    color_source: str = Field(default="accent", description="取色来源: primary|accent|gradient等")
-    thickness: int = Field(default=2, description="线条粗细(px)")
-    opacity: float = Field(default=0.6, description="透明度 0-1")
-
-
-class OverlayStyle(BaseModel):
-    """遮罩装饰风格"""
-    type: str = Field(default="linear-gradient", description="类型: linear-gradient|radial-gradient|solid")
-    direction: str = Field(default="to-bottom", description="方向: to-bottom|to-top|to-right|diagonal")
-    color_source: str = Field(default="primary", description="取色来源")
-    opacity: float = Field(default=0.5, description="透明度 0-1")
-
-
-class ShapeDecoStyle(BaseModel):
-    """形状装饰风格"""
-    border_radius: int = Field(default=0, description="圆角半径(px)")
-    fill_source: str = Field(default="accent", description="填充色来源")
-    border_width: int = Field(default=0, description="边框粗细(px)")
-    border_color_source: str = Field(default="primary", description="边框色来源")
-    opacity: float = Field(default=0.9, description="透明度 0-1")
-
-
-class DecorationStyles(BaseModel):
-    """装饰风格集合"""
-    divider: DividerStyle = Field(default_factory=DividerStyle, description="分隔线风格")
-    overlay: OverlayStyle = Field(default_factory=OverlayStyle, description="遮罩风格")
-    shape: ShapeDecoStyle = Field(default_factory=ShapeDecoStyle, description="形状风格")
-
-
-class EmotionDefinition(BaseModel):
-    """情绪定义"""
-    description: str = Field(..., description="情绪描述")
-    color_strategies: List[str] = Field(default_factory=list, description="配色策略")
-    color_palettes: ColorPalette = Field(default_factory=ColorPalette, description="配色方案")
-    typography: Typography = Field(default=None, description="排版风格")
-    layout: LayoutStyle = Field(default=None, description="布局风格")
-    decorations: DecorationStyles = Field(default_factory=DecorationStyles, description="装饰风格")
-
 
 class IndustryDefinition(BaseModel):
     """行业定义"""
     description: str = Field(..., description="行业描述")
-    embodies: List[str] = Field(default_factory=list, description="体现的情绪")
-    design_principles: List[str] = Field(default_factory=list, description="设计原则")
-    avoid: List[str] = Field(default_factory=list, description="应避免的元素")
+    design_principles: List[str] = Field(default_factory=list)
+    avoid: List[str] = Field(default_factory=list)
 
 
 class VibeDefinition(BaseModel):
     """风格定义"""
     description: str = Field(..., description="风格描述")
-    embodies: List[str] = Field(default_factory=list, description="体现的情绪")
-    modifiers: Dict[str, Any] = Field(default_factory=dict, description="修饰参数")
+    modifiers: Dict[str, Any] = Field(default_factory=dict)
 
 
 # ============================================================================
-# 推理结果模型
+# Layer 1 — Emotion 节点
 # ============================================================================
+
+class EmotionDefinition(BaseModel):
+    """情绪定义（语义中枢节点）"""
+    description: str = Field(..., description="情绪描述")
+    palettes: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="该情绪的调色板 {primary: [...], accent: [...], ...}",
+    )
+
+
+# ============================================================================
+# Layer 2 — Visual Strategy 节点
+# ============================================================================
+
+class ColorStrategyDefinition(BaseModel):
+    """配色策略定义"""
+    description: str = Field(..., description="策略描述")
+    method: str = Field(default="", description="配色方法论")
+    effect: str = Field(default="", description="视觉效果")
+
+
+class TypographyStyleDefinition(BaseModel):
+    """排版风格定义"""
+    description: str = Field(..., description="字体风格描述")
+    family_hints: List[str] = Field(default_factory=list, description="推荐字体族")
+
+
+class LayoutPatternDefinition(BaseModel):
+    """布局模式定义"""
+    description: str = Field(..., description="布局模式描述")
+    strategy: str = Field(..., description="布局策略标签")
+    intent: str = Field(..., description="布局意图标签")
+    patterns: List[str] = Field(default_factory=list, description="产出的模式名列表")
+    effect: str = Field(default="", description="视觉效果")
+
+
+class DecorationThemeDefinition(BaseModel):
+    """装饰主题定义"""
+    description: str = Field(..., description="装饰主题描述")
+    divider: Dict[str, Any] = Field(default_factory=dict)
+    overlay: Dict[str, Any] = Field(default_factory=dict)
+    shape: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ============================================================================
+# 关系模型
+# ============================================================================
+
+class Relation(BaseModel):
+    """语义三元组"""
+    source: str = Field(..., description="源节点 ID")
+    target: str = Field(..., description="目标节点 ID")
+    type: str = Field(..., description="关系类型")
+    weight: float = Field(default=1.0, ge=0.0, le=1.0, description="关系权重")
+    context: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="边上下文（如 EVOKES typography 的 weight/characteristics）",
+    )
+
+
+# ============================================================================
+# 推理结果模型（与 v2 输出格式完全兼容）
+# ============================================================================
+
+class InferenceTrace(BaseModel):
+    """单条推理链路追踪"""
+    path: List[str] = Field(..., description="推理路径 [entry, emotion, strategy]")
+    relation_chain: List[str] = Field(..., description="关系链 [EMBODIES, EVOKES]")
+    weight: float = Field(..., description="路径累积权重（乘积）")
+
 
 class InferenceResult(BaseModel):
-    """推理结果 v2"""
+    """推理结果 v3 — 输出格式与 v2 完全兼容"""
     # 情绪层
-    emotions: List[str] = Field(default_factory=list, description="识别到的情绪")
-    
+    emotions: List[str] = Field(default_factory=list)
+
     # 颜色层
-    color_strategies: List[str] = Field(default_factory=list, description="推荐的配色策略")
-    color_palettes: Dict[str, List[str]] = Field(default_factory=dict, description="推荐的配色方案")
-    
+    color_strategies: List[str] = Field(default_factory=list)
+    color_palettes: Dict[str, List[str]] = Field(default_factory=dict)
+
     # 排版层
-    typography_styles: List[str] = Field(default_factory=list, description="推荐的字体风格")
-    typography_weights: List[str] = Field(default_factory=list, description="推荐的字重")
-    typography_characteristics: List[str] = Field(default_factory=list, description="排版特征")
-    
+    typography_styles: List[str] = Field(default_factory=list)
+    typography_weights: List[str] = Field(default_factory=list)
+    typography_characteristics: List[str] = Field(default_factory=list)
+
     # 布局层
-    layout_strategies: List[str] = Field(default_factory=list, description="布局策略")
-    layout_intents: List[str] = Field(default_factory=list, description="布局意图")
-    layout_patterns: List[str] = Field(default_factory=list, description="布局模式")
+    layout_strategies: List[str] = Field(default_factory=list)
+    layout_intents: List[str] = Field(default_factory=list)
+    layout_patterns: List[str] = Field(default_factory=list)
 
     # 装饰层
-    decoration_styles: Dict[str, Any] = Field(default_factory=dict, description="装饰风格推荐")
+    decoration_styles: Dict[str, Any] = Field(default_factory=dict)
 
     # 设计原则
-    design_principles: List[str] = Field(default_factory=list, description="设计原则")
-    avoid: List[str] = Field(default_factory=list, description="应避免的元素")
-    
+    design_principles: List[str] = Field(default_factory=list)
+    avoid: List[str] = Field(default_factory=list)
+
+    # v3 新增：推理链追踪
+    inference_traces: List[InferenceTrace] = Field(
+        default_factory=list,
+        description="完整推理链路（可选，用于可解释性）",
+    )
+
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
-        return self.model_dump()
-    
-    def merge(self, other: 'InferenceResult') -> 'InferenceResult':
+        """转换为字典（兼容 v2 消费方）"""
+        d = self.model_dump()
+        d.pop("inference_traces", None)
+        return d
+
+    def merge(self, other: "InferenceResult") -> "InferenceResult":
         """合并两个推理结果"""
         merged_palettes = dict(self.color_palettes)
         for key, colors in other.color_palettes.items():
@@ -163,7 +179,7 @@ class InferenceResult(BaseModel):
                 merged_palettes[key] = list(set(merged_palettes[key] + colors))
             else:
                 merged_palettes[key] = colors
-        
+
         merged_decorations = dict(self.decoration_styles)
         for key, val in other.decoration_styles.items():
             if key not in merged_decorations:
@@ -175,13 +191,16 @@ class InferenceResult(BaseModel):
             color_palettes=merged_palettes,
             typography_styles=list(set(self.typography_styles + other.typography_styles)),
             typography_weights=list(set(self.typography_weights + other.typography_weights)),
-            typography_characteristics=list(set(self.typography_characteristics + other.typography_characteristics)),
+            typography_characteristics=list(set(
+                self.typography_characteristics + other.typography_characteristics
+            )),
             layout_strategies=list(set(self.layout_strategies + other.layout_strategies)),
             layout_intents=list(set(self.layout_intents + other.layout_intents)),
             layout_patterns=list(set(self.layout_patterns + other.layout_patterns)),
             decoration_styles=merged_decorations,
             design_principles=list(set(self.design_principles + other.design_principles)),
-            avoid=list(set(self.avoid + other.avoid))
+            avoid=list(set(self.avoid + other.avoid)),
+            inference_traces=self.inference_traces + other.inference_traces,
         )
 
 
@@ -189,12 +208,13 @@ class GraphStats(BaseModel):
     """图谱统计信息"""
     node_count: int = Field(..., description="节点数量")
     edge_count: int = Field(..., description="边数量")
-    rules_file: str = Field(..., description="规则文件路径")
-    version: str = Field(default="2.0.0", description="数据版本")
-    industries: List[str] = Field(default_factory=list, description="支持的行业")
-    vibes: List[str] = Field(default_factory=list, description="支持的风格")
-    emotions: List[str] = Field(default_factory=list, description="支持的情绪")
-    
+    rules_file: str = Field(..., description="本体数据文件路径")
+    version: str = Field(default="3.0.0")
+    industries: List[str] = Field(default_factory=list)
+    vibes: List[str] = Field(default_factory=list)
+    emotions: List[str] = Field(default_factory=list)
+    node_type_counts: Dict[str, int] = Field(default_factory=dict)
+    edge_type_counts: Dict[str, int] = Field(default_factory=dict)
+
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
         return self.model_dump()

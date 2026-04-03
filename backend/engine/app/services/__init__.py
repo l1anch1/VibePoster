@@ -17,12 +17,15 @@ def get_poster_service_class():
     return PosterService
 
 
-from .asset_service import AssetService, AssetResult
+def get_asset_service():
+    """延迟导入 AssetService，避免加载 tools 层的重量级依赖"""
+    from .asset_service import AssetService, AssetResult
+    return AssetService, AssetResult
+
 
 __all__ = [
     "get_poster_service_class",
+    "get_asset_service",
     "RendererService",
     "create_simple_poster_from_text",
-    "AssetService",
-    "AssetResult",
 ]

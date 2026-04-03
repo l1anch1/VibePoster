@@ -1,137 +1,109 @@
 """
-Layout Agent Prompt - 绝对坐标版式生成
+Layout Agent Prompt — 语义 DSL 版式生成
 
-LLM 直接输出每个图层的 x, y, width, height，不依赖自动排版引擎。
+LLM 输出语义 DSL 指令（无坐标），OOP 布局引擎根据 layout_strategy 自动计算坐标。
 """
 import json
 from typing import Dict, Any, Optional
 
 
-SYSTEM_PROMPT = """你是一位顶级海报版式设计师。你需要根据设计简报和素材，为每个图层输出 **精确的像素坐标**。
+SYSTEM_PROMPT = """你是一位顶级海报版式设计师。你需要根据设计简报和素材，输出**语义化的 DSL 指令**。
+
+⚠️ 重要：你不需要指定任何坐标（x, y, width, height）。系统的 OOP 布局引擎会根据你选择的 layout_strategy 自动计算所有元素的精确位置。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 一、输出格式
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-输出 JSON，每条指令必须包含 x, y, width, height：
+输出 JSON，包含 layout_strategy、font_style 和 dsl_instructions：
 
 {
-  "layout_style": "版式名称(自由发挥)",
+  "layout_strategy": "bottom_heavy",
   "font_style": "sans",
   "dsl_instructions": [
-    {
-      "command": "add_image",
-      "src": "{ASSET_BG}",
-      "x": 0, "y": 0,
-      "width": 1080, "height": 1920,
-      "layer_type": "background"
-    },
-    {
-      "command": "add_title",
-      "content": "标题文本",
-      "x": 80, "y": 400,
-      "width": 920, "height": 120,
-      "font_size": 72,
-      "color": "#FFFFFF",
-      "text_align": "left"
-    }
+    {"command": "add_image", "src": "{ASSET_BG}", "layer_type": "background"},
+    {"command": "add_overlay"},
+    {"command": "add_title", "content": "标题文本", "font_size": 64, "color": "#FFFFFF"},
+    {"command": "add_subtitle", "content": "副标题", "font_size": 28, "color": "#EEEEEE"},
+    {"command": "add_divider"},
+    {"command": "add_cta", "content": "了解更多", "font_size": 24, "color": "#FFFFFF"}
   ]
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-二、字体风格（font_style）
+二、布局策略（layout_strategy）—— 必选
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+从以下 7 种策略中选择最适合的一种。布局引擎会自动将元素放置到对应区域：
+
+- "top_text"       — 上文下图型：标题+副标题放在画布上方，下方留给背景视觉
+- "centered"       — 居中对称型：所有文字垂直居中于画布，上下留白，适合极简风格
+- "bottom_heavy"   — 底部聚集型：标题和 CTA 堆叠在画布底部，上方留给背景视觉
+- "left_aligned"   — 左对齐通栏型：所有文字左对齐，从上到下铺开，像杂志封面
+- "diagonal"       — 对角线型：标题放在左上区域，CTA 放在右下区域，形成视觉对角线
+- "big_title"      — 大标题铺满型：标题字号放大 1.5x，居中展示，副标题和 CTA 紧跟
+- "split_vertical" — 上下分割型：画布上半部分放标题和副标题，下半部分放 CTA
+
+每次生成请选择不同的策略，保持多样性。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、字体风格（font_style）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 在 JSON 顶层指定 font_style，系统会自动映射到具体字体。可选值：
 
-- "sans"        — 无衬线体（现代、科技、商务）→ 苹方
-- "serif"       — 衬线体（优雅、正式、文艺）→ 宋体
-- "rounded"     — 圆体（友好、温暖、亲切）→ 圆体
-- "handwriting" — 手写体（文艺、个性、轻松）→ 楷体
-- "display"     — 展示体（标题醒目、有冲击力）→ 报隶（标题） + 苹方（正文）
+- "sans"        — 无衬线体（现代、科技、商务）
+- "serif"       — 衬线体（优雅、正式、文艺）
+- "rounded"     — 圆体（友好、温暖、亲切）
+- "handwriting" — 手写体（文艺、个性、轻松）
+- "display"     — 展示体（标题醒目、有冲击力）
 
 根据海报风格和情绪基调选择最匹配的 font_style。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-三、可用指令
+四、可用指令（无需坐标）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. add_image  — 图片图层
-   必填: src, x, y, width, height, layer_type("background"|"subject")
-   背景图通常 x=0, y=0, width=画布宽, height=画布高（铺满）
+   必填: src, layer_type("background"|"subject")
+   背景图始终铺满画布，主体素材由布局引擎自动定位
 
 2. add_title  — 主标题
-   必填: content, x, y, width, height, font_size, color
-   可选: text_align(left|center|right)
+   必填: content, font_size, color
+   可选: text_align(left|center|right), font_weight(normal|bold)
 
 3. add_subtitle — 副标题
-   必填: content, x, y, width, height, font_size, color
-   可选: text_align
+   必填: content, font_size, color
+   可选: text_align, font_weight
 
 4. add_text   — 正文
-   必填: content, x, y, width, height, font_size, color
-   可选: text_align
+   必填: content, font_size, color
+   可选: text_align, font_weight
 
 5. add_cta    — 行动号召
-   必填: content, x, y, width, height, font_size, color
-   可选: text_align
+   必填: content, font_size, color
+   可选: text_align, font_weight
 
 6. add_divider — 分隔线（装饰性水平线条）
-   必填: x, y, width
-   可选: height(默认很细), color
-   注意: 颜色和样式由系统根据风格自动决定，你只需要决定放在哪里
+   可选: width_ratio(0.0~1.0, 默认 0.5), color
+   注意: 粗细和样式由系统根据风格自动决定
 
 7. add_overlay — 渐变遮罩（提升文字可读性）
-   必填: x, y, width, height
-   注意: 渐变方向和颜色由系统自动决定，通常放在文字和背景图之间
+   无需任何参数，系统根据布局策略自动确定覆盖区域和方向
 
 8. add_shape  — 装饰形状（色块、标签背景等）
-   必填: x, y, width, height
-   可选: color, border_radius, opacity
+   可选: width_ratio(0.0~1.0), height(px), color, border_radius, opacity, subtype
    注意: 默认填充色和圆角由系统根据风格自动决定
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-四、版式灵感（必须多样化）
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-以下是几种常见版式思路，你应该根据内容和风格 **自由选择或创造**，禁止每次都用同一种：
-
-A. 上文下图型
-   标题 + 副标题放在画布上方 1/3，主图（如有）放在下方 2/3
-
-B. 居中对称型
-   所有文字垂直居中于画布，上下留白，适合极简风格
-
-C. 底部聚集型
-   标题和 CTA 堆叠在画布底部 1/3，上方留给背景视觉
-
-D. 左对齐通栏型
-   所有文字左对齐，标题在上、副标题紧跟、CTA 在底，像杂志封面
-
-E. 对角线型
-   标题放在左上区域，CTA 放在右下区域，形成视觉对角线
-
-F. 大标题铺满型
-   标题字号极大，几乎铺满画布宽度，副标题和 CTA 在角落
-
-G. 上下分割型
-   画布上半部分放标题和副标题，下半部分放主体素材和 CTA
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 五、设计规则
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. 背景图始终铺满画布（x=0, y=0, width=画布宽, height=画布高）
-2. 文字不能超出画布边界，必须留至少 40px 安全边距
-3. 标题 font_size 建议 48-96，副标题 28-42，正文 18-28，CTA 24-36
-4. 【文字颜色 — 极其重要！】
-   背景通常是一张复杂的照片/插画，文字直接叠在上面。你必须确保文字颜色与背景有极强对比：
+1. dsl_instructions 中元素的顺序决定了视觉从上到下的排列顺序
+2. 标题 font_size 建议 48-96，副标题 28-42，正文 18-28，CTA 24-36
+3. 【文字颜色 — 极其重要！】
    - 绝大多数情况下使用 **#FFFFFF（纯白）** 或 **#000000（纯黑）**
-   - 如果背景整体偏暗（夜景、深色调）→ 文字用 #FFFFFF
-   - 如果背景整体偏亮（白天、浅色调）→ 文字用 #000000 或 #1A1A1A
-   - 禁止使用中间灰度（如 #888888、#666666）作为标题颜色
-   - 禁止使用与背景色相近的颜色（如蓝色背景用蓝色字）
-   - 如果不确定背景明暗，一律用 #FFFFFF（白字在大多数海报背景上可读性最佳）
-5. 如果有主体素材（subject），合理安排其位置和尺寸，不要遮挡主标题
-6. height 估算：height ≈ font_size × 行数 × 1.4
-7. 每次生成请选择不同的版式思路，保持多样性
-8. layout_style 字段必须填写你所选择的版式名称（自由发挥，如"对角线冲击"、"极简居中"等）
-9. 善用 add_overlay 提升文字在背景图上的可读性：在文字图层和背景图之间添加渐变遮罩
+   - 如果背景整体偏暗 → 文字用 #FFFFFF
+   - 如果背景整体偏亮 → 文字用 #000000 或 #1A1A1A
+   - 禁止使用中间灰度（如 #888888）作为标题颜色
+   - 如果不确定，一律用 #FFFFFF
+4. 善用 add_overlay 提升文字在背景图上的可读性
+5. 每次生成请选择不同的 layout_strategy，保持多样性
 """
 
 
@@ -142,8 +114,8 @@ USER_PROMPT_TEMPLATE = """【输入】
 - 素材:
 {asset_summary}
 {knowledge_section}{reference_section}{style_hint_section}{review_feedback_section}
-请输出完整的 JSON，包含所有图层的精确坐标。
-结合上述知识推荐和灵感库（A-G）自由选择或创造版式，layout_style 填写你选用的版式名称。
+请输出完整的 JSON（包含 layout_strategy、font_style、dsl_instructions）。
+结合上述知识推荐，从 7 种 layout_strategy 中选择最合适的一种。
 仅输出 JSON，不要包含其他文本。"""
 
 
@@ -152,7 +124,7 @@ USER_PROMPT_TEMPLATE = """【输入】
 # ============================================================================
 
 def _summarize_assets(asset_list: Dict[str, Any]) -> str:
-    """将 asset_list 压缩为 prompt 友好的摘要，避免把巨大 base64 塞进上下文"""
+    """将 asset_list 压缩为 prompt 友好的摘要"""
     parts = []
     if asset_list.get("background_layer"):
         bg = asset_list["background_layer"]
@@ -253,7 +225,7 @@ def _summarize_knowledge(design_brief: Dict[str, Any]) -> str:
 
 
 def _summarize_reference(design_brief: Dict[str, Any]) -> str:
-    """从 design_brief 提取风格参考图分析结果，格式化为布局指导"""
+    """从 design_brief 提取风格参考图分析结果"""
     has_ref = any(
         design_brief.get(k)
         for k in ("reference_mood", "reference_theme", "reference_description",
@@ -312,10 +284,7 @@ def get_prompt(
     构建 Layout Agent 的 prompt
 
     Args:
-        style_hint: 多样性引导（如 "请尝试 E. 对角线型 风格"），用于并行生成时避免雷同
-
-    Returns:
-        {"system": ..., "user": ...}
+        style_hint: 多样性引导（如 "请尝试 diagonal 风格"），用于并行生成时避免雷同
     """
     review_feedback_section = ""
     if review_feedback and review_feedback.get("status") == "REJECT":
@@ -327,8 +296,8 @@ def get_prompt(
 具体问题:
 {issues_text}
 
-你可以且应该同时调整：坐标/尺寸、文字颜色(color)、字号(font_size)、文字内容。
-特别注意：如果反馈提到「文字可读性」或「颜色接近」，直接将所有文字颜色改为 #FFFFFF（白色）或 #000000（黑色），不要再用中间色调。"""
+你可以且应该同时调整：layout_strategy、font_style、文字颜色(color)、字号(font_size)、文字内容、元素顺序。
+特别注意：如果反馈提到「文字可读性」或「颜色接近」，直接将所有文字颜色改为 #FFFFFF（白色）或 #000000（黑色）。"""
 
     style_hint_section = ""
     if style_hint:

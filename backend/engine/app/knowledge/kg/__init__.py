@@ -1,57 +1,53 @@
 """
-Knowledge Graph 模块 v2
+Knowledge Graph 模块 v3
 
-支持语义化推理链：Industry/Vibe → Emotion → Visual Elements
+五层设计知识本体：
+    Industry/Vibe → Emotion → ColorStrategy / TypographyStyle / LayoutPattern / DecorationTheme
 
 模块结构:
-    - types.py: Pydantic 类型定义
-    - loader.py: 规则数据加载
-    - graph.py: 图结构管理
-    - inference.py: 推理引擎
-    - knowledge_graph.py: 组合入口
+    - types.py:           Pydantic 类型定义（节点、边、推理结果）
+    - loader.py:          本体数据加载（ontology.json）
+    - graph.py:           有向属性图构建与遍历
+    - inference.py:       多跳推理引擎（冲突消解 + 链路追踪）
+    - knowledge_graph.py: 组合入口（IKnowledgeGraph 实现）
 """
 
 from .knowledge_graph import DesignKnowledgeGraph
 from .types import (
-    # 枚举
     NodeType,
     EdgeType,
-    # 设计元素模型
-    ColorPalette,
-    Typography,
-    LayoutStyle,
     EmotionDefinition,
     IndustryDefinition,
     VibeDefinition,
-    # 结果模型
+    ColorStrategyDefinition,
+    TypographyStyleDefinition,
+    LayoutPatternDefinition,
+    DecorationThemeDefinition,
+    Relation,
     InferenceResult,
+    InferenceTrace,
     GraphStats,
 )
-from .loader import RulesLoader
+from .loader import OntologyLoader, RulesLoader
 from .graph import DesignGraph
 from .inference import InferenceEngine
 
 __all__ = [
-    # 主入口
     "DesignKnowledgeGraph",
-    
-    # 枚举
     "NodeType",
     "EdgeType",
-    
-    # 设计元素模型
-    "ColorPalette",
-    "Typography",
-    "LayoutStyle",
     "EmotionDefinition",
     "IndustryDefinition",
     "VibeDefinition",
-    
-    # 结果模型
+    "ColorStrategyDefinition",
+    "TypographyStyleDefinition",
+    "LayoutPatternDefinition",
+    "DecorationThemeDefinition",
+    "Relation",
     "InferenceResult",
+    "InferenceTrace",
     "GraphStats",
-    
-    # 组件
+    "OntologyLoader",
     "RulesLoader",
     "DesignGraph",
     "InferenceEngine",

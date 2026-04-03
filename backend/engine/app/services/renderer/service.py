@@ -2,7 +2,7 @@
 渲染服务 - 统一入口
 
 职责：
-1. 协调 DSL 解析和 Schema 转换
+1. 协调 DSL 解析（OOP 布局引擎）和 Schema 转换
 2. 提供完整的渲染流程
 """
 
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 
 class RendererService:
-    """渲染服务 — DSL 解析 + Schema 转换"""
+    """渲染服务 — DSL → OOP 布局 → Pydantic Schema"""
 
     def __init__(self):
         self.dsl_parser = DSLParser()
@@ -26,14 +26,16 @@ class RendererService:
     def parse_dsl_and_build_layout(
         self,
         dsl_instructions: List[Dict[str, Any]],
+        layout_strategy: str = "centered",
         canvas_width: int = 1080,
         canvas_height: int = 1920,
         design_brief: Optional[Dict[str, Any]] = None,
         font_style: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """解析 DSL 指令，返回元素字典列表"""
+        """解析 DSL 指令，通过 OOP 布局引擎计算坐标，返回元素字典列表。"""
         return self.dsl_parser.parse(
             dsl_instructions=dsl_instructions,
+            layout_strategy=layout_strategy,
             canvas_width=canvas_width,
             canvas_height=canvas_height,
             design_brief=design_brief,
@@ -74,39 +76,26 @@ def create_simple_poster_from_text(
     canvas_width: int = 1080,
     canvas_height: int = 1920,
 ) -> PosterData:
-    """快速创建简单海报（无需 LLM）"""
+    """快速创建简单海报（无需 LLM，使用 OOP 布局引擎）"""
     renderer = RendererService()
 
-    instructions = [
-        {
-            "command": "add_title",
-            "content": title,
-            "font_size": 48,
-            "x": 40, "y": int(canvas_height * 0.35),
-            "width": canvas_width - 80, "height": 80,
-        }
-    ]
-
-    if subtitle:
-        instructions.append({
-            "command": "add_subtitle",
-            "content": subtitle,
-            "font_size": 32,
-            "x": 40, "y": int(canvas_height * 0.45),
-            "width": canvas_width - 80, "height": 60,
-        })
+    instructions: List[Dict[str, Any]] = []
 
     if image_url:
-        instructions.insert(0, {
+        instructions.append({
             "command": "add_image",
             "src": image_url,
-            "x": 0, "y": 0,
-            "width": canvas_width, "height": canvas_height,
             "layer_type": "background",
         })
 
+    instructions.append({"command": "add_title", "content": title, "font_size": 48})
+
+    if subtitle:
+        instructions.append({"command": "add_subtitle", "content": subtitle, "font_size": 32})
+
     elements = renderer.parse_dsl_and_build_layout(
         dsl_instructions=instructions,
+        layout_strategy="centered",
         canvas_width=canvas_width,
         canvas_height=canvas_height,
     )
