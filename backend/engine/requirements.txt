@@ -44,10 +44,6 @@ networkx>=3.1
 # MCP Server
 mcp>=1.0.0
 
-# Optional: RAG Vector Search (轻量级推荐方案)
-# sentence-transformers>=2.2.0
-
-# Optional: RAG with ChromaDB (完整方案)
-# langchain>=0.1.0
-# chromadb>=0.4.0
+# RAG Vector Search
+sentence-transformers>=2.2.0
 
