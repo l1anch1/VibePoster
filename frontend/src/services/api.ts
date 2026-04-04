@@ -88,6 +88,12 @@ export async function exportAndDownloadPoster(
 // 分步生成 API（Step-by-Step Wizard）
 // ============================================================================
 
+export interface InferenceTrace {
+  path: string[];
+  relation_chain: string[];
+  weight: number;
+}
+
 export interface DesignBrief {
   title?: string;
   subtitle?: string;
@@ -97,6 +103,29 @@ export interface DesignBrief {
   intent?: string;
   industry?: string;
   vibe?: string;
+  decision_trace?: {
+    intent_source?: string;
+    main_color_source?: string;
+    design_rules_source?: string;
+    emotions?: string[];
+    brand_source?: string;
+    brand_name?: string;
+  };
+  kg_rules?: {
+    emotions?: string[];
+    color_strategies?: string[];
+    color_palettes?: Record<string, string[]>;
+    layout_strategies?: string[];
+    layout_patterns?: string[];
+    typography_styles?: string[];
+    decoration_styles?: Record<string, unknown>;
+    inference_traces?: InferenceTrace[];
+    [key: string]: unknown;
+  };
+  design_source?: {
+    kg_active?: boolean;
+    rag_active?: boolean;
+  };
   [key: string]: unknown;
 }
 

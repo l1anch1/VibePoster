@@ -157,14 +157,17 @@ class VerticalContainer(Container):
         max_width = 0
         
         for i, element in enumerate(self.elements):
-            # 设置子元素的 x（居中或左对齐）
             element_x = self.x + self.padding
-            
-            # 如果子元素宽度小于容器宽度，可以选择居中
             available_width = self.width - 2 * self.padding
+
             if element.width < available_width:
-                # 居中对齐
-                element_x = self.x + self.padding + (available_width - element.width) / 2
+                align = self.style.text_align if self.style else "center"
+                if align == "left":
+                    element_x = self.x + self.padding
+                elif align == "right":
+                    element_x = self.x + self.padding + (available_width - element.width)
+                else:
+                    element_x = self.x + self.padding + (available_width - element.width) / 2
             
             # 设置子元素的 y
             element.set_position(element_x, current_y)

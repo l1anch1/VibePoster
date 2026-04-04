@@ -251,7 +251,9 @@ async def step_layouts(req: LayoutsRequest):
             continue
         if r["review"].get("status") == "PASS":
             logger.info(f"  ✅ 版式 {i + 1} 审核通过")
-            passed.append(r["poster"])
+            poster = r["poster"]
+            poster["_review"] = r["review"]
+            passed.append(poster)
         else:
             fb = r["review"].get("feedback", "")
             logger.warning(f"  ❌ 版式 {i + 1} 审核不通过: {fb}")
@@ -279,6 +281,7 @@ async def step_layouts(req: LayoutsRequest):
                 run_critic_agent, poster, design_brief=brief_dict
             )
             if review.get("status") == "PASS":
+                poster["_review"] = review
                 return poster
             return None
 

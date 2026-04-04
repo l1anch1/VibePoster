@@ -16,7 +16,7 @@ Design Knowledge Graph v3 — 组合入口
     print(result["decoration_styles"])
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 
 from .types import InferenceResult, InferenceTrace, GraphStats
 from .loader import OntologyLoader
@@ -50,9 +50,13 @@ class DesignKnowledgeGraph(IKnowledgeGraph):
     # IKnowledgeGraph 接口
     # ==================================================================
 
-    def infer_rules(self, keywords: List[str]) -> Dict[str, Any]:
-        result = self._engine.infer(keywords)
-        return result.to_dict()
+    def infer_rules(
+        self, keywords: List[str], extra_avoids: Optional[Set[str]] = None,
+    ) -> Dict[str, Any]:
+        result = self._engine.infer(keywords, extra_avoids=extra_avoids)
+        d = result.to_dict()
+        d["inference_traces"] = [t.model_dump() for t in result.inference_traces]
+        return d
 
     def get_graph_stats(self) -> Dict[str, Any]:
         return self._graph.get_stats().to_dict()

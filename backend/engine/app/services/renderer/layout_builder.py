@@ -53,41 +53,41 @@ class StrategyConfig:
 
 STRATEGIES: Dict[str, StrategyConfig] = {
     "top_text": StrategyConfig(
-        content_region=LayoutRegion(0.06, 0.55),
-        padding=60, gap=24, text_align="center",
+        content_region=LayoutRegion(0.04, 0.50),
+        padding=48, gap=20, text_align="left",
         overlay_coverage="full",
     ),
     "centered": StrategyConfig(
-        content_region=LayoutRegion(0.25, 0.75),
-        padding=80, gap=28, text_align="center",
+        content_region=LayoutRegion(0.28, 0.72),
+        padding=100, gap=36, text_align="center",
         overlay_coverage="content",
     ),
     "bottom_heavy": StrategyConfig(
-        content_region=LayoutRegion(0.55, 0.95),
-        padding=60, gap=20, text_align="center",
+        content_region=LayoutRegion(0.58, 0.96),
+        padding=48, gap=16, text_align="left",
         overlay_coverage="bottom_half",
     ),
     "left_aligned": StrategyConfig(
-        content_region=LayoutRegion(0.10, 0.90),
-        padding=60, gap=16, text_align="left",
+        content_region=LayoutRegion(0.12, 0.88),
+        padding=48, gap=12, text_align="left",
         overlay_coverage="full",
     ),
     "diagonal": StrategyConfig(
-        content_region=LayoutRegion(0.06, 0.45, align="left"),
-        cta_region=LayoutRegion(0.78, 0.94, align="right"),
-        padding=60, gap=20, text_align="left",
+        content_region=LayoutRegion(0.04, 0.42, align="left"),
+        cta_region=LayoutRegion(0.80, 0.96, align="right"),
+        padding=48, gap=16, text_align="left",
         overlay_coverage="full",
     ),
     "big_title": StrategyConfig(
-        content_region=LayoutRegion(0.20, 0.80),
-        padding=40, gap=28, text_align="center",
-        title_scale=1.5,
+        content_region=LayoutRegion(0.15, 0.85),
+        padding=32, gap=40, text_align="center",
+        title_scale=1.8,
         overlay_coverage="content",
     ),
     "split_vertical": StrategyConfig(
-        content_region=LayoutRegion(0.05, 0.48),
-        cta_region=LayoutRegion(0.55, 0.92),
-        padding=60, gap=16, text_align="center",
+        content_region=LayoutRegion(0.04, 0.45),
+        cta_region=LayoutRegion(0.58, 0.96),
+        padding=48, gap=12, text_align="center",
         overlay_coverage="full",
     ),
 }
@@ -166,6 +166,7 @@ class LayoutBuilder:
         content_ctr = self._build_and_arrange_container(
             content_elems, strategy.content_region,
             canvas_width, canvas_height, strategy.padding, strategy.gap,
+            text_align=strategy.text_align,
         )
 
         # ── 4. CTA 区域 ──
@@ -180,6 +181,7 @@ class LayoutBuilder:
                 cta_ctr = self._build_and_arrange_container(
                     cta_elems, strategy.cta_region,
                     canvas_width, canvas_height, strategy.padding, strategy.gap,
+                    text_align=cta_align,
                 )
             else:
                 for e in cta_elems:
@@ -237,20 +239,20 @@ class LayoutBuilder:
             elif cmd in _SUBTITLE_COMMANDS:
                 elem = self._make_text(
                     instr, available_width, font_style, role="body",
-                    default_size=32, default_color="#CCCCCC",
+                    default_size=32, default_color="#E0E0E0",
                     default_weight="normal", default_align=text_align,
                 )
             elif cmd in _BODY_COMMANDS:
                 body_align = text_align if text_align != "center" else "left"
                 elem = self._make_text(
                     instr, available_width, font_style, role="body",
-                    default_size=24, default_color="#DDDDDD",
+                    default_size=24, default_color="#F0F0F0",
                     default_weight="normal", default_align=body_align,
                 )
             elif cmd in _CTA_COMMANDS:
                 elem = self._make_text(
                     instr, available_width, font_style, role="title",
-                    default_size=28, default_color="#0066FF",
+                    default_size=28, default_color="#8B5CF6",
                     default_weight="bold", default_align="center",
                 )
             elif cmd in _DIVIDER_COMMANDS:
@@ -345,11 +347,13 @@ class LayoutBuilder:
         canvas_height: int,
         padding: float,
         gap: float,
+        text_align: str = "center",
     ) -> VerticalContainer:
         region_y = int(region.y_start * canvas_height)
         ctr = VerticalContainer(
             x=0, y=region_y,
             width=canvas_width, padding=padding, gap=gap,
+            style=Style(text_align=text_align),
         )
         for e in elements:
             ctr.add(e)
@@ -496,7 +500,7 @@ def _resolve_kg_color(
 ) -> str:
     kg = (design_brief or {}).get("kg_rules", {})
     colors = kg.get("color_palettes", {}).get(source_key, [])
-    return colors[0] if colors else "#666666"
+    return colors[0] if colors else "#A78BFA"
 
 
 def _ensure_canvas_bounds(

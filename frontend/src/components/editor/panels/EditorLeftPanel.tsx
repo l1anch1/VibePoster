@@ -183,6 +183,58 @@ const AnalysisDashboard: React.FC<{ data: ExtractedData }> = ({ data }) => (
         ))}
       </div>
     </div>
+
+    {/* Critic Review — 审核反馈 */}
+    {data.review?.feedback && (
+      <div className="pt-2 border-t border-violet-100/40">
+        <p className="text-xs font-medium text-gray-500 mb-1.5">Quality Review</p>
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+            data.review.status === 'PASS'
+              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+              : 'bg-red-50 text-red-600 border border-red-200/60'
+          }`}>
+            {data.review.status}
+          </span>
+        </div>
+        <p className="text-[11px] text-gray-400 leading-relaxed">{data.review.feedback}</p>
+      </div>
+    )}
+
+    {/* AI Insights — 从 designBrief 提取的决策解释 */}
+    {data.designBrief?.emotions && data.designBrief.emotions.length > 0 && (
+      <div className="pt-2 border-t border-violet-100/40">
+        <p className="text-xs font-medium text-gray-500 mb-2">AI Insights</p>
+
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
+          {data.designBrief.emotions.map(e => (
+            <span key={e} className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-200/60">
+              {e}
+            </span>
+          ))}
+        </div>
+
+        {data.designBrief.colorSource && (
+          <p className="text-[11px] text-gray-400 mb-1">
+            Color: <span className="text-gray-600 font-medium">{data.designBrief.colorSource === 'kg_inference' ? 'Knowledge Graph' : 'LLM'}</span>
+          </p>
+        )}
+
+        {data.designBrief.inferenceTraces && data.designBrief.inferenceTraces.length > 0 && (
+          <div className="mt-2">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Reasoning</p>
+            {data.designBrief.inferenceTraces
+              .sort((a, b) => b.weight - a.weight)
+              .slice(0, 3)
+              .map((t, i) => (
+                <p key={i} className="text-[11px] text-gray-400 font-mono leading-relaxed">
+                  {t.path.join(' \u2192 ')} <span className="text-violet-400">({t.weight.toFixed(2)})</span>
+                </p>
+              ))}
+          </div>
+        )}
+      </div>
+    )}
   </div>
 );
 

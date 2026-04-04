@@ -9,6 +9,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { PosterData } from '../../types/PosterSchema';
+import type { ExtractedData } from '../../types/EditorTypes';
 import type { DesignBrief } from '../../services/api';
 import { stepPlan, stepAssets, stepLayouts, stepFinalize } from '../../services/api';
 import { EditorCanvas } from './canvas';
@@ -29,7 +30,7 @@ export interface WizardConfig {
 
 interface StepWizardProps {
   config: WizardConfig;
-  onComplete: (posterData: PosterData, analysisData?: { palette: string[]; styles: string[] } | null) => void;
+  onComplete: (posterData: PosterData, analysisData?: ExtractedData | null) => void;
   onCancel: () => void;
 }
 
@@ -221,6 +222,53 @@ const BriefEditor: React.FC<{
                 )}
               </div>
             </div>
+          )}
+
+          {/* AI Reasoning — KG 推理链路 */}
+          {brief.kg_rules?.emotions && brief.kg_rules.emotions.length > 0 && (
+            <details className="pt-2">
+              <summary className="text-xs font-medium text-gray-400 uppercase tracking-wide cursor-pointer hover:text-gray-600 select-none">
+                AI Reasoning
+              </summary>
+              <div className="mt-3 space-y-3 rounded-xl p-3" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.12)' }}>
+                {brief.kg_rules.emotions.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5">Emotions</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {brief.kg_rules.emotions.map(e => (
+                        <span key={e} className="px-2 py-0.5 text-[11px] rounded-full bg-violet-50 text-violet-600 border border-violet-200/60">{e}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {brief.decision_trace?.main_color_source && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Decision Sources</p>
+                    <p className="text-[11px] text-gray-500">
+                      Color: <span className="font-medium text-gray-700">{brief.decision_trace.main_color_source === 'kg_inference' ? 'Knowledge Graph' : 'LLM'}</span>
+                      {brief.decision_trace.design_rules_source && (
+                        <> &middot; Rules: <span className="font-medium text-gray-700">{brief.decision_trace.design_rules_source === 'kg_inference' ? 'Knowledge Graph' : 'LLM'}</span></>
+                      )}
+                    </p>
+                  </div>
+                )}
+                {brief.kg_rules.inference_traces && brief.kg_rules.inference_traces.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1.5">Top Reasoning Chains</p>
+                    <div className="space-y-1">
+                      {brief.kg_rules.inference_traces
+                        .sort((a, b) => b.weight - a.weight)
+                        .slice(0, 5)
+                        .map((t, i) => (
+                          <p key={i} className="text-[11px] text-gray-500 font-mono">
+                            {t.path.join(' \u2192 ')} <span className="text-violet-500">({t.weight.toFixed(2)})</span>
+                          </p>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
           )}
         </div>
       </div>
@@ -599,13 +647,36 @@ export const StepWizard: React.FC<StepWizardProps> = ({ config, onComplete, onCa
         posterData: layoutCandidates[selectedLayoutIdx],
       });
       // Extract analysis data for the dashboard
-      const extractedAnalysis = {
+      // 从选中的 layout 中提取 Critic 审核数据（后端挂在 _review 字段上）
+      const selectedLayout = layoutCandidates[selectedLayoutIdx] as PosterData & { _review?: Record<string, unknown> };
+      const reviewData = selectedLayout?._review;
+
+      const extractedAnalysis: ExtractedData = {
         palette: [
           ...(colorSuggestions?.palette as string[] || []),
           designBrief?.main_color,
           designBrief?.background_color,
         ].filter((c): c is string => !!c && typeof c === 'string'),
         styles: designBrief?.style_keywords as string[] || [],
+        designBrief: {
+          title: designBrief?.title,
+          subtitle: designBrief?.subtitle,
+          industry: designBrief?.industry,
+          vibe: designBrief?.vibe,
+          intent: designBrief?.intent,
+          emotions: designBrief?.kg_rules?.emotions,
+          colorSource: designBrief?.decision_trace?.main_color_source,
+          layoutStrategies: designBrief?.kg_rules?.layout_strategies,
+          inferenceTraces: designBrief?.kg_rules?.inference_traces?.map(t => ({
+            path: t.path,
+            weight: t.weight,
+          })),
+        },
+        review: reviewData ? {
+          status: reviewData.status as string,
+          feedback: reviewData.feedback as string,
+          issues: reviewData.issues as string[],
+        } : undefined,
       };
       onComplete(res.poster, extractedAnalysis);
     } catch (e: any) {

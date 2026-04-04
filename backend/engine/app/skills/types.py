@@ -98,12 +98,16 @@ class IntentParseOutput(BaseModel):
         description="提取到的 KG 关键词"
     )
     confidence: float = Field(
-        default=0.8, 
-        ge=0.0, 
-        le=1.0, 
+        default=0.8,
+        ge=0.0,
+        le=1.0,
         description="解析置信度"
     )
-    
+    negative_constraints: List[str] = Field(
+        default_factory=list,
+        description="用户否定约束对应的 KG 节点名（如 Grid, Multi-color）"
+    )
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         return self.model_dump()
@@ -137,10 +141,18 @@ class DesignRuleInput(BaseModel):
         description="风格关键词"
     )
     additional_keywords: List[str] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="额外的关键词"
     )
-    
+    image_analyses: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="参考图 VLM 分析结果（用于视觉意图逆向映射）"
+    )
+    negative_constraints: List[str] = Field(
+        default_factory=list,
+        description="用户否定约束对应的 KG 节点名"
+    )
+
     def get_all_keywords(self) -> List[str]:
         """获取所有非空关键词"""
         keywords = []
@@ -211,6 +223,12 @@ class DesignRuleOutput(BaseModel):
     decoration_styles: Dict[str, Any] = Field(
         default_factory=dict,
         description="装饰风格推荐 {divider: {...}, overlay: {...}, shape: {...}}"
+    )
+
+    # 推理链路追踪（XAI）
+    inference_traces: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="KG 推理链路 [{path, relation_chain, weight}]"
     )
 
     # 设计原则

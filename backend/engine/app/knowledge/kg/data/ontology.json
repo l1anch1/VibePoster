@@ -316,39 +316,39 @@
     "decoration_themes": {
       "SolidClean": {
         "description": "纯色简洁装饰，适合信任感与专业场景",
-        "divider":  { "style": "solid",    "color_source": "accent",  "thickness": 2, "opacity": 0.5  },
-        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "primary", "opacity": 0.4  },
+        "divider":  { "style": "solid",    "color_source": "accent",  "thickness": 3, "opacity": 0.7  },
+        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "primary", "opacity": 0.6  },
         "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
       },
       "GradientModern": {
         "description": "渐变现代装饰，适合科技创新场景",
-        "divider":  { "style": "gradient",       "color_source": "gradient", "thickness": 3, "opacity": 0.7  },
-        "overlay":  { "type": "linear-gradient",  "direction": "diagonal",   "color_source": "primary", "opacity": 0.5  },
-        "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.85 }
+        "divider":  { "style": "gradient",       "color_source": "gradient", "thickness": 3, "opacity": 0.8  },
+        "overlay":  { "type": "linear-gradient",  "direction": "diagonal",   "color_source": "primary", "opacity": 0.7  },
+        "shape":    { "border_radius": 8,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
       },
       "DashedEnergetic": {
         "description": "虚线活力装饰，适合动感促销场景",
-        "divider":  { "style": "dashed",          "color_source": "accent",  "thickness": 3, "opacity": 0.8  },
-        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.45 },
+        "divider":  { "style": "dashed",          "color_source": "accent",  "thickness": 4, "opacity": 1.0  },
+        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.6  },
         "shape":    { "border_radius": 0,  "fill_source": "accent",   "border_width": 0, "border_color_source": "primary", "opacity": 0.9 }
       },
       "SubtleElegant": {
         "description": "细腻优雅装饰，适合高端奢华场景",
-        "divider":  { "style": "solid",           "color_source": "accent",  "thickness": 1, "opacity": 0.3  },
-        "overlay":  { "type": "linear-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.6  },
-        "shape":    { "border_radius": 0,  "fill_source": "primary",  "border_width": 1, "border_color_source": "accent", "opacity": 0.9 }
+        "divider":  { "style": "solid",           "color_source": "accent",  "thickness": 2, "opacity": 0.5  },
+        "overlay":  { "type": "linear-gradient",  "direction": "to-bottom",  "color_source": "primary", "opacity": 0.8  },
+        "shape":    { "border_radius": 4,  "fill_source": "primary",  "border_width": 1, "border_color_source": "accent", "opacity": 0.9 }
       },
       "DottedOrganic": {
         "description": "点状有机装饰，适合温暖亲切场景",
-        "divider":  { "style": "dotted",   "color_source": "accent",  "thickness": 2, "opacity": 0.5  },
-        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "natural", "opacity": 0.4  },
-        "shape":    { "border_radius": 20, "fill_source": "natural",  "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
+        "divider":  { "style": "dotted",   "color_source": "accent",  "thickness": 3, "opacity": 0.7  },
+        "overlay":  { "type": "solid",     "direction": "to-bottom",  "color_source": "natural", "opacity": 0.6  },
+        "shape":    { "border_radius": 20, "fill_source": "natural",  "border_width": 0, "border_color_source": "accent", "opacity": 0.9 }
       },
       "PlayfulBold": {
         "description": "趣味大胆装饰，适合童趣创意场景",
-        "divider":  { "style": "dashed",          "color_source": "pop",     "thickness": 3, "opacity": 0.7  },
-        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "pop",     "opacity": 0.35 },
-        "shape":    { "border_radius": 24, "fill_source": "pop",      "border_width": 0, "border_color_source": "accent", "opacity": 0.85 }
+        "divider":  { "style": "dashed",          "color_source": "pop",     "thickness": 4, "opacity": 0.9  },
+        "overlay":  { "type": "radial-gradient",  "direction": "to-bottom",  "color_source": "pop",     "opacity": 0.5  },
+        "shape":    { "border_radius": 24, "fill_source": "pop",      "border_width": 0, "border_color_source": "accent", "opacity": 0.9 }
       }
     }
   },

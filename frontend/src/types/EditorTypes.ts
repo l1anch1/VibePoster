@@ -19,5 +19,24 @@ export interface Transform {
 export interface ExtractedData {
     palette: string[];
     styles: string[];
+    designBrief?: {
+        title?: string;
+        subtitle?: string;
+        industry?: string;
+        vibe?: string;
+        intent?: string;
+        emotions?: string[];
+        colorSource?: string;
+        layoutStrategies?: string[];
+        inferenceTraces?: Array<{
+            path: string[];
+            weight: number;
+        }>;
+    };
+    review?: {
+        status?: string;
+        feedback?: string;
+        issues?: string[];
+    };
 }
 

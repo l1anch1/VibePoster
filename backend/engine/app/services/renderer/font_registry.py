@@ -25,15 +25,15 @@ FONT_REGISTRY: Dict[str, Dict[str, FontEntry]] = {
     },
     "serif": {
         "title": {"family": "Songti SC",    "weight": "900",    "ps": "STSongti-SC-Black"},
-        "body":  {"family": "Songti SC",    "weight": "normal", "ps": "STSongti-SC-Regular"},
+        "body":  {"family": "PingFang SC",  "weight": "normal", "ps": "PingFangSC-Regular"},
     },
     "rounded": {
         "title": {"family": "Yuanti TC",    "weight": "bold",   "ps": "STYuanti-TC-Bold"},
-        "body":  {"family": "Yuanti TC",    "weight": "normal", "ps": "STYuanti-TC-Regular"},
+        "body":  {"family": "PingFang SC",  "weight": "normal", "ps": "PingFangSC-Regular"},
     },
     "handwriting": {
         "title": {"family": "Kaiti SC",     "weight": "bold",   "ps": "STKaitiSC-Bold"},
-        "body":  {"family": "Kaiti SC",     "weight": "normal", "ps": "STKaitiSC-Regular"},
+        "body":  {"family": "PingFang SC",  "weight": "normal", "ps": "PingFangSC-Regular"},
     },
     "display": {
         "title": {"family": "Baoli SC",     "weight": "normal", "ps": "STBaoliSC-Regular"},
