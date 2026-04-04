@@ -10,7 +10,7 @@
     Phase 6  构建推理链追踪         每条路径 (entry → emotion → strategy) 记录
 """
 
-from typing import Dict, Any, List, Set, Tuple
+from typing import Dict, Any, List, Optional, Set, Tuple
 from collections import defaultdict
 
 from .types import InferenceResult, InferenceTrace, NodeType
@@ -50,7 +50,9 @@ class InferenceEngine:
     # 公共接口
     # ==================================================================
 
-    def infer(self, keywords: List[str]) -> InferenceResult:
+    def infer(
+        self, keywords: List[str], extra_avoids: Optional[Set[str]] = None,
+    ) -> InferenceResult:
         if not keywords:
             return InferenceResult()
 
@@ -71,8 +73,9 @@ class InferenceEngine:
         # Phase 3: 冲突消解
         self._phase3_resolve_conflicts(strategy_map)
 
-        # Phase 4: AVOIDS 过滤
-        self._phase4_apply_avoids(strategy_map, entry_avoids)
+        # Phase 4: AVOIDS 过滤（合并本体 AVOIDS + 动态否定约束）
+        all_avoids = entry_avoids | (extra_avoids or set())
+        self._phase4_apply_avoids(strategy_map, all_avoids)
 
         # Phase 5: 聚合结果
         result = self._phase5_aggregate(

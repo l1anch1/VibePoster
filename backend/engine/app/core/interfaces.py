@@ -9,7 +9,7 @@ Date: 2025-01
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 
 
 # ============================================================================
@@ -20,7 +20,7 @@ class IKnowledgeGraph(ABC):
     """知识图谱接口 v2"""
     
     @abstractmethod
-    def infer_rules(self, keywords: List[str]) -> Dict[str, Any]:
+    def infer_rules(self, keywords: List[str], extra_avoids: Optional[Set[str]] = None) -> Dict[str, Any]:
         """
         根据关键词推理设计规则（语义化推理链）
         

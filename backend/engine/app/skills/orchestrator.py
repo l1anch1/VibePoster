@@ -159,6 +159,7 @@ class SkillOrchestrator:
         user_prompt: str,
         chat_history: Optional[List[Dict[str, str]]] = None,
         brand_name: Optional[str] = None,
+        image_analyses: Optional[List[Dict[str, Any]]] = None,
     ) -> PlannerContext:
         """
         执行完整的规划流程
@@ -194,10 +195,12 @@ class SkillOrchestrator:
             # 构建最小意图，确保流程可以继续
             context.intent = IntentParseOutput(poster_type="promotion")
         
-        # Step 2: 设计规则推理
+        # Step 2: 设计规则推理（多模态融合：文字 + 视觉 + 否定约束）
         rule_result = self.rule_skill(DesignRuleInput(
             industry=context.intent.industry,
             vibe=context.intent.vibe,
+            image_analyses=image_analyses,
+            negative_constraints=context.intent.negative_constraints,
         ))
         context.skill_results["design_rule"] = rule_result
         

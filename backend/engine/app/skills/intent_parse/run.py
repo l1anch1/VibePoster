@@ -131,6 +131,7 @@ class IntentParseSkill(BaseSkill[IntentParseInput, IntentParseOutput]):
         poster_type = self._extract_poster_type(user_prompt)
         brand_name = self._extract_brand(user_prompt)
         key_elements = self._extract_key_elements(user_prompt)
+        negative_constraints = self._extract_negative_constraints(user_prompt)
 
         extracted_keywords = []
         if industry:
@@ -148,6 +149,7 @@ class IntentParseSkill(BaseSkill[IntentParseInput, IntentParseOutput]):
             key_elements=key_elements,
             extracted_keywords=extracted_keywords,
             confidence=confidence,
+            negative_constraints=negative_constraints,
         )
 
         logger.info(
@@ -210,6 +212,61 @@ class IntentParseSkill(BaseSkill[IntentParseInput, IntentParseOutput]):
             if kw in text:
                 elements.append(kw)
         return list(set(elements))
+
+    # ------------------------------------------------------------------
+    # 否定约束提取（E: Negative Constraint Extraction）
+    # ------------------------------------------------------------------
+
+    _NEGATIVE_PATTERNS = [
+        r"不要(.+?)(?=[，。,.\s不]|$)",
+        r"不用(.+?)(?=[，。,.\s不]|$)",
+        r"别(.+?)(?=[，。,.\s不]|$)",
+        r"禁止(.+?)(?=[，。,.\s不]|$)",
+        r"不需要(.+?)(?=[，。,.\s不]|$)",
+    ]
+
+    # 否定表达 → KG 节点名映射
+    _NEGATIVE_TO_KG: Dict[str, List[str]] = {
+        "死板": ["Grid", "Centered"],
+        "太死板": ["Grid", "Centered"],
+        "规矩": ["Grid", "Centered"],
+        "花哨": ["Multi-color", "High-saturation", "PlayfulBold"],
+        "太花": ["Multi-color", "High-saturation"],
+        "正式": ["Serif", "Grid"],
+        "太正式": ["Serif", "Grid"],
+        "廉价": ["DashedEnergetic", "Multi-color"],
+        "cheap": ["DashedEnergetic", "Multi-color"],
+        "boring": ["Grid", "Centered", "Monochromatic"],
+        "无聊": ["Grid", "Centered", "Monochromatic"],
+        "单调": ["Monochromatic"],
+        "复杂": ["Scattered", "Burst", "Multi-color"],
+        "太复杂": ["Scattered", "Burst", "Multi-color"],
+        "简单": ["Scattered", "Burst", "Asymmetric"],
+        "太简单": ["Scattered", "Burst", "Asymmetric"],
+        "可爱": ["PlayfulBold", "Rounded-Sans"],
+        "幼稚": ["PlayfulBold", "Rounded-Sans", "Playfulness"],
+        "严肃": ["Display", "Burst", "DashedEnergetic"],
+    }
+
+    def _extract_negative_constraints(self, text: str) -> List[str]:
+        """从用户输入中提取否定约束，映射为 KG 节点名"""
+        kg_nodes: List[str] = []
+        for pattern in self._NEGATIVE_PATTERNS:
+            matches = re.findall(pattern, text)
+            for match in matches:
+                match = match.strip()
+                if not match:
+                    continue
+                # 精确匹配
+                if match in self._NEGATIVE_TO_KG:
+                    kg_nodes.extend(self._NEGATIVE_TO_KG[match])
+                    continue
+                # 子串匹配
+                for neg_key, nodes in self._NEGATIVE_TO_KG.items():
+                    if neg_key in match:
+                        kg_nodes.extend(nodes)
+                        break
+        return list(set(kg_nodes))
 
     def _calculate_confidence(
         self, industry_conf: float, vibe_conf: float, has_brand: bool

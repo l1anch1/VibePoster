@@ -164,6 +164,19 @@ class DesignGraph:
         neighbors = self.get_neighbors(strategy, EdgeType.CONFLICTS_WITH.value)
         return {n["target"] for n in neighbors}
 
+    def get_emotions_that_evoke(self, strategy: str) -> List[Dict[str, Any]]:
+        """反向查询：哪些 Emotion 通过 EVOKES 指向了这个 Strategy 节点"""
+        if not self.graph.has_node(strategy):
+            return []
+        results = []
+        for source, _, data in self.graph.in_edges(strategy, data=True):
+            if data.get("relation") == EdgeType.EVOKES.value:
+                results.append({
+                    "source": source,
+                    "weight": data.get("weight", 1.0),
+                })
+        return results
+
     # ------------------------------------------------------------------
     # 推理链可视化
     # ------------------------------------------------------------------

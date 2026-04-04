@@ -47,6 +47,7 @@ def run_planner_agent(
     user_prompt: str,
     chat_history: Optional[List[Dict[str, str]]] = None,
     brand_name: Optional[str] = None,
+    image_analyses: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     运行 Planner Agent（通过 SkillOrchestrator 调度）
@@ -73,6 +74,7 @@ def run_planner_agent(
             user_prompt=user_prompt,
             chat_history=chat_history,
             brand_name=brand_name,
+            image_analyses=image_analyses,
         )
 
         if context.design_brief:
