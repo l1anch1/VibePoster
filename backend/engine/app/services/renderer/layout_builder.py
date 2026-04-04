@@ -508,9 +508,10 @@ def _ensure_canvas_bounds(
         return elem
 
     margin = 20
+    min_h = 1 if elem.get("subtype") == "divider" else 20
     x = max(margin, min(int(elem["x"]), cw - margin))
     y = max(margin, min(int(elem["y"]), ch - margin))
     w = max(40, min(int(elem["width"]), cw - x - margin))
-    h = max(20, min(int(elem["height"]), ch - y - margin))
+    h = max(min_h, min(int(elem["height"]), ch - y - margin))
     elem.update({"x": x, "y": y, "width": w, "height": h})
     return elem

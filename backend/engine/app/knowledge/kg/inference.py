@@ -306,19 +306,29 @@ class InferenceEngine:
     # Phase 6: 推理链追踪
     # ==================================================================
 
-    @staticmethod
     def _phase6_build_traces(
+        self,
         keywords: List[str],
         emotions: Dict[str, float],
         hits: Dict[str, _StrategyHit],
     ) -> List[InferenceTrace]:
+        # 构建 keyword → emotion 的真实映射，避免伪路径
+        kw_to_emotions: Dict[str, Set[str]] = {}
+        for kw in keywords:
+            if not self.graph.has_node(kw):
+                continue
+            for emo_hit in self.graph.get_embodied_emotions(kw):
+                kw_to_emotions.setdefault(kw, set()).add(emo_hit["target"])
+
         traces: List[InferenceTrace] = []
         for hit in hits.values():
             for emo in hit.source_emotions:
-                for kw in keywords:
+                for kw, emo_set in kw_to_emotions.items():
+                    if emo not in emo_set:
+                        continue  # 跳过伪路径：该 keyword 并不 EMBODIES 该 emotion
                     traces.append(InferenceTrace(
                         path=[kw, emo, hit.name],
                         relation_chain=["EMBODIES", "EVOKES"],
-                        weight=emotions.get(emo, 0.0) * hit.weight,
+                        weight=hit.weight,  # 已是 emo_weight * edge_weight，不再重复乘
                     ))
         return traces
