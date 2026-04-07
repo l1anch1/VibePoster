@@ -114,7 +114,7 @@ USER_PROMPT_TEMPLATE = """【输入】
 {design_brief}
 - 素材:
 {asset_summary}
-{knowledge_section}{reference_section}{style_hint_section}{review_feedback_section}
+{knowledge_section}{reference_section}{layout_recommendation}{style_hint_section}{review_feedback_section}
 请输出完整的 JSON（包含 layout_strategy、font_style、dsl_instructions）。
 结合上述知识推荐，从 7 种 layout_strategy 中选择最合适的一种。
 仅输出 JSON，不要包含其他文本。"""
@@ -225,6 +225,101 @@ def _summarize_knowledge(design_brief: Dict[str, Any]) -> str:
     return "\n".join(parts) + "\n"
 
 
+# ============================================================================
+# KG LayoutPattern → layout_strategy 映射 + 内容语义布局推荐
+# ============================================================================
+
+# KG LayoutPattern 的 strategy 标签 → 最匹配的 layout_strategy
+_KG_STRATEGY_TO_LAYOUT: Dict[str, list] = {
+    "Structured":  ["left_aligned", "top_text"],
+    "Balanced":    ["centered", "split_vertical"],
+    "Dynamic":     ["diagonal", "big_title"],
+    "Energetic":   ["big_title", "diagonal"],
+    "Minimal":     ["centered", "bottom_heavy"],
+    "Organic":     ["bottom_heavy", "top_text"],
+    "Guided":      ["left_aligned", "split_vertical"],
+    "Playful":     ["diagonal", "big_title"],
+    "Clean":       ["centered", "top_text"],
+}
+
+# 内容语义关键词 → 布局偏好 + 原因
+_CONTENT_LAYOUT_HINTS: Dict[str, Dict[str, str]] = {
+    # 有主体素材（产品/人物）→ 给素材留空间
+    "product_centered": {
+        "keywords": "手机,电脑,产品,设备,汽车,数码,耳机,相机,手表",
+        "strategy": "centered",
+        "reason": "产品类海报建议居中展示主体",
+    },
+    "food_visual": {
+        "keywords": "美食,食物,餐饮,料理,蛋糕,咖啡,饮品,菜品",
+        "strategy": "bottom_heavy",
+        "reason": "美食类海报建议上方大面积展示食物图片",
+    },
+    "event_info": {
+        "keywords": "发布会,展览,演唱会,音乐节,论坛,峰会,招聘,开业",
+        "strategy": "left_aligned",
+        "reason": "活动类海报信息密度高，建议杂志式左对齐排版",
+    },
+    "promotion_impact": {
+        "keywords": "促销,打折,限时,抢购,秒杀,特价,优惠,清仓",
+        "strategy": "big_title",
+        "reason": "促销类海报需要大字冲击力",
+    },
+    "landscape_visual": {
+        "keywords": "风景,旅行,旅游,建筑,城市,自然,山水,海滩",
+        "strategy": "bottom_heavy",
+        "reason": "风景类海报建议文字在底部，上方留给视觉",
+    },
+    "brand_minimal": {
+        "keywords": "品牌,奢侈,高端,极简,品质,格调",
+        "strategy": "centered",
+        "reason": "高端品牌建议极简居中，突出品质感",
+    },
+}
+
+
+def _recommend_layout_strategy(design_brief: Dict[str, Any]) -> str:
+    """根据 KG 布局推理 + 内容语义，生成布局策略推荐"""
+    recommendations = []
+
+    # 路径 1：从 KG layout_patterns 推荐
+    kg = design_brief.get("kg_rules", {})
+    layout_strategies = kg.get("layout_strategies", [])
+    kg_suggested = set()
+    for ls in layout_strategies:
+        mapped = _KG_STRATEGY_TO_LAYOUT.get(ls, [])
+        kg_suggested.update(mapped)
+    if kg_suggested:
+        recommendations.append(
+            f"知识图谱推荐: {', '.join(kg_suggested)}"
+        )
+
+    # 路径 2：从内容语义推荐
+    user_prompt = design_brief.get("user_prompt", "")
+    intent = design_brief.get("intent", "")
+    text = f"{user_prompt} {intent}".lower()
+
+    for hint_key, hint_data in _CONTENT_LAYOUT_HINTS.items():
+        keywords = hint_data["keywords"].split(",")
+        if any(kw in text for kw in keywords):
+            recommendations.append(
+                f"内容语义推荐: {hint_data['strategy']}（{hint_data['reason']}）"
+            )
+            break  # 只取第一个匹配
+
+    # 路径 3：有主体素材时的特殊推荐
+    has_subject = design_brief.get("has_subject") or "subject" in text or "素材" in text
+    if has_subject:
+        recommendations.append(
+            "检测到主体素材: 建议 centered 或 split_vertical，给素材留出展示空间"
+        )
+
+    if not recommendations:
+        return ""
+
+    return "【布局策略推荐】\n" + "\n".join(f"- {r}" for r in recommendations) + "\n\n"
+
+
 def _summarize_reference(design_brief: Dict[str, Any]) -> str:
     """从 design_brief 提取风格参考图分析结果"""
     has_ref = any(
@@ -311,11 +406,18 @@ def get_prompt(
         and not (isinstance(v, str) and len(v) > 500)
     }
 
+    # 生成布局策略推荐（基于 KG + 内容语义）
+    # 检测是否有主体素材
+    has_subject = bool(asset_list and asset_list.get("subject_layer"))
+    brief_with_subject = {**design_brief, "has_subject": has_subject}
+    layout_recommendation = _recommend_layout_strategy(brief_with_subject)
+
     user_prompt = USER_PROMPT_TEMPLATE.format(
         design_brief=json.dumps(brief_for_prompt, ensure_ascii=False, indent=2),
         asset_summary=_summarize_assets(asset_list or {}),
         knowledge_section=_summarize_knowledge(design_brief),
         reference_section=_summarize_reference(design_brief),
+        layout_recommendation=layout_recommendation,
         style_hint_section=style_hint_section,
         canvas_width=canvas_width,
         canvas_height=canvas_height,
