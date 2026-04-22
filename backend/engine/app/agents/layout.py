@@ -68,6 +68,53 @@ class LayoutAgent(BaseAgent):
             return response
 
 
+BASELINE_SYSTEM_PROMPT = """你是一位顶级海报版式设计师。你需要根据设计简报和素材，直接输出带像素坐标的海报图层 JSON。
+
+⚠️ 重要：你必须为每个元素指定精确的 x, y, width, height 像素值。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+一、输出格式
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+输出 JSON，包含 layers 数组，每个元素带有精确的像素坐标：
+
+{
+  "layers": [
+    {"type": "image", "x": 0, "y": 0, "width": 1080, "height": 1920, "src": "{ASSET_BG}"},
+    {"type": "text", "x": 72, "y": 800, "width": 936, "height": 80, "content": "标题文本", "fontSize": 64, "color": "#FFFFFF", "fontFamily": "PingFang SC", "fontWeight": "bold", "textAlign": "center"},
+    {"type": "text", "x": 72, "y": 900, "width": 936, "height": 50, "content": "副标题", "fontSize": 28, "color": "#EEEEEE", "fontFamily": "PingFang SC", "fontWeight": "normal", "textAlign": "center"},
+    {"type": "text", "x": 72, "y": 980, "width": 936, "height": 44, "content": "了解更多", "fontSize": 24, "color": "#FFFFFF", "fontFamily": "PingFang SC", "fontWeight": "bold", "textAlign": "center"}
+  ]
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+二、布局策略参考
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+你可以从以下布局思路中选择最适合的一种，并据此确定元素坐标：
+
+- "top_text"       — 上文下图：标题在画布上方（y: 5%~50%），下方留给背景
+- "centered"       — 极简居中：大留白，文字垂直居中（y: 25%~75%）
+- "bottom_heavy"   — 底部聚集：内容紧凑在底部（y: 55%~95%），上方全给背景
+- "left_aligned"   — 杂志通栏：左对齐紧凑排版（x: 5%~60%）
+- "diagonal"       — 对角线冲击：标题左上 + CTA右下，视觉张力
+- "big_title"      — 大字报：超大标题占据视觉中心
+- "split_vertical" — 上下分割：信息分两区
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、设计规则
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 标题 font_size 建议 48-96，副标题 28-42，正文 18-28，CTA 24-36
+2. 【文字颜色】
+   - 标题鼓励使用知识图谱推荐的强调色（accent color），前提是与背景有足够对比
+   - 副标题可使用主色调的浅色变体或 #FFFFFF
+   - 正文和 CTA 优先使用 #FFFFFF 或 #000000 保证可读性
+   - 禁止使用与背景同色系的文字（如蓝色背景上用蓝色字）
+   - 禁止使用中间灰度（如 #888888）作为标题颜色
+3. 所有坐标和尺寸必须是具体的像素值，元素不能溢出画布
+4. 画布外边距至少保留 40px
+5. 文字图层之间应保持合理的垂直间距（40-80px）
+6. 所有文字建议对齐到同一条竖直基准线（左对齐或居中对齐）"""
+
+
 def run_layout_agent(
     design_brief: Dict[str, Any],
     asset_list: Dict[str, Any],
@@ -75,22 +122,24 @@ def run_layout_agent(
     canvas_height: int,
     review_feedback: Optional[Dict[str, Any]] = None,
     style_hint: Optional[str] = None,
+    use_dsl: bool = True,
 ) -> Dict[str, Any]:
     """
-    运行 Layout Agent（语义 DSL + OOP 布局引擎）
+    运行 Layout Agent
 
-    流程：
-    1. LLM 输出语义 DSL 指令（无坐标）+ layout_strategy
-    2. 替换图片占位符
-    3. OOP 布局引擎根据 strategy 计算所有坐标
-    4. 转换为 Pydantic Schema
+    Args:
+        use_dsl: True=语义DSL+布局引擎（默认），False=LLM直接输出坐标（Baseline消融实验用）
     """
-    logger.info("📐 Layout Agent 正在规划布局...")
+    logger.info(f"📐 Layout Agent 正在规划布局... (use_dsl={use_dsl})")
 
     if review_feedback and review_feedback.get("status") == "REJECT":
         logger.info(f"📝 收到审核反馈: {review_feedback.get('feedback', '')}")
 
     try:
+        # Baseline 模式：LLM 直接输出坐标，跳过 DSL 和布局引擎
+        if not use_dsl:
+            return _run_baseline_layout(design_brief, asset_list, canvas_width, canvas_height)
+
         # 1. 生成 Prompt
         prompts = layout_prompt.get_prompt(
             design_brief=design_brief,
@@ -197,6 +246,82 @@ def run_layout_agent(
         import traceback
         logger.error(f"   堆栈:\n{traceback.format_exc()}")
         return ERROR_FALLBACKS["layout"]
+
+
+def _run_baseline_layout(
+    design_brief: Dict[str, Any],
+    asset_list: Dict[str, Any],
+    canvas_width: int,
+    canvas_height: int,
+) -> Dict[str, Any]:
+    """
+    Baseline 模式：LLM 直接输出带像素坐标的图层 JSON，不经过 DSL 和布局引擎。
+
+    与 DSL 模式共享相同的 user_prompt（包含知识上下文、布局推荐等），
+    仅替换 system_prompt 为直接坐标输出格式，确保消融实验的公平性。
+    """
+    logger.info("📐 [Baseline] LLM 直接输出坐标模式（公平 prompt）")
+
+    # 复用 DSL 模式的 user_prompt 构建（获得相同的知识上下文）
+    prompts = layout_prompt.get_prompt(
+        design_brief=design_brief,
+        asset_list=asset_list,
+        canvas_width=canvas_width,
+        canvas_height=canvas_height,
+    )
+
+    # 替换输出格式要求：DSL 指令 → 直接坐标 JSON
+    user_prompt = prompts["user"].replace(
+        "请输出完整的 JSON（包含 layout_strategy、font_style、dsl_instructions）。\n"
+        "结合上述知识推荐，从 7 种 layout_strategy 中选择最合适的一种。\n"
+        "仅输出 JSON，不要包含其他文本。",
+        "请直接输出带像素坐标的 layers JSON（不要使用 DSL 指令）。\n"
+        "结合上述知识推荐，选择合适的布局思路，为每个元素计算精确的 x, y, width, height。\n"
+        "仅输出 JSON，不要包含其他文本。",
+    )
+
+    from .base import AgentFactory
+    agent = AgentFactory.get_layout_agent()
+    response = agent.invoke(contents=f"{BASELINE_SYSTEM_PROMPT}\n\n{user_prompt}")
+
+    if hasattr(response, "text"):
+        content = response.text
+    elif hasattr(response, "choices") and len(response.choices) > 0:
+        content = response.choices[0].message.content
+    else:
+        raise ValueError(f"Unknown response format: {type(response)}")
+
+    if "```json" in content:
+        content = content.replace("```json", "").replace("```", "")
+    content = content.strip()
+
+    result = json.loads(content)
+    layers = result.get("layers", [])
+
+    # 替换图片占位符
+    for layer in layers:
+        src = layer.get("src", "")
+        if "ASSET_BG" in str(src) and asset_list.get("background_layer"):
+            layer["src"] = asset_list["background_layer"].get("src", "")
+        elif "ASSET_FG" in str(src) and asset_list.get("subject_layer"):
+            layer["src"] = asset_list["subject_layer"].get("src", "")
+
+    # 与 DSL 模式相同的文字颜色后处理（公平消融：后处理不应成为组间差异来源）
+    from ..services.renderer.layout_builder import LayoutBuilder
+    bg_color = LayoutBuilder._extract_bg_color(layers)
+    layers = [LayoutBuilder._ensure_text_contrast(l, bg_color) for l in layers]
+
+    poster_json = {
+        "canvas": {
+            "width": canvas_width,
+            "height": canvas_height,
+            "backgroundColor": design_brief.get("background_color", "#FFFFFF"),
+        },
+        "layers": layers,
+        "layout_strategy": "baseline_direct",
+    }
+    logger.info(f"✅ [Baseline] 生成了 {len(layers)} 个图层")
+    return poster_json
 
 
 def layout_node(state: Dict[str, Any]) -> Dict[str, Any]:

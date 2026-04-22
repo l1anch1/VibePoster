@@ -48,6 +48,8 @@ def run_planner_agent(
     chat_history: Optional[List[Dict[str, str]]] = None,
     brand_name: Optional[str] = None,
     image_analyses: Optional[List[Dict[str, Any]]] = None,
+    skip_kg: bool = False,
+    skip_rag: bool = False,
 ) -> Dict[str, Any]:
     """
     运行 Planner Agent（通过 SkillOrchestrator 调度）
@@ -62,6 +64,9 @@ def run_planner_agent(
         user_prompt: 用户输入的提示词
         chat_history: 对话历史（可选）
         brand_name: 企业品牌名称（可选，用于 RAG 检索）
+        image_analyses: 图像分析结果（可选）
+        skip_kg: 跳过知识图谱推理（消融实验用）
+        skip_rag: 跳过 RAG 品牌知识检索（消融实验用）
 
     Returns:
         设计简报字典
@@ -75,6 +80,8 @@ def run_planner_agent(
             chat_history=chat_history,
             brand_name=brand_name,
             image_analyses=image_analyses,
+            skip_kg=skip_kg,
+            skip_rag=skip_rag,
         )
 
         if context.design_brief:

@@ -91,60 +91,77 @@ pip install pytest-cov
 pytest --cov=app --cov-report=html
 ```
 
-## 测试分类
+## 论文第五章实验
 
-### 单元测试 (unit)
-- 测试单个函数或方法
-- 使用 mock 隔离依赖
-- 快速执行
+### 前提条件
 
-### 集成测试 (integration)
-- 测试多个组件协作
-- 可能需要真实依赖（如数据库）
-- 执行时间较长
+1. 激活虚拟环境：`source .venv/bin/activate`
+2. 确认 `.env` 中配好 API Key（PLANNER/LAYOUT/CRITIC 三个 Agent + CRITIC_VISION）
+3. 确认单元测试通过：`python -m pytest tests/ -m "not slow" -q`
 
-### API 测试 (api)
-- 测试 HTTP 接口
-- 使用 TestClient
-- 验证请求/响应格式
+### 实验 1：消融实验（论文 5.3 节）
 
-## 编写测试指南
+五组配置 × 30 条 prompt = 150 次 LLM 调用。
 
-1. **测试命名**: 使用 `test_` 前缀
-2. **测试类命名**: 使用 `Test` 前缀
-3. **使用 fixtures**: 在 `conftest.py` 中定义共享 fixtures
-4. **使用 mock**: 隔离外部依赖（如 LLM API、文件系统）
-5. **测试边界**: 测试正常情况、边界情况和错误情况
-6. **保持独立**: 每个测试应该独立运行，不依赖其他测试
+| 配置 | 说明 |
+|------|------|
+| Baseline | 纯 LLM 直接输出坐标（无 DSL、无 KG、无 RAG） |
+| +DSL | 加入语义 DSL + 布局引擎 |
+| +DSL+KG | 再加入 KG 知识图谱推理 |
+| +DSL+RAG | DSL + RAG 品牌知识（无 KG） |
+| Full | 完整系统（DSL + KG + RAG） |
 
-## 示例
-
-### 基本测试
-
-```python
-def test_example():
-    """测试示例"""
-    result = function_under_test()
-    assert result == expected_value
+```bash
+python -m pytest tests/test_ablation.py -v -s -m slow
 ```
 
-### 使用 fixtures
+- 预计耗时：40–75 分钟
+- 输出：`tests/results/ablation_results.json`
+- 终端打印各配置的 PASS 率、可读性、布局得分和平均耗时
 
-```python
-def test_with_fixture(client):
-    """使用 fixture 的测试"""
-    response = client.get("/api/endpoint")
-    assert response.status_code == 200
+### 实验 2：端到端成功率（论文 5.2 + 5.4 节）
+
+完整系统配置跑 30 条 prompt，含 Critic 重试。
+
+```bash
+python -m pytest tests/test_e2e_benchmark.py -v -s -m slow
 ```
 
-### 使用 mock
+- 预计耗时：15–30 分钟
+- 输出：`tests/results/e2e_results.json`
+- 终端打印 Plan/Layout/Critic 成功率、重试次数和平均耗时
+
+### 实验 3：单元测试覆盖率（论文 5.2 节）
+
+```bash
+python -m pytest tests/ -m "not slow" --cov=app --cov-report=term-missing
+```
+
+### 实验相关文件
+
+| 文件 | 用途 |
+|------|------|
+| `tests/data/test_prompts.json` | 30 条测试 prompt（6 行业 × 5 风格） |
+| `tests/test_ablation.py` | 消融实验运行器（4 配置 × 30 prompt） |
+| `tests/test_e2e_benchmark.py` | 端到端全流程测试 |
+| `app/utils/metrics.py` | 自动化质量指标（可读性/布局/风格一致性） |
+| `tests/results/` | 实验结果输出目录（运行后生成） |
+
+### 从结果中提取论文数据
 
 ```python
-@patch('app.services.poster_service.app_workflow')
-def test_with_mock(mock_workflow):
-    """使用 mock 的测试"""
-    mock_workflow.invoke.return_value = {"result": "success"}
-    result = service.method()
-    assert result == expected
+import json
+with open("tests/results/ablation_results.json") as f:
+    data = json.load(f)
+for name in ["Baseline", "+DSL", "+DSL+RAG", "Full"]:
+    rows = [r for r in data if r["config"] == name]
+    pass_n = sum(1 for r in rows if r.get("critic_status") == "PASS")
+    print(f"{name:12s}  PASS={pass_n}/{len(rows)}")
 ```
+
+### 注意事项
+
+- 素材搜索（Pexels/Flux）在实验中跳过，使用占位图
+- LLM 调用真实，结果有随机性，建议多次运行取均值
+- `@pytest.mark.slow` 确保日常 `pytest` 不会意外执行这些实验
 

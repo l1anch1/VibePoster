@@ -69,6 +69,117 @@
         "category": "品牌禁忌",
         "type": "restrictions"
       }
+    },
+
+    {
+      "id": "starbucks_color_main",
+      "text": "星巴克的品牌主色调是星巴克绿 (#00704A)，辅以暖白 (#F2F0EB) 和深棕 (#1E3932)。绿色象征自然、新鲜与可持续发展理念，是品牌最核心的视觉识别色。",
+      "metadata": {
+        "brand": "星巴克",
+        "category": "配色方案",
+        "type": "color_scheme"
+      }
+    },
+    {
+      "id": "starbucks_design_style",
+      "text": "星巴克品牌设计风格：温暖、自然、社区感。强调手工质感与咖啡文化的融合，视觉上追求舒适与亲切。避免过于冷峻的科技感，保持品牌的人文温度。",
+      "metadata": {
+        "brand": "星巴克",
+        "category": "设计风格",
+        "type": "design_guide"
+      }
+    },
+    {
+      "id": "starbucks_slogan",
+      "text": "星巴克品牌理念：激发并孕育人文精神——每人，每杯，每个社区。体现了星巴克作为第三空间的品牌定位。",
+      "metadata": {
+        "brand": "星巴克",
+        "category": "品牌口号",
+        "type": "slogan"
+      }
+    },
+    {
+      "id": "starbucks_typography",
+      "text": "星巴克品牌推荐使用 Sodo Sans 字体家族，风格温暖友好。中文场景推荐使用圆体或思源黑体，保持亲和力与可读性的平衡。",
+      "metadata": {
+        "brand": "星巴克",
+        "category": "字体规范",
+        "type": "typography"
+      }
+    },
+
+    {
+      "id": "nike_color_main",
+      "text": "Nike 的品牌主色调是经典黑 (#000000) 和 Nike 橙 (#F45B22)，辅以纯白 (#FFFFFF)。黑白配色体现运动的力量与纯粹，橙色用于强调和行动号召，传递活力与激情。",
+      "metadata": {
+        "brand": "耐克",
+        "category": "配色方案",
+        "type": "color_scheme"
+      }
+    },
+    {
+      "id": "nike_design_style",
+      "text": "Nike 品牌设计风格：大胆、动感、激励人心。视觉语言强调运动员精神和突破极限的力量感，善用高对比度和动态构图。保持简洁有力，让产品和运动员成为主角。",
+      "metadata": {
+        "brand": "耐克",
+        "category": "设计风格",
+        "type": "design_guide"
+      }
+    },
+    {
+      "id": "nike_slogan",
+      "text": "Nike 品牌 Slogan：Just Do It。这句全球知名的口号鼓励每个人突破自我，是运动品牌中最具辨识度的标语之一。",
+      "metadata": {
+        "brand": "耐克",
+        "category": "品牌口号",
+        "type": "slogan"
+      }
+    },
+    {
+      "id": "nike_typography",
+      "text": "Nike 品牌标准字体为 Futura Bold 和 Helvetica Neue，强调力量感和现代感。中文场景推荐使用黑体加粗字重，保持视觉冲击力。",
+      "metadata": {
+        "brand": "耐克",
+        "category": "字体规范",
+        "type": "typography"
+      }
+    },
+
+    {
+      "id": "xiaomi_color_main",
+      "text": "小米的品牌主色调是小米橙 (#FF6900)，辅以深空灰 (#2C2C2C) 和纯白 (#FFFFFF)。橙色代表小米的年轻、活力与科技创新精神，是品牌最核心的识别色。",
+      "metadata": {
+        "brand": "小米",
+        "category": "配色方案",
+        "type": "color_scheme"
+      }
+    },
+    {
+      "id": "xiaomi_design_style",
+      "text": "小米品牌设计风格：年轻、科技、极致性价比。视觉上追求简洁现代，善用大面积留白与产品特写。设计语言强调轻量化和未来感，避免过度装饰。",
+      "metadata": {
+        "brand": "小米",
+        "category": "设计风格",
+        "type": "design_guide"
+      }
+    },
+    {
+      "id": "xiaomi_slogan",
+      "text": "小米品牌 Slogan：让每个人都能享受科技的乐趣。体现了小米普惠科技、高性价比的品牌使命。",
+      "metadata": {
+        "brand": "小米",
+        "category": "品牌口号",
+        "type": "slogan"
+      }
+    },
+    {
+      "id": "xiaomi_typography",
+      "text": "小米品牌标准字体为小米兰亭 (MiLanPro)，这是一款小米定制的现代无衬线字体。中文场景保持简洁清晰的字体风格，推荐使用思源黑体作为替代。",
+      "metadata": {
+        "brand": "小米",
+        "category": "字体规范",
+        "type": "typography"
+      }
     }
   ]
 }

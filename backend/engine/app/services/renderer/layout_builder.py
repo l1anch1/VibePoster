@@ -28,6 +28,42 @@ logger = get_logger(__name__)
 
 
 # ============================================================================
+# WCAG 2.0 对比度计算（用于文字颜色后置校验）
+# ============================================================================
+
+def _hex_to_rgb(hex_color: str) -> tuple:
+    """#RRGGBB 或 #RGB 转为 (r, g, b)"""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = h[0] * 2 + h[1] * 2 + h[2] * 2
+    if len(h) < 6:
+        return (0, 0, 0)
+    try:
+        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+    except ValueError:
+        return (0, 0, 0)
+
+
+def _relative_luminance(r: int, g: int, b: int) -> float:
+    """WCAG 2.0 相对亮度"""
+    def linearize(c):
+        s = c / 255.0
+        return s / 12.92 if s <= 0.03928 else ((s + 0.055) / 1.055) ** 2.4
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+
+
+def _wcag_contrast(color1: str, color2: str) -> float:
+    """计算两个十六进制颜色的 WCAG 对比度（1.0 ~ 21.0）"""
+    r1, g1, b1 = _hex_to_rgb(color1)
+    r2, g2, b2 = _hex_to_rgb(color2)
+    l1 = _relative_luminance(r1, g1, b1)
+    l2 = _relative_luminance(r2, g2, b2)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+# ============================================================================
 # 布局策略配置
 # ============================================================================
 
@@ -195,17 +231,24 @@ class LayoutBuilder:
                 ov, content_ctr, cta_ctr, strategy, canvas_width, canvas_height, design_brief,
             ))
 
-        # ── 6. 收集内容图层 ──
+        # ── 6. 主体素材（置于 overlay 之后、文字之前，避免遮挡文字） ──
+        for subj in subj_instrs:
+            result.append(self._build_subject(subj, strategy, canvas_width, canvas_height))
+
+        # ── 7. 收集内容图层（文字在最上层） ──
         result.extend(content_ctr.get_all_elements())
         if cta_ctr:
             result.extend(cta_ctr.get_all_elements())
 
-        # ── 7. 主体素材 ──
-        for subj in subj_instrs:
-            result.append(self._build_subject(subj, strategy, canvas_width, canvas_height))
-
         # ── 8. 画布边界保护 ──
         result = [_ensure_canvas_bounds(e, canvas_width, canvas_height) for e in result]
+
+        # ── 9. 文字颜色对比度校验 ──
+        bg_color = self._extract_bg_color(result)
+        result = [self._ensure_text_contrast(e, bg_color) for e in result]
+
+        # ── 10. rect+text 对齐修正（按钮/高亮色块内的文字居中） ──
+        result = _fix_rect_text_alignment(result)
 
         logger.info(f"✅ OOP 布局完成，共 {len(result)} 个元素")
         return result
@@ -438,6 +481,70 @@ class LayoutBuilder:
             "src": instr.get("src", ""), "layer_type": "subject",
         }
 
+    # ------------------------------------------------------------------
+    # 颜色对比度校验
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _extract_bg_color(layers: List[Dict[str, Any]]) -> str:
+        """
+        从已构建的图层列表中提取文字实际所在的有效背景色。
+
+        优先级：
+        1. 如果存在不透明度 >= 0.5 的 overlay（含 gradient），以其主色为准
+        2. 否则用第一个 image 图层的颜色
+        3. 回退到 #333333
+        """
+        import re
+        image_color = "#333333"
+        overlay_color = None
+
+        for layer in layers:
+            # 提取背景图颜色
+            if layer.get("type") == "image" and image_color == "#333333":
+                src = layer.get("src", "")
+                m = re.search(r"placehold\.co/\d+x\d+/([0-9A-Fa-f]{6})", src)
+                if m:
+                    image_color = f"#{m.group(1).upper()}"
+
+            # 检测 overlay（含 gradient）
+            if (layer.get("type") == "rect"
+                    and layer.get("subtype") == "overlay"
+                    and layer.get("opacity", 1.0) >= 0.5):
+                bg = layer.get("backgroundColor", "")
+                if bg and bg != "transparent":
+                    overlay_color = bg
+                elif layer.get("gradient"):
+                    # 从 gradient 字符串中提取第一个 hex 色值
+                    gm = re.search(r"#([0-9A-Fa-f]{6})", layer["gradient"])
+                    if gm:
+                        overlay_color = f"#{gm.group(1).upper()}"
+
+        if overlay_color:
+            return overlay_color
+
+        return image_color
+
+    @staticmethod
+    def _ensure_text_contrast(
+        elem: Dict[str, Any], bg_color: str,
+    ) -> Dict[str, Any]:
+        """如果文字与背景对比度不足 3.0，替换为黑或白中对比度更高的"""
+        if elem.get("type") != "text":
+            return elem
+        text_color = elem.get("color", "#FFFFFF")
+        if not text_color or text_color == "transparent":
+            return elem
+
+        ratio = _wcag_contrast(text_color, bg_color)
+        if ratio >= 3.0:
+            return elem
+
+        white_ratio = _wcag_contrast("#FFFFFF", bg_color)
+        black_ratio = _wcag_contrast("#000000", bg_color)
+        elem["color"] = "#FFFFFF" if white_ratio >= black_ratio else "#000000"
+        return elem
+
 
 # ============================================================================
 # 模块级辅助函数
@@ -491,16 +598,52 @@ def _classify_instructions(
 def _get_decoration_style(
     design_brief: Optional[Dict[str, Any]], decoration_type: str,
 ) -> Dict[str, Any]:
-    kg = (design_brief or {}).get("kg_rules", {})
-    return kg.get("decoration_styles", {}).get(decoration_type, {})
+    kg = (design_brief or {}).get("kg_rules") or {}
+    return (kg.get("decoration_styles") or {}).get(decoration_type, {})
 
 
 def _resolve_kg_color(
     design_brief: Optional[Dict[str, Any]], source_key: str,
 ) -> str:
-    kg = (design_brief or {}).get("kg_rules", {})
-    colors = kg.get("color_palettes", {}).get(source_key, [])
+    kg = (design_brief or {}).get("kg_rules") or {}
+    colors = (kg.get("color_palettes") or {}).get(source_key, [])
     return colors[0] if colors else "#A78BFA"
+
+
+def _fix_rect_text_alignment(layers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    修正 rect + text 对的 y 坐标对齐。
+
+    LLM 生成 add_shape（色块/按钮背景）+ add_cta（按钮文字）时，VerticalContainer
+    将它们作为独立元素按间距排列，导致 text 不在 rect 内部。
+    此函数检测相邻的 rect-text 对，将 text 的 y 居中到 rect 内部。
+    """
+    for i in range(len(layers) - 1):
+        curr = layers[i]
+        nxt = layers[i + 1]
+
+        # 检测 rect + text 对（rect 的 subtype 是 label/highlight/shape/rect 等）
+        if (curr.get("type") == "rect"
+                and curr.get("subtype") in ("label", "highlight", "shape", "rect")
+                and nxt.get("type") == "text"):
+
+            rect_y = curr.get("y", 0)
+            rect_h = curr.get("height", 0)
+            text_h = nxt.get("height", 0)
+
+            if rect_h > 0 and text_h > 0:
+                # 将 text 垂直居中在 rect 内
+                centered_y = rect_y + (rect_h - text_h) // 2
+                nxt["y"] = max(rect_y, centered_y)
+                # text 宽度不超过 rect（留 padding）
+                rect_w = curr.get("width", 0)
+                rect_x = curr.get("x", 0)
+                if rect_w > 0:
+                    padding = min(20, rect_w * 0.1)
+                    nxt["x"] = int(rect_x + padding)
+                    nxt["width"] = int(rect_w - 2 * padding)
+
+    return layers
 
 
 def _ensure_canvas_bounds(

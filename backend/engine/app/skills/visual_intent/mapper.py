@@ -4,9 +4,9 @@
 将 VLM 图像分析结果映射到 KG Emotion 空间，实现参考图 → 设计意图的逆向推理。
 
 三条映射路径：
-1. mood/theme 直接映射到 Emotion（语义查表）
-2. color_palette 与 KG Emotion palettes 做色彩距离匹配（LAB ΔE）
-3. layout_hints 映射到 LayoutPattern，反向追溯 Emotion（图反向遍历）
+1. mood/theme 直接映射到 Emotion（双语语义查表，置信度 0.85）
+2. style 类别映射到 Emotion（VLM 风格分类 → KG Emotion，置信度 0.7）
+3. layout_hints 映射到 LayoutPattern，反向追溯 Emotion（图反向遍历，置信度 0.5）
 """
 
 from typing import Dict, Any, List, Optional
@@ -94,10 +94,10 @@ class VisualIntentMapper:
     """
     视觉意图逆向映射器
 
-    将 VLM 分析结果（mood, theme, style, palette, layout_hints）映射到
+    将 VLM 分析结果（mood, theme, style, layout_hints）映射到
     KG Emotion 空间的得分分布 {emotion_name: score}。
 
-    这个映射不修改 KG，只是把视觉特征当作"查询条件"匹配已有节点。
+    不修改 KG 结构，仅以视觉特征作为查询条件匹配已有节点。
     """
 
     def map_visual_to_emotions(

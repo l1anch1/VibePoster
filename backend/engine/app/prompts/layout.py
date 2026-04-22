@@ -283,7 +283,7 @@ def _recommend_layout_strategy(design_brief: Dict[str, Any]) -> str:
     recommendations = []
 
     # 路径 1：从 KG layout_patterns 推荐
-    kg = design_brief.get("kg_rules", {})
+    kg = design_brief.get("kg_rules") or {}
     layout_strategies = kg.get("layout_strategies", [])
     kg_suggested = set()
     for ls in layout_strategies:

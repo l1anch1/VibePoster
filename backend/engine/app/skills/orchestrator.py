@@ -160,17 +160,22 @@ class SkillOrchestrator:
         chat_history: Optional[List[Dict[str, str]]] = None,
         brand_name: Optional[str] = None,
         image_analyses: Optional[List[Dict[str, Any]]] = None,
+        skip_kg: bool = False,
+        skip_rag: bool = False,
     ) -> PlannerContext:
         """
         执行完整的规划流程
-        
+
         流程：IntentParse → DesignRule → BrandContext → DesignBrief
-        
+
         Args:
             user_prompt: 用户输入
             chat_history: 对话历史（可选）
             brand_name: 品牌名称（可选，优先级高于自动识别）
-            
+            image_analyses: 图像分析结果（可选）
+            skip_kg: 跳过知识图谱推理（消融实验用）
+            skip_rag: 跳过 RAG 品牌知识检索（消融实验用）
+
         Returns:
             包含所有 Skill 结果的上下文
         """
@@ -196,21 +201,31 @@ class SkillOrchestrator:
             context.intent = IntentParseOutput(poster_type="promotion")
         
         # Step 2: 设计规则推理（多模态融合：文字 + 视觉 + 否定约束）
-        rule_result = self.rule_skill(DesignRuleInput(
-            industry=context.intent.industry,
-            vibe=context.intent.vibe,
-            image_analyses=image_analyses,
-            negative_constraints=context.intent.negative_constraints,
-        ))
-        context.skill_results["design_rule"] = rule_result
-        
-        if rule_result.output:
-            context.design_rules = rule_result.output
-        else:
+        if skip_kg:
+            logger.info("⏭️ [消融] 跳过 KG 推理")
             context.design_rules = DesignRuleOutput()
-        
+            context.skill_results["design_rule"] = SkillResult.success(
+                context.design_rules, method="skipped_ablation"
+            )
+        else:
+            rule_result = self.rule_skill(DesignRuleInput(
+                industry=context.intent.industry,
+                vibe=context.intent.vibe,
+                image_analyses=image_analyses,
+                negative_constraints=context.intent.negative_constraints,
+            ))
+            context.skill_results["design_rule"] = rule_result
+
+            if rule_result.output:
+                context.design_rules = rule_result.output
+            else:
+                context.design_rules = DesignRuleOutput()
+
         # Step 3: 品牌上下文（仅当有品牌名时）
         effective_brand = context.intent.brand_name
+        if skip_rag:
+            logger.info("⏭️ [消融] 跳过 RAG 检索")
+            effective_brand = None
         if effective_brand:
             brand_result = self.brand_skill(BrandContextInput(
                 brand_name=effective_brand,
