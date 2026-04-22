@@ -47,3 +47,6 @@ mcp>=1.0.0
 # RAG Vector Search
 sentence-transformers>=2.2.0
 
+# Document Parsing
+pymupdf>=1.24.0
+

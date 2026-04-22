@@ -41,19 +41,58 @@ router = APIRouter(prefix="/api", tags=["knowledge"])
 
 MAX_UPLOAD_PART_SIZE = 1024 * 1024 * 10  # 10 MB
 
+ALLOWED_EXTENSIONS = {".txt", ".md", ".json", ".pdf"}
+
+
+async def _extract_text_from_upload(form) -> str:
+    """从 form 中提取文本：优先 file 字段，fallback 到 text 字段"""
+    from starlette.datastructures import UploadFile as StarletteUploadFile
+
+    file_field = form.get("file")
+    if file_field and isinstance(file_field, StarletteUploadFile) and file_field.filename:
+        import os
+        ext = os.path.splitext(file_field.filename)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise ValidationException(
+                message=f"不支持的文件格式: {ext}",
+                detail={"detail": f"支持的格式: {', '.join(ALLOWED_EXTENSIONS)}"},
+            )
+
+        file_bytes = await file_field.read()
+        if not file_bytes:
+            raise ValidationException(
+                message="上传文件为空",
+                detail={"detail": "文件内容为空"},
+            )
+
+        if ext == ".pdf":
+            from ...knowledge.rag.pdf_parser import extract_text_from_pdf
+            return extract_text_from_pdf(file_bytes)
+
+        return file_bytes.decode("utf-8")
+
+    text = str(form.get("text", ""))
+    if not text.strip():
+        raise ValidationException(
+            message="文档内容为空",
+            detail={"detail": "请提供 file 或 text 字段"},
+        )
+    return text
+
+
 @router.post("/brand/upload", summary="上传企业品牌文档")
 async def upload_brand_document(request: Request) -> APIResponse[BrandUploadResult]:
     """
     上传企业品牌文档到 RAG 知识库（multipart/form-data，单字段最大 10MB）
-    
+
     参数说明：
-    - **text**: 品牌规范文本内容
+    - **file**: 品牌文档文件（.txt / .md / .json / .pdf）
+    - **text**: 品牌规范文本内容（与 file 二选一，file 优先）
     - **brand_name**: 品牌名称（如：华为、小米、苹果）
     - **category**: 文档类别（配色方案/设计风格/字体规范/品牌口号）
     """
     try:
         form = await request.form(max_part_size=MAX_UPLOAD_PART_SIZE)
-        text = str(form.get("text", ""))
         brand_name = str(form.get("brand_name", ""))
         category = str(form.get("category", "通用"))
 
@@ -62,25 +101,22 @@ async def upload_brand_document(request: Request) -> APIResponse[BrandUploadResu
                 message="缺少品牌名称",
                 detail={"detail": "请提供 brand_name 字段"}
             )
-        if not text.strip():
-            raise ValidationException(
-                message="文档内容为空",
-                detail={"detail": "请提供品牌规范内容"}
-            )
-        
+
+        text = await _extract_text_from_upload(form)
+
         knowledge_base = get_knowledge_base()
-        
+
         doc_id = f"{brand_name}_{category}_{hash(text) % 10000}"
         metadata = {
             "brand": brand_name,
             "category": category,
             "type": "user_upload"
         }
-        
+
         knowledge_base.add_document(text, metadata, doc_id)
-        
+
         logger.info(f"📚 品牌文档上传成功: {brand_name} - {category}")
-        
+
         return APIResponse(
             success=True,
             data=BrandUploadResult(
@@ -91,7 +127,7 @@ async def upload_brand_document(request: Request) -> APIResponse[BrandUploadResu
             ),
             message=f"品牌文档上传成功"
         )
-    
+
     except ValidationException:
         raise
     except Exception as e:

@@ -214,14 +214,9 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
     setIsUploading(true);
     try {
-      // 读取文件内容
-      const text = await selectedFile.text();
-
-      // 使用文件名（去掉扩展名）作为品牌名称
       const brandName = selectedFile.name.replace(/\.[^/.]+$/, '');
 
-      // 上传到 RAG
-      await uploadBrandDocument(text, brandName);
+      await uploadBrandDocument(selectedFile, brandName);
 
       setUploadStatus('success');
       fetchBrandData();

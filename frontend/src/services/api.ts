@@ -213,12 +213,12 @@ export async function stepFinalize(params: {
 // ============================================================================
 
 export async function uploadBrandDocument(
-  text: string,
+  file: File,
   brandName: string,
   category: string = '通用'
 ): Promise<void> {
   const formData = new FormData();
-  formData.append('text', text);
+  formData.append('file', file);
   formData.append('brand_name', brandName);
   formData.append('category', category);
 

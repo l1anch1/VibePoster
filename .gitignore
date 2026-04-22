@@ -21,6 +21,9 @@ node_modules/
 dist/
 build/
 
+# Test artifacts
+**/tests/results/
+
 # Logs
 *.log
 
