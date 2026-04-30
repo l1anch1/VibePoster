@@ -92,36 +92,40 @@ class TestRendererService:
             layer_dict = layer.model_dump()
             assert "type" in layer_dict
 
-    def test_absolute_coordinates_preserved(self, renderer):
-        """绝对坐标模式：指定的 x, y 应保持（除越界修正外）"""
+    def test_vertical_ordering_preserved(self, renderer):
+        """OOP 布局引擎：多个文本元素应按声明顺序从上到下排列"""
         dsl = [
-            {"command": "add_title", "content": "Top",    "font_size": 48, "x": 100, "y": 100, "width": 880, "height": 80},
-            {"command": "add_subtitle", "content": "Mid",  "font_size": 32, "x": 100, "y": 500, "width": 880, "height": 50},
-            {"command": "add_text", "content": "Bottom",   "font_size": 24, "x": 100, "y": 900, "width": 880, "height": 40},
+            {"command": "add_title", "content": "Top", "font_size": 48},
+            {"command": "add_subtitle", "content": "Mid", "font_size": 32},
+            {"command": "add_text", "content": "Bottom", "font_size": 24},
         ]
-        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        elements = renderer.parse_dsl_and_build_layout(
+            dsl, layout_strategy="centered", canvas_width=1080, canvas_height=1920
+        )
         poster = renderer.convert_to_pydantic_schema(elements)
 
         ys = [l.y for l in poster.layers]
-        assert ys[0] == 100
-        assert ys[1] == 500
-        assert ys[2] == 900
+        assert ys[0] < ys[1] < ys[2], f"元素应从上到下排列，实际 y 值: {ys}"
 
     def test_clamp_bounds(self, renderer):
-        """越界元素应被修正到画布内"""
+        """OOP 布局引擎：元素应在画布边界内"""
         dsl = [{
             "command": "add_title", "content": "Out", "font_size": 24,
-            "x": -100, "y": -50, "width": 2000, "height": 40,
         }]
-        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        elements = renderer.parse_dsl_and_build_layout(
+            dsl, layout_strategy="centered", canvas_width=1080, canvas_height=1920
+        )
 
-        assert elements[0]["x"] >= 20
-        assert elements[0]["y"] >= 20
-        assert elements[0]["width"] <= 1080
+        assert elements[0]["x"] >= 0
+        assert elements[0]["y"] >= 0
+        assert elements[0]["x"] + elements[0]["width"] <= 1080
+        assert elements[0]["y"] + elements[0]["height"] <= 1920
 
     def test_unknown_command_ignored(self, renderer):
         dsl = [{"command": "unknown_cmd", "x": 0, "y": 0, "width": 100, "height": 100}]
-        elements = renderer.parse_dsl_and_build_layout(dsl, 1080, 1920)
+        elements = renderer.parse_dsl_and_build_layout(
+            dsl, layout_strategy="centered", canvas_width=1080, canvas_height=1920
+        )
         assert len(elements) == 0
 
 

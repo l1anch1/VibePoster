@@ -52,7 +52,7 @@ class TestStepPlanRoute:
 class TestStepAssetsRoute:
     """Step 2: /api/step/assets 路由测试"""
 
-    @patch("app.api.routes.steps.search_assets_multiple")
+    @patch("app.services.asset_service.search_assets_multiple")
     def test_assets_text_only(self, mock_search):
         mock_search.return_value = [
             "https://example.com/bg1.jpg",
@@ -80,12 +80,17 @@ class TestStepAssetsRoute:
 class TestStepLayoutsRoute:
     """Step 3: /api/step/layouts 路由测试"""
 
+    @patch("app.api.routes.steps.run_critic_agent")
     @patch("app.api.routes.steps.run_layout_agent")
-    def test_layouts_success(self, mock_layout):
+    def test_layouts_success(self, mock_layout, mock_critic):
         mock_layout.return_value = {
             "canvas": {"width": 1080, "height": 1920, "backgroundColor": "#FFFFFF"},
-            "layers": [],
+            "layers": [
+                {"id": "bg", "type": "image", "x": 0, "y": 0, "width": 1080, "height": 1920, "src": "https://example.com/bg.jpg"},
+                {"id": "t1", "type": "text", "x": 72, "y": 800, "width": 936, "height": 60, "content": "Test Title", "fontSize": 48, "color": "#FFFFFF"},
+            ],
         }
+        mock_critic.return_value = {"status": "PASS", "feedback": ""}
 
         response = client.post(
             "/api/step/layouts",

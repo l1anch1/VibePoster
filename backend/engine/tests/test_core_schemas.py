@@ -74,7 +74,7 @@ class TestTextLayer:
         assert layer.height == 0
         assert layer.fontSize == 24
         assert layer.color == "#000000"
-        assert layer.fontFamily == "Yuanti TC"
+        assert layer.fontFamily == "PingFang SC"
 
 
 class TestImageLayer:
