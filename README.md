@@ -44,7 +44,7 @@ cp backend/engine/env.template backend/engine/.env
 docker-compose up -d --build
 
 # Or local dev (3 terminals)
-cd backend/engine && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000
+cd backend/engine && uv sync && uv run uvicorn app.main:app --reload --port 8000
 cd backend/render && npm install && node src/server.js
 cd frontend && npm install && npm run dev
 ```

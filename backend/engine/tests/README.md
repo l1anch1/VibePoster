@@ -44,7 +44,7 @@ tests/
 ### 安装测试依赖
 
 ```bash
-pip install pytest pytest-asyncio httpx
+uv sync  # dev 依赖已包含 pytest、pytest-asyncio 等
 ```
 
 ### 运行所有测试
@@ -87,15 +87,14 @@ pytest -m "not slow"
 ### 查看测试覆盖率
 
 ```bash
-pip install pytest-cov
-pytest --cov=app --cov-report=html
+uv run pytest --cov=app --cov-report=html
 ```
 
 ## 论文第五章实验
 
 ### 前提条件
 
-1. 激活虚拟环境：`source .venv/bin/activate`
+1. 安装依赖：`uv sync`
 2. 确认 `.env` 中配好 API Key（PLANNER/LAYOUT/CRITIC 三个 Agent + CRITIC_VISION）
 3. 确认单元测试通过：`python -m pytest tests/ -m "not slow" -q`
 

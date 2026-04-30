@@ -28,8 +28,8 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up     # dev (hot
 
 ```bash
 # Terminal 1: Engine
-cd backend/engine && pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+cd backend/engine && uv sync
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Terminal 2: Render
 cd backend/render && npm install && node src/server.js
