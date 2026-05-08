@@ -157,11 +157,23 @@ class AssetService:
             f"🔍 主体素材分析: {subject_analysis.get('understanding', {}).get('description', '?')[:60]}"
         )
 
-        # 确定背景候选
+        # 确定背景候选：有 bg_bytes 时作为风格参考搜索匹配背景，而非直接使用
         if bg_bytes:
-            user_bg_url = image_to_base64(bg_bytes)
-            logger.info("🖼️ Material 模式：使用用户上传的背景图")
-            candidates = [user_bg_url]
+            logger.info("🖼️ Material 模式：分析参考图风格后搜索匹配背景")
+            ref_analysis = understand_image(image_data=bg_bytes, user_prompt=user_prompt)
+            ref_understanding = ref_analysis.get("understanding", {})
+            ref_style = ref_understanding.get("style")
+            if ref_style and ref_style not in keywords:
+                keywords = keywords + [ref_style]
+                design_brief["style_keywords"] = keywords
+            ref_palette = ref_understanding.get("color_palette", [])
+            if ref_palette:
+                design_brief["reference_palette"] = ref_palette
+            candidates = search_assets_multiple(
+                keywords=keywords,
+                design_brief=design_brief,
+                count=count,
+            )
         else:
             candidates = search_assets_multiple(
                 keywords=keywords,

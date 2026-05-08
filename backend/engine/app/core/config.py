@@ -66,7 +66,7 @@ class PlannerAgentConfig(BaseSettings):
             "temperature": self.TEMPERATURE,
             "api_key": self.API_KEY,
             "base_url": self.BASE_URL,
-            "response_format": {"type": "json_object"},
+            "response_format": None,  # Claude via OpenRouter 不支持 json_object mode
             "default_intent": self.DEFAULT_INTENT,
         }
 
@@ -204,7 +204,7 @@ class CriticAgentConfig(BaseSettings):
             "temperature": self.TEMPERATURE,
             "api_key": self.API_KEY,
             "base_url": self.BASE_URL,
-            "response_format": {"type": "json_object"},
+            "response_format": None,  # Claude via OpenRouter 不支持 json_object mode
             "system_prompt": "你是一个严格的海报质量审核员。请仔细检查海报数据，输出 JSON 格式的审核结果。",
             "default_status": self.DEFAULT_STATUS,
             "default_feedback": "审核通过",

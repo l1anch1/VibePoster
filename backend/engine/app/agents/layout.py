@@ -203,6 +203,11 @@ def run_layout_agent(
         # 6. OOP 布局引擎计算坐标
         renderer = RendererService()
 
+        subject_layer = asset_list.get("subject_layer", {})
+        subject_size = None
+        if subject_layer.get("width") and subject_layer.get("height"):
+            subject_size = (subject_layer["width"], subject_layer["height"])
+
         elements = renderer.parse_dsl_and_build_layout(
             dsl_instructions=dsl_instructions,
             layout_strategy=layout_strategy,
@@ -210,6 +215,7 @@ def run_layout_agent(
             canvas_height=canvas_height,
             design_brief=design_brief,
             font_style=font_style,
+            subject_size=subject_size,
         )
 
         # 7. 转换为 Pydantic Schema

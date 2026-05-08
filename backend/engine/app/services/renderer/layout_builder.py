@@ -165,6 +165,7 @@ class LayoutBuilder:
         canvas_height: int = 1920,
         design_brief: Optional[Dict[str, Any]] = None,
         font_style: Optional[str] = None,
+        subject_size: Optional[tuple] = None,
     ) -> List[Dict[str, Any]]:
         """
         构建布局并返回扁平元素字典列表（与 SchemaConverter 兼容）。
@@ -232,8 +233,10 @@ class LayoutBuilder:
             ))
 
         # ── 6. 主体素材（置于 overlay 之后、文字之前，避免遮挡文字） ──
+        subj_w = subject_size[0] if subject_size else None
+        subj_h = subject_size[1] if subject_size else None
         for subj in subj_instrs:
-            result.append(self._build_subject(subj, strategy, canvas_width, canvas_height))
+            result.append(self._build_subject(subj, strategy, canvas_width, canvas_height, subj_w, subj_h))
 
         # ── 7. 收集内容图层（文字在最上层） ──
         result.extend(content_ctr.get_all_elements())
@@ -469,15 +472,44 @@ class LayoutBuilder:
         instr: Dict[str, Any],
         strategy: StrategyConfig,
         cw: int, ch: int,
+        subject_width: Optional[int] = None,
+        subject_height: Optional[int] = None,
     ) -> Dict[str, Any]:
+        """主体素材定位：基于内容区域互补 + 宽高比等比缩放"""
         mid = (strategy.content_region.y_start + strategy.content_region.y_end) / 2
         if mid < 0.5:
-            sy, sh = int(ch * 0.55), ch - int(ch * 0.55)
+            region_y_start = strategy.content_region.y_end + 0.02
+            region_y_end = 0.96
         else:
-            sy, sh = 0, int(ch * 0.45)
+            region_y_start = 0.04
+            region_y_end = strategy.content_region.y_start - 0.02
+
+        region_h = int(ch * (region_y_end - region_y_start))
+        region_y = int(ch * region_y_start)
+
+        if subject_width and subject_height and subject_width > 0 and subject_height > 0:
+            aspect = subject_width / subject_height
+            max_w = int(cw * 0.85)
+            max_h = region_h
+
+            if aspect >= 1:
+                w = min(max_w, int(max_h * aspect))
+                h = int(w / aspect)
+            else:
+                h = min(max_h, int(max_w / aspect))
+                w = int(h * aspect)
+
+            x = (cw - w) // 2
+            y = region_y + (region_h - h) // 2
+        else:
+            x = 0
+            y = region_y
+            w = cw
+            h = region_h
+
         return {
             "type": "image",
-            "x": 0, "y": sy, "width": cw, "height": sh,
+            "x": x, "y": y, "width": w, "height": h,
             "src": instr.get("src", ""), "layer_type": "subject",
         }
 

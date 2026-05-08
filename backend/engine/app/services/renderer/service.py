@@ -31,6 +31,7 @@ class RendererService:
         canvas_height: int = 1920,
         design_brief: Optional[Dict[str, Any]] = None,
         font_style: Optional[str] = None,
+        subject_size: Optional[tuple] = None,
     ) -> List[Dict[str, Any]]:
         """解析 DSL 指令，通过 OOP 布局引擎计算坐标，返回元素字典列表。"""
         return self.dsl_parser.parse(
@@ -40,6 +41,7 @@ class RendererService:
             canvas_height=canvas_height,
             design_brief=design_brief,
             font_style=font_style,
+            subject_size=subject_size,
         )
 
     def convert_to_pydantic_schema(

@@ -41,7 +41,17 @@ def analyze_image_with_llm(
         )
         
         image_base64 = base64.b64encode(image_data).decode('utf-8')
-        
+
+        # 根据图片头部字节判断实际格式
+        if image_data[:8] == b'\x89PNG\r\n\x1a\n':
+            media_type = "image/png"
+        elif image_data[:2] == b'\xff\xd8':
+            media_type = "image/jpeg"
+        elif image_data[:4] == b'RIFF' and image_data[8:12] == b'WEBP':
+            media_type = "image/webp"
+        else:
+            media_type = "image/jpeg"  # fallback
+
         prompts = visual_prompt.get_prompt(user_prompt if user_prompt else "无")
         prompt = f"{prompts['system']}\n\n{prompts['user']}"
         
@@ -60,7 +70,7 @@ def analyze_image_with_llm(
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
+                                "url": f"data:{media_type};base64,{image_base64}"
                             }
                         }
                     ]

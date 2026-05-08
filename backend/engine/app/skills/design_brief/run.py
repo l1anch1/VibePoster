@@ -140,7 +140,18 @@ class DesignBriefSkill(BaseSkill[DesignBriefInput, DesignBriefOutput]):
             )
 
             content = response.choices[0].message.content
-            brief_data = json.loads(content)
+            if not content:
+                return self._build_fallback(input, "LLM returned empty content")
+            # 清理 markdown 代码块包裹
+            cleaned = content.strip()
+            if cleaned.startswith("```"):
+                lines = cleaned.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                cleaned = "\n".join(lines)
+            brief_data = json.loads(cleaned)
 
             if "intent" not in brief_data:
                 brief_data["intent"] = input.intent.poster_type

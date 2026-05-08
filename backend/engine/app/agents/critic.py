@@ -32,13 +32,15 @@ class CriticAgent(BaseAgent):
 
     def invoke(self, messages: list, **kwargs) -> Dict[str, Any]:
         """调用 Critic Agent"""
-        response = self.client.chat.completions.create(
-            model=self.config["model"],
-            messages=messages,
-            temperature=self.config["temperature"],
-            response_format=self.config.get("response_format"),
+        params = {
+            "model": self.config["model"],
+            "messages": messages,
+            "temperature": self.config["temperature"],
             **kwargs,
-        )
+        }
+        if self.config.get("response_format"):
+            params["response_format"] = self.config["response_format"]
+        response = self.client.chat.completions.create(**params)
         return response
 
 
